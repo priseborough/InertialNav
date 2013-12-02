@@ -19,9 +19,9 @@ The filter estimates the following states:
 3 North,East,Down  position components
 3 IMU delta angle bias components
 3 IMU delta velocity bias components
-2 North,East wind velocity componenets
-3 North,East,Down  earth magnetic flux componenets
-3 X,Y,Z body fixe magnetic flux componenets (these are opposite sign to the compass offsets used by APM)
+2 North,East wind velocity components
+3 North,East,Down  earth magnetic flux components
+3 X,Y,Z body fixed magnetic flux components (these are opposite sign to the compass offsets used by APM)
 
 You will need Matlab + Simulink 2012a or later to run this model
 
