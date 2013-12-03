@@ -23,11 +23,11 @@ The filter estimates the following states:
 3 North,East,Down  earth magnetic flux components
 3 X,Y,Z body fixed magnetic flux components (these are opposite sign to the compass offsets used by APM)
 
-The filter is designed to run in parallel with the exisiting APM AHRS complementary filter, firstly to provide
+The filter is designed to run in parallel with the existing APM AHRS complementary filter, firstly to provide
 a bootstrap for initial alignment, and secondly to provide a watchdog reference to detect filter divergence.
 
-No optimisation of tuning parameters has been perfomred, other than to roughly set them based on innovation sequence
-RMS errors obtained from teh test data set.
+No optimisation of tuning parameters has been performed, other than to roughly set them based on innovation sequence
+RMS errors obtained from the test data set.
 
 The three test data sets were obtained from a PX4 FMU and digital airspeed sensor, installed in a Skywalker X-8 
 airframe. The 2nd and 3rd data sets include aerobatic manoeuvres (loops and axial rolls), but no spinning due to
