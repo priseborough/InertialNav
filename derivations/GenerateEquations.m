@@ -1,3 +1,5 @@
+% IMPORTANT - This script requires the Matlab symbolic toolbox and takes ~3 hours to run
+
 % Derivation of Navigation EKF using a local NED earth Tangent Frame and 
 % XYZ body fixed frame
 % Sequential fusion of velocity and position measurements
