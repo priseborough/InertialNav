@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.571"
+    ComputedModelVersion    "1.574"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -38,9 +38,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "user"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Thu Dec 05 16:39:42 2013"
-  RTWModifiedTimeStamp	  308160589
-  ModelVersionFormat	  "1.%<AutoIncrement:571>"
+  LastModifiedDate	  "Thu Dec 05 18:34:00 2013"
+  RTWModifiedTimeStamp	  308167703
+  ModelVersionFormat	  "1.%<AutoIncrement:574>"
   ConfigurationManager	  "None"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -78,6 +78,7 @@ Model {
     $ObjectID		    2
     $ClassName		    "Simulink.SimulationData.ModelLoggingInfo"
     model_		    "TestHarness"
+    signals_		    []
     overrideMode_	    [0.0]
     Array {
       Type		      "Cell"
@@ -7394,6 +7395,7 @@ Model {
 	  SID			  "1264"
 	  Position		  [895, 795, 945, 835]
 	  ZOrder		  2
+	  BackgroundColor	  "red"
 	  Threshold		  "1e6"
 	  InputSameDT		  off
 	  SaturateOnIntegerOverflow off
@@ -13105,12 +13107,13 @@ Stateflow {
       "setting the coresponding covariance terms to zero. To be efficient, the \n% corresponding terms should also not "
       "be calculated above\nif onGround || ~useCompass\n    % Inhibit magnetic flux state updates and covariance growth"
       "\n    predP(19:24,:) = single(0);\n    predP(:,19:24) = single(0);\nend\n\n% If on ground or not using airspeed "
-      "sensing, inhibit wind velocity state\n% updates by setting the coresponding covariance terms to zero. To be \n% "
-      "efficient, the corresponding terms should also not be calculated above\nif onGround || ~useAirspeed\n    % Inhib"
-      "it Wind velocity state updates and covariance growth\n    predP(17:18,:) = single(0);\n    predP(:,17:18) = sing"
-      "le(0);\nend\n\n% If the total position variance exceds 1E6 (1000m), then stop covariance\n% growth by setting th"
-      "e predicted to the previous values\n% This prevent an ill conditioned matrix from occurring for long periods\n% "
-      "without GPS\nif (P(8,8) + P(9,9)) > 1E6\n    predP(8:9,:) = P(8:9,:);\n    predP(:,8:9) = P(:,8:9);\nend\n\nend"
+      "sensing, inhibit wind velocity\n% covariance growth by setting the coresponding covariance terms to zero. \n% To"
+      " be % efficient, the corresponding terms should also not be calculated above\nif onGround || ~useAirspeed\n    %"
+      " Inhibit Wind velocity state updates and covariance growth\n    predP(17:18,:) = P(17:18,:);\n    predP(:,17:18)"
+      " = P(:,17:18);\nend\n\n% If the total position variance exceds 1E6 (1000m), then stop covariance\n% growth by se"
+      "tting the predicted to the previous values\n% This prevent an ill conditioned matrix from occurring for long per"
+      "iods\n% without GPS\nif (P(8,8) + P(9,9)) > 1E6\n    predP(8:9,:) = P(8:9,:);\n    predP(:,8:9) = P(:,8:9);\nend"
+      "\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
