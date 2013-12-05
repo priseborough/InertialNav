@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.548"
+    ComputedModelVersion    "1.571"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -38,9 +38,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "user"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Wed Dec 04 18:00:20 2013"
-  RTWModifiedTimeStamp	  308076253
-  ModelVersionFormat	  "1.%<AutoIncrement:548>"
+  LastModifiedDate	  "Thu Dec 05 16:39:42 2013"
+  RTWModifiedTimeStamp	  308160589
+  ModelVersionFormat	  "1.%<AutoIncrement:571>"
   ConfigurationManager	  "None"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -78,7 +78,6 @@ Model {
     $ObjectID		    2
     $ClassName		    "Simulink.SimulationData.ModelLoggingInfo"
     model_		    "TestHarness"
-    signals_		    []
     overrideMode_	    [0.0]
     Array {
       Type		      "Cell"
@@ -278,7 +277,7 @@ Model {
 	  ArtificialAlgebraicLoopMsg "warning"
 	  SaveWithDisabledLinksMsg "warning"
 	  SaveWithParameterizedLinksMsg	"warning"
-	  CheckSSInitialOutputMsg on
+	  CheckSSInitialOutputMsg off
 	  UnderspecifiedInitializationDetection	"Classic"
 	  MergeDetectMultiDrivingBlocksExec "none"
 	  CheckExecutionContextPreStartOutputMsg off
@@ -637,8 +636,8 @@ Model {
 	PropName		"Components"
       }
       Name		      "Configuration"
-      CurrentDlgPage	      "Diagnostics/Connectivity"
-      ConfigPrmDlgPosition     [ 194, -886, 1120, -336 ] 
+      CurrentDlgPage	      "Diagnostics/Data Validity"
+      ConfigPrmDlgPosition     [ 217, -886, 1098, -336 ] 
     }
     PropName		    "ConfigurationSets"
   }
@@ -1166,7 +1165,7 @@ Model {
   }
   System {
     Name		    "NavFilterTestHarness"
-    Location		    [-101, -1126, 1599, -21]
+    Location		    [-101, -1126, 1615, -21]
     Open		    on
     ModelBrowserVisibility  on
     ModelBrowserWidth	    200
@@ -1180,7 +1179,7 @@ Model {
     ShowPageBoundaries	    off
     ZoomFactor		    "100"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "1292"
+    SIDHighWatermark	    "1312"
     Block {
       BlockType		      SubSystem
       Name		      "CalculateInitialStates"
@@ -1198,7 +1197,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"CalculateInitialStates"
-	Location		[30, 128, 1192, 761]
+	Location		[16, 52, 1234, 869]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -1319,7 +1318,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Eul2Quat"
-	    Location		    [401, 52, 1060, 575]
+	    Location		    [371, 52, 1086, 759]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -1607,7 +1606,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "calculate\nTbn"
-	    Location		    [-161, -955, 1551, 449]
+	    Location		    [16, 52, 1784, 1640]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -2033,7 +2032,7 @@ Model {
       MaskIconUnits	      "normalized"
       System {
 	Name			"Convert GPS Data"
-	Location		[167, 121, 890, 933]
+	Location		[137, 52, 916, 1048]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -2046,7 +2045,7 @@ Model {
 	TiledPageScale		1
 	ShowPageBoundaries	off
 	ZoomFactor		"100"
-	SIDHighWatermark	"58"
+	SIDHighWatermark	"66"
 	Block {
 	  BlockType		  Inport
 	  Name			  "GPS_DataArrived"
@@ -2103,20 +2102,20 @@ Model {
 	Block {
 	  BlockType		  Demux
 	  Name			  " Demux "
-	  SID			  "1277::52"
+	  SID			  "1277::64"
 	  Ports			  [1, 1]
 	  Position		  [270, 245, 320, 285]
-	  ZOrder		  26
+	  ZOrder		  38
 	  Outputs		  "1"
 	}
 	Block {
 	  BlockType		  S-Function
 	  Name			  " SFunction "
-	  SID			  "1277::51"
+	  SID			  "1277::63"
 	  Tag			  "Stateflow S-Function NavFilterTestHarness 11"
 	  Ports			  [6, 3]
 	  Position		  [180, 102, 230, 243]
-	  ZOrder		  25
+	  ZOrder		  37
 	  FunctionName		  "sf_sfun"
 	  PortCounts		  "[6 3]"
 	  EnableBusSupport	  on
@@ -2136,9 +2135,9 @@ Model {
 	Block {
 	  BlockType		  Terminator
 	  Name			  " Terminator "
-	  SID			  "1277::54"
+	  SID			  "1277::66"
 	  Position		  [460, 256, 480, 274]
-	  ZOrder		  28
+	  ZOrder		  40
 	}
 	Block {
 	  BlockType		  Outport
@@ -2239,7 +2238,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"InertialNavFilter"
-	Location		[-502, 87, 1142, 1192]
+	Location		[-8, -8, 1928, 1168]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -2288,7 +2287,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "GPS_DataArrived"
 	  SID			  "622"
-	  Position		  [485, 778, 515, 792]
+	  Position		  [500, 713, 530, 727]
 	  ZOrder		  15
 	  Port			  "4"
 	  IconDisplay		  "Port number"
@@ -2308,31 +2307,31 @@ Model {
 	}
 	Block {
 	  BlockType		  Inport
-	  Name			  "PosNE"
-	  SID			  "605"
-	  Position		  [915, 563, 945, 577]
-	  ZOrder		  13
-	  Port			  "6"
-	  IconDisplay		  "Port number"
-	  OutDataTypeStr	  "single"
-	  PortDimensions	  "2"
-	}
-	Block {
-	  BlockType		  Inport
 	  Name			  "MAG_DataArrived"
 	  SID			  "676"
-	  Position		  [1275, 533, 1305, 547]
-	  ZOrder		  15
-	  Port			  "7"
+	  Position		  [500, 1163, 530, 1177]
+	  ZOrder		  40
+	  Port			  "6"
 	  IconDisplay		  "Port number"
 	  OutDataTypeStr	  "boolean"
 	  PortDimensions	  "1"
 	}
 	Block {
 	  BlockType		  Inport
+	  Name			  "PosNE"
+	  SID			  "605"
+	  Position		  [915, 563, 945, 577]
+	  ZOrder		  13
+	  Port			  "7"
+	  IconDisplay		  "Port number"
+	  OutDataTypeStr	  "single"
+	  PortDimensions	  "2"
+	}
+	Block {
+	  BlockType		  Inport
 	  Name			  "MagData"
 	  SID			  "677"
-	  Position		  [1275, 663, 1305, 677]
+	  Position		  [1280, 588, 1310, 602]
 	  ZOrder		  12
 	  Port			  "8"
 	  IconDisplay		  "Port number"
@@ -2343,7 +2342,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "TAS_DataArrived"
 	  SID			  "712"
-	  Position		  [485, 993, 515, 1007]
+	  Position		  [500, 858, 530, 872]
 	  ZOrder		  15
 	  Port			  "9"
 	  IconDisplay		  "Port number"
@@ -2365,7 +2364,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "HGT_DataArrived"
 	  SID			  "802"
-	  Position		  [485, 1213, 515, 1227]
+	  Position		  [500, 1018, 530, 1032]
 	  ZOrder		  15
 	  Port			  "11"
 	  IconDisplay		  "Port number"
@@ -2475,7 +2474,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Calc Initial Parameters"
-	    Location		    [-720, 204, 940, 1309]
+	    Location		    [16, 92, 1732, 1381]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -2538,7 +2537,7 @@ Model {
 	      MaskIconUnits	      "normalized"
 	      System {
 		Name			"Embedded\nMATLAB Function"
-		Location		[167, 121, 890, 933]
+		Location		[137, 52, 916, 1048]
 		Open			off
 		ModelBrowserVisibility	on
 		ModelBrowserWidth	200
@@ -2551,7 +2550,7 @@ Model {
 		TiledPageScale		1
 		ShowPageBoundaries	off
 		ZoomFactor		"100"
-		SIDHighWatermark	"52"
+		SIDHighWatermark	"60"
 		Block {
 		  BlockType		  Inport
 		  Name			  "latDeg"
@@ -2563,20 +2562,20 @@ Model {
 		Block {
 		  BlockType		  Demux
 		  Name			  " Demux "
-		  SID			  "551::50"
+		  SID			  "551::58"
 		  Ports			  [1, 1]
 		  Position		  [270, 245, 320, 285]
-		  ZOrder		  25
+		  ZOrder		  33
 		  Outputs		  "1"
 		}
 		Block {
 		  BlockType		  S-Function
 		  Name			  " SFunction "
-		  SID			  "551::49"
+		  SID			  "551::57"
 		  Tag			  "Stateflow S-Function NavFilterTestHarness 6"
 		  Ports			  [1, 5]
 		  Position		  [180, 100, 230, 220]
-		  ZOrder		  24
+		  ZOrder		  32
 		  FunctionName		  "sf_sfun"
 		  PortCounts		  "[1 5]"
 		  EnableBusSupport	  on
@@ -2608,9 +2607,9 @@ Model {
 		Block {
 		  BlockType		  Terminator
 		  Name			  " Terminator "
-		  SID			  "551::52"
+		  SID			  "551::60"
 		  Position		  [460, 256, 480, 274]
-		  ZOrder		  27
+		  ZOrder		  35
 		}
 		Block {
 		  BlockType		  Outport
@@ -2771,10 +2770,26 @@ Model {
 	  }
 	}
 	Block {
+	  BlockType		  Reference
+	  Name			  "DocBlock"
+	  SID			  "1312"
+	  Ports			  []
+	  Position		  [62, 610, 258, 731]
+	  ZOrder		  -2
+	  BackgroundColor	  "lightBlue"
+	  ShowName		  off
+	  LibraryVersion	  "1.260"
+	  UserDataPersistent	  on
+	  UserData		  "DataTag0"
+	  SourceBlock		  "simulink/Model-Wide\nUtilities/DocBlock"
+	  SourceType		  "DocBlock"
+	  DocumentType		  "Text"
+	}
+	Block {
 	  BlockType		  SubSystem
 	  Name			  "Fuse Magnetometer Measurements"
 	  SID			  "830"
-	  Ports			  [5, 4]
+	  Ports			  [6, 4]
 	  Position		  [1350, 210, 1580, 870]
 	  ZOrder		  21
 	  ErrorFcn		  "Stateflow.Translate.translate"
@@ -2800,7 +2815,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Fuse Magnetometer Measurements"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -2813,7 +2828,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "93"
+	    SIDHighWatermark	    "102"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "states"
@@ -2851,32 +2866,41 @@ Model {
 	    }
 	    Block {
 	      BlockType		      Inport
+	      Name		      "StatesAtMeasTime"
+	      SID		      "830::98"
+	      Position		      [20, 246, 40, 264]
+	      ZOrder		      32
+	      Port		      "5"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
 	      Name		      "useCompass"
 	      SID		      "830::93"
-	      Position		      [20, 246, 40, 264]
+	      Position		      [20, 281, 40, 299]
 	      ZOrder		      27
-	      Port		      "5"
+	      Port		      "6"
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "830::90"
+	      SID		      "830::100"
 	      Ports		      [1, 1]
 	      Position		      [270, 245, 320, 285]
-	      ZOrder		      24
+	      ZOrder		      34
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "830::89"
+	      SID		      "830::99"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 9"
-	      Ports		      [5, 5]
-	      Position		      [180, 100, 230, 220]
-	      ZOrder		      23
+	      Ports		      [6, 5]
+	      Position		      [180, 102, 230, 243]
+	      ZOrder		      33
 	      FunctionName	      "sf_sfun"
-	      PortCounts	      "[5 5]"
+	      PortCounts	      "[6 5]"
 	      EnableBusSupport	      on
 	      Port {
 		PortNumber		2
@@ -2906,9 +2930,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "830::92"
+	      SID		      "830::102"
 	      Position		      [460, 256, 480, 274]
-	      ZOrder		      26
+	      ZOrder		      36
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -2970,10 +2994,16 @@ Model {
 	      DstPort		      4
 	    }
 	    Line {
-	      SrcBlock		      "useCompass"
+	      SrcBlock		      "StatesAtMeasTime"
 	      SrcPort		      1
 	      DstBlock		      " SFunction "
 	      DstPort		      5
+	    }
+	    Line {
+	      SrcBlock		      "useCompass"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      6
 	    }
 	    Line {
 	      Name		      "corrStates"
@@ -3051,7 +3081,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Fuse True Airspeed Measurements"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -3064,7 +3094,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "92"
+	    SIDHighWatermark	    "100"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "states"
@@ -3121,20 +3151,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "710::89"
+	      SID		      "710::98"
 	      Ports		      [1, 1]
 	      Position		      [270, 245, 320, 285]
-	      ZOrder		      25
+	      ZOrder		      34
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "710::88"
+	      SID		      "710::97"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 4"
 	      Ports		      [6, 5]
 	      Position		      [180, 102, 230, 243]
-	      ZOrder		      24
+	      ZOrder		      33
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[6 5]"
 	      EnableBusSupport	      on
@@ -3166,9 +3196,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "710::91"
+	      SID		      "710::100"
 	      Position		      [460, 256, 480, 274]
-	      ZOrder		      27
+	      ZOrder		      36
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -3317,7 +3347,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Fuse Vel Pos Measurements"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -3330,7 +3360,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "104"
+	    SIDHighWatermark	    "112"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "states"
@@ -3423,20 +3453,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "645::102"
+	      SID		      "645::110"
 	      Ports		      [1, 1]
 	      Position		      [270, 320, 320, 360]
-	      ZOrder		      39
+	      ZOrder		      47
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "645::101"
+	      SID		      "645::109"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 19"
 	      Ports		      [10, 5]
 	      Position		      [180, 100, 230, 320]
-	      ZOrder		      38
+	      ZOrder		      46
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[10 5]"
 	      EnableBusSupport	      on
@@ -3468,9 +3498,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "645::104"
+	      SID		      "645::112"
 	      Position		      [460, 331, 480, 349]
-	      ZOrder		      41
+	      ZOrder		      49
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -3629,7 +3659,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Log Airspeed Innovations"
-	    Location		    [172, 52, 1390, 869]
+	    Location		    [142, 52, 1416, 1053]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -3809,7 +3839,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Log MagInnovations"
-	    Location		    [16, 52, 1788, 1341]
+	    Location		    [16, 52, 1844, 1525]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -4143,7 +4173,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Log PosD Innovations"
-	    Location		    [16, 63, 1772, 1352]
+	    Location		    [16, 52, 1828, 1525]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -4376,7 +4406,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Log VelNED and PosNE Innovations"
-	    Location		    [172, 52, 1390, 869]
+	    Location		    [142, 52, 1416, 1053]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -4927,7 +4957,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Predict Covariance"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -4940,7 +4970,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "58"
+	    SIDHighWatermark	    "66"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "deltaAngle"
@@ -5015,20 +5045,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "597::54"
+	      SID		      "597::64"
 	      Ports		      [1, 1]
-	      Position		      [270, 285, 320, 325]
-	      ZOrder		      28
+	      Position		      [270, 280, 320, 320]
+	      ZOrder		      38
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "597::53"
+	      SID		      "597::63"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 3"
 	      Ports		      [8, 2]
-	      Position		      [180, 105, 230, 285]
-	      ZOrder		      27
+	      Position		      [180, 100, 230, 280]
+	      ZOrder		      37
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[8 2]"
 	      EnableBusSupport	      on
@@ -5042,9 +5072,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "597::56"
-	      Position		      [460, 296, 480, 314]
-	      ZOrder		      30
+	      SID		      "597::66"
+	      Position		      [460, 291, 480, 309]
+	      ZOrder		      40
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -5154,7 +5184,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Predict States"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -5167,7 +5197,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "54"
+	    SIDHighWatermark	    "62"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "dAng"
@@ -5224,20 +5254,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "568::52"
+	      SID		      "568::60"
 	      Ports		      [1, 1]
 	      Position		      [270, 245, 320, 285]
-	      ZOrder		      26
+	      ZOrder		      34
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "568::51"
+	      SID		      "568::59"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 2"
 	      Ports		      [6, 5]
 	      Position		      [180, 102, 230, 243]
-	      ZOrder		      25
+	      ZOrder		      33
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[6 5]"
 	      EnableBusSupport	      on
@@ -5269,9 +5299,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "568::54"
+	      SID		      "568::62"
 	      Position		      [460, 256, 480, 274]
-	      ZOrder		      28
+	      ZOrder		      36
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -5392,11 +5422,11 @@ Model {
 	}
 	Block {
 	  BlockType		  SubSystem
-	  Name			  "Store States at GPS Meas Time"
-	  SID			  "754"
-	  Ports			  [2, 2]
-	  Position		  [600, 658, 860, 827]
-	  ZOrder		  -17
+	  Name			  "Store States at Meas Time1"
+	  SID			  "1293"
+	  Ports			  [4, 2]
+	  Position		  [640, 682, 820, 783]
+	  ZOrder		  30
 	  ErrorFcn		  "Stateflow.Translate.translate"
 	  PermitHierarchicalResolution "ExplicitOnly"
 	  TreatAsAtomicUnit	  on
@@ -5419,8 +5449,8 @@ Model {
 	  MaskPortRotate	  "default"
 	  MaskIconUnits		  "normalized"
 	  System {
-	    Name		    "Store States at GPS Meas Time"
-	    Location		    [167, 121, 890, 933]
+	    Name		    "Store States at Meas Time1"
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -5433,43 +5463,251 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "54"
+	    SIDHighWatermark	    "64"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "States"
-	      SID		      "754::1"
+	      SID		      "1293::1"
 	      Position		      [20, 101, 40, 119]
 	      ZOrder		      -1
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
 	      BlockType		      Inport
-	      Name		      "dataArrived"
-	      SID		      "754::2"
+	      Name		      "measDataArrived"
+	      SID		      "1293::2"
 	      Position		      [20, 136, 40, 154]
 	      ZOrder		      -2
 	      Port		      "2"
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
+	      BlockType		      Inport
+	      Name		      "Ndelay"
+	      SID		      "1293::55"
+	      Position		      [20, 171, 40, 189]
+	      ZOrder		      29
+	      Port		      "3"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "ratio"
+	      SID		      "1293::56"
+	      Position		      [20, 206, 40, 224]
+	      ZOrder		      30
+	      Port		      "4"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "754::52"
+	      SID		      "1293::62"
 	      Ports		      [1, 1]
-	      Position		      [270, 180, 320, 220]
-	      ZOrder		      26
+	      Position		      [270, 205, 320, 245]
+	      ZOrder		      36
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "754::51"
+	      SID		      "1293::61"
+	      Tag		      "Stateflow S-Function NavFilterTestHarness 12"
+	      Ports		      [4, 3]
+	      Position		      [180, 102, 230, 203]
+	      ZOrder		      35
+	      FunctionName	      "sf_sfun"
+	      PortCounts	      "[4 3]"
+	      EnableBusSupport	      on
+	      Port {
+		PortNumber		2
+		Name			"FuseData"
+		RTWStorageClass		"Auto"
+		DataLoggingNameMode	"SignalName"
+	      }
+	      Port {
+		PortNumber		3
+		Name			"StatesAtMeasTime"
+		RTWStorageClass		"Auto"
+		DataLoggingNameMode	"SignalName"
+	      }
+	    }
+	    Block {
+	      BlockType		      Terminator
+	      Name		      " Terminator "
+	      SID		      "1293::64"
+	      Position		      [460, 216, 480, 234]
+	      ZOrder		      38
+	    }
+	    Block {
+	      BlockType		      Outport
+	      Name		      "FuseData"
+	      SID		      "1293::46"
+	      Position		      [460, 101, 480, 119]
+	      ZOrder		      20
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Outport
+	      Name		      "StatesAtMeasTime"
+	      SID		      "1293::8"
+	      Position		      [460, 136, 480, 154]
+	      ZOrder		      -9
+	      Port		      "2"
+	      IconDisplay	      "Port number"
+	    }
+	    Line {
+	      SrcBlock		      "States"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      "measDataArrived"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      2
+	    }
+	    Line {
+	      SrcBlock		      "Ndelay"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      3
+	    }
+	    Line {
+	      SrcBlock		      "ratio"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      4
+	    }
+	    Line {
+	      Name		      "FuseData"
+	      Labels		      [0, 0]
+	      SrcBlock		      " SFunction "
+	      SrcPort		      2
+	      DstBlock		      "FuseData"
+	      DstPort		      1
+	    }
+	    Line {
+	      Name		      "StatesAtMeasTime"
+	      Labels		      [0, 0]
+	      SrcBlock		      " SFunction "
+	      SrcPort		      3
+	      DstBlock		      "StatesAtMeasTime"
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      " Demux "
+	      SrcPort		      1
+	      DstBlock		      " Terminator "
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      " SFunction "
+	      SrcPort		      1
+	      DstBlock		      " Demux "
+	      DstPort		      1
+	    }
+	  }
+	}
+	Block {
+	  BlockType		  SubSystem
+	  Name			  "Store States at Meas Time2"
+	  SID			  "1296"
+	  Ports			  [4, 2]
+	  Position		  [640, 827, 820, 928]
+	  ZOrder		  33
+	  ErrorFcn		  "Stateflow.Translate.translate"
+	  PermitHierarchicalResolution "ExplicitOnly"
+	  TreatAsAtomicUnit	  on
+	  MinAlgLoopOccurrences	  off
+	  PropExecContextOutsideSubsystem off
+	  RTWSystemCode		  "Auto"
+	  FunctionWithSeparateData off
+	  Opaque		  off
+	  RequestExecContextInheritance	off
+	  MaskHideContents	  off
+	  SFBlockType		  "MATLAB Function"
+	  MaskType		  "Stateflow"
+	  MaskDescription	  "Embedded MATLAB block"
+	  MaskSelfModifiable	  on
+	  MaskDisplay		  "bgColor = Simulink.Root.ColorString2Rgb(get_param(gcbh, 'BackgroundColor')); image(imread('private/"
+	  "eml_membrane_16.png','png','BackgroundColor',bgColor(1:3)),'center'); disp([10 10 'StoreStatesAtMeasTime']);"
+	  MaskIconFrame		  on
+	  MaskIconOpaque	  off
+	  MaskIconRotate	  "none"
+	  MaskPortRotate	  "default"
+	  MaskIconUnits		  "normalized"
+	  System {
+	    Name		    "Store States at Meas Time2"
+	    Location		    [137, 52, 916, 1048]
+	    Open		    off
+	    ModelBrowserVisibility  on
+	    ModelBrowserWidth	    200
+	    ScreenColor		    "white"
+	    PaperOrientation	    "landscape"
+	    PaperPositionMode	    "auto"
+	    PaperType		    "A4"
+	    PaperUnits		    "centimeters"
+	    TiledPaperMargins	    [1.270000, 1.270000, 1.270000, 1.270000]
+	    TiledPageScale	    1
+	    ShowPageBoundaries	    off
+	    ZoomFactor		    "100"
+	    SIDHighWatermark	    "64"
+	    Block {
+	      BlockType		      Inport
+	      Name		      "States"
+	      SID		      "1296::1"
+	      Position		      [20, 101, 40, 119]
+	      ZOrder		      -1
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "measDataArrived"
+	      SID		      "1296::2"
+	      Position		      [20, 136, 40, 154]
+	      ZOrder		      -2
+	      Port		      "2"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "Ndelay"
+	      SID		      "1296::55"
+	      Position		      [20, 171, 40, 189]
+	      ZOrder		      29
+	      Port		      "3"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "ratio"
+	      SID		      "1296::56"
+	      Position		      [20, 206, 40, 224]
+	      ZOrder		      30
+	      Port		      "4"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Demux
+	      Name		      " Demux "
+	      SID		      "1296::62"
+	      Ports		      [1, 1]
+	      Position		      [270, 205, 320, 245]
+	      ZOrder		      36
+	      Outputs		      "1"
+	    }
+	    Block {
+	      BlockType		      S-Function
+	      Name		      " SFunction "
+	      SID		      "1296::61"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 5"
-	      Ports		      [2, 3]
-	      Position		      [180, 100, 230, 180]
-	      ZOrder		      25
+	      Ports		      [4, 3]
+	      Position		      [180, 102, 230, 203]
+	      ZOrder		      35
 	      FunctionName	      "sf_sfun"
-	      PortCounts	      "[2 3]"
+	      PortCounts	      "[4 3]"
 	      EnableBusSupport	      on
 	      Port {
 		PortNumber		2
@@ -5487,14 +5725,14 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "754::54"
-	      Position		      [460, 191, 480, 209]
-	      ZOrder		      28
+	      SID		      "1296::64"
+	      Position		      [460, 216, 480, 234]
+	      ZOrder		      38
 	    }
 	    Block {
 	      BlockType		      Outport
 	      Name		      "FuseData"
-	      SID		      "754::46"
+	      SID		      "1296::46"
 	      Position		      [460, 101, 480, 119]
 	      ZOrder		      20
 	      IconDisplay	      "Port number"
@@ -5502,7 +5740,7 @@ Model {
 	    Block {
 	      BlockType		      Outport
 	      Name		      "StatesAtMeasTime"
-	      SID		      "754::8"
+	      SID		      "1296::8"
 	      Position		      [460, 136, 480, 154]
 	      ZOrder		      -9
 	      Port		      "2"
@@ -5515,10 +5753,22 @@ Model {
 	      DstPort		      1
 	    }
 	    Line {
-	      SrcBlock		      "dataArrived"
+	      SrcBlock		      "measDataArrived"
 	      SrcPort		      1
 	      DstBlock		      " SFunction "
 	      DstPort		      2
+	    }
+	    Line {
+	      SrcBlock		      "Ndelay"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      3
+	    }
+	    Line {
+	      SrcBlock		      "ratio"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      4
 	    }
 	    Line {
 	      Name		      "FuseData"
@@ -5552,11 +5802,11 @@ Model {
 	}
 	Block {
 	  BlockType		  SubSystem
-	  Name			  "Store States at Height Meas Time"
-	  SID			  "801"
-	  Ports			  [2, 2]
-	  Position		  [600, 1093, 860, 1262]
-	  ZOrder		  -17
+	  Name			  "Store States at Meas Time3"
+	  SID			  "1301"
+	  Ports			  [4, 2]
+	  Position		  [640, 987, 820, 1088]
+	  ZOrder		  36
 	  ErrorFcn		  "Stateflow.Translate.translate"
 	  PermitHierarchicalResolution "ExplicitOnly"
 	  TreatAsAtomicUnit	  on
@@ -5579,8 +5829,8 @@ Model {
 	  MaskPortRotate	  "default"
 	  MaskIconUnits		  "normalized"
 	  System {
-	    Name		    "Store States at Height Meas Time"
-	    Location		    [167, 121, 890, 933]
+	    Name		    "Store States at Meas Time3"
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -5593,203 +5843,61 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "54"
+	    SIDHighWatermark	    "64"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "States"
-	      SID		      "801::1"
+	      SID		      "1301::1"
 	      Position		      [20, 101, 40, 119]
 	      ZOrder		      -1
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
 	      BlockType		      Inport
-	      Name		      "dataArrived"
-	      SID		      "801::2"
+	      Name		      "measDataArrived"
+	      SID		      "1301::2"
 	      Position		      [20, 136, 40, 154]
 	      ZOrder		      -2
 	      Port		      "2"
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
-	      BlockType		      Demux
-	      Name		      " Demux "
-	      SID		      "801::52"
-	      Ports		      [1, 1]
-	      Position		      [270, 180, 320, 220]
-	      ZOrder		      26
-	      Outputs		      "1"
-	    }
-	    Block {
-	      BlockType		      S-Function
-	      Name		      " SFunction "
-	      SID		      "801::51"
-	      Tag		      "Stateflow S-Function NavFilterTestHarness 8"
-	      Ports		      [2, 3]
-	      Position		      [180, 100, 230, 180]
-	      ZOrder		      25
-	      FunctionName	      "sf_sfun"
-	      PortCounts	      "[2 3]"
-	      EnableBusSupport	      on
-	      Port {
-		PortNumber		2
-		Name			"FuseData"
-		RTWStorageClass		"Auto"
-		DataLoggingNameMode	"SignalName"
-	      }
-	      Port {
-		PortNumber		3
-		Name			"StatesAtMeasTime"
-		RTWStorageClass		"Auto"
-		DataLoggingNameMode	"SignalName"
-	      }
-	    }
-	    Block {
-	      BlockType		      Terminator
-	      Name		      " Terminator "
-	      SID		      "801::54"
-	      Position		      [460, 191, 480, 209]
-	      ZOrder		      28
-	    }
-	    Block {
-	      BlockType		      Outport
-	      Name		      "FuseData"
-	      SID		      "801::46"
-	      Position		      [460, 101, 480, 119]
-	      ZOrder		      20
-	      IconDisplay	      "Port number"
-	    }
-	    Block {
-	      BlockType		      Outport
-	      Name		      "StatesAtMeasTime"
-	      SID		      "801::8"
-	      Position		      [460, 136, 480, 154]
-	      ZOrder		      -9
-	      Port		      "2"
-	      IconDisplay	      "Port number"
-	    }
-	    Line {
-	      SrcBlock		      "States"
-	      SrcPort		      1
-	      DstBlock		      " SFunction "
-	      DstPort		      1
-	    }
-	    Line {
-	      SrcBlock		      "dataArrived"
-	      SrcPort		      1
-	      DstBlock		      " SFunction "
-	      DstPort		      2
-	    }
-	    Line {
-	      Name		      "FuseData"
-	      Labels		      [0, 0]
-	      SrcBlock		      " SFunction "
-	      SrcPort		      2
-	      DstBlock		      "FuseData"
-	      DstPort		      1
-	    }
-	    Line {
-	      Name		      "StatesAtMeasTime"
-	      Labels		      [0, 0]
-	      SrcBlock		      " SFunction "
-	      SrcPort		      3
-	      DstBlock		      "StatesAtMeasTime"
-	      DstPort		      1
-	    }
-	    Line {
-	      SrcBlock		      " Demux "
-	      SrcPort		      1
-	      DstBlock		      " Terminator "
-	      DstPort		      1
-	    }
-	    Line {
-	      SrcBlock		      " SFunction "
-	      SrcPort		      1
-	      DstBlock		      " Demux "
-	      DstPort		      1
-	    }
-	  }
-	}
-	Block {
-	  BlockType		  SubSystem
-	  Name			  "Store States at Vtas Meas Time"
-	  SID			  "755"
-	  Ports			  [2, 2]
-	  Position		  [600, 873, 860, 1042]
-	  ZOrder		  -17
-	  ErrorFcn		  "Stateflow.Translate.translate"
-	  PermitHierarchicalResolution "ExplicitOnly"
-	  TreatAsAtomicUnit	  on
-	  MinAlgLoopOccurrences	  off
-	  PropExecContextOutsideSubsystem off
-	  RTWSystemCode		  "Auto"
-	  FunctionWithSeparateData off
-	  Opaque		  off
-	  RequestExecContextInheritance	off
-	  MaskHideContents	  off
-	  SFBlockType		  "MATLAB Function"
-	  MaskType		  "Stateflow"
-	  MaskDescription	  "Embedded MATLAB block"
-	  MaskSelfModifiable	  on
-	  MaskDisplay		  "bgColor = Simulink.Root.ColorString2Rgb(get_param(gcbh, 'BackgroundColor')); image(imread('private/"
-	  "eml_membrane_16.png','png','BackgroundColor',bgColor(1:3)),'center'); disp([10 10 'StoreStatesAtMeasTime']);"
-	  MaskIconFrame		  on
-	  MaskIconOpaque	  off
-	  MaskIconRotate	  "none"
-	  MaskPortRotate	  "default"
-	  MaskIconUnits		  "normalized"
-	  System {
-	    Name		    "Store States at Vtas Meas Time"
-	    Location		    [167, 121, 890, 933]
-	    Open		    off
-	    ModelBrowserVisibility  on
-	    ModelBrowserWidth	    200
-	    ScreenColor		    "white"
-	    PaperOrientation	    "landscape"
-	    PaperPositionMode	    "auto"
-	    PaperType		    "A4"
-	    PaperUnits		    "centimeters"
-	    TiledPaperMargins	    [1.270000, 1.270000, 1.270000, 1.270000]
-	    TiledPageScale	    1
-	    ShowPageBoundaries	    off
-	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "54"
-	    Block {
 	      BlockType		      Inport
-	      Name		      "States"
-	      SID		      "755::1"
-	      Position		      [20, 101, 40, 119]
-	      ZOrder		      -1
+	      Name		      "Ndelay"
+	      SID		      "1301::55"
+	      Position		      [20, 171, 40, 189]
+	      ZOrder		      29
+	      Port		      "3"
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
 	      BlockType		      Inport
-	      Name		      "dataArrived"
-	      SID		      "755::2"
-	      Position		      [20, 136, 40, 154]
-	      ZOrder		      -2
-	      Port		      "2"
+	      Name		      "ratio"
+	      SID		      "1301::56"
+	      Position		      [20, 206, 40, 224]
+	      ZOrder		      30
+	      Port		      "4"
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "755::52"
+	      SID		      "1301::62"
 	      Ports		      [1, 1]
-	      Position		      [270, 180, 320, 220]
-	      ZOrder		      26
+	      Position		      [270, 205, 320, 245]
+	      ZOrder		      36
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "755::51"
+	      SID		      "1301::61"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 7"
-	      Ports		      [2, 3]
-	      Position		      [180, 100, 230, 180]
-	      ZOrder		      25
+	      Ports		      [4, 3]
+	      Position		      [180, 102, 230, 203]
+	      ZOrder		      35
 	      FunctionName	      "sf_sfun"
-	      PortCounts	      "[2 3]"
+	      PortCounts	      "[4 3]"
 	      EnableBusSupport	      on
 	      Port {
 		PortNumber		2
@@ -5807,14 +5915,14 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "755::54"
-	      Position		      [460, 191, 480, 209]
-	      ZOrder		      28
+	      SID		      "1301::64"
+	      Position		      [460, 216, 480, 234]
+	      ZOrder		      38
 	    }
 	    Block {
 	      BlockType		      Outport
 	      Name		      "FuseData"
-	      SID		      "755::46"
+	      SID		      "1301::46"
 	      Position		      [460, 101, 480, 119]
 	      ZOrder		      20
 	      IconDisplay	      "Port number"
@@ -5822,7 +5930,7 @@ Model {
 	    Block {
 	      BlockType		      Outport
 	      Name		      "StatesAtMeasTime"
-	      SID		      "755::8"
+	      SID		      "1301::8"
 	      Position		      [460, 136, 480, 154]
 	      ZOrder		      -9
 	      Port		      "2"
@@ -5835,10 +5943,212 @@ Model {
 	      DstPort		      1
 	    }
 	    Line {
-	      SrcBlock		      "dataArrived"
+	      SrcBlock		      "measDataArrived"
 	      SrcPort		      1
 	      DstBlock		      " SFunction "
 	      DstPort		      2
+	    }
+	    Line {
+	      SrcBlock		      "Ndelay"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      3
+	    }
+	    Line {
+	      SrcBlock		      "ratio"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      4
+	    }
+	    Line {
+	      Name		      "FuseData"
+	      Labels		      [0, 0]
+	      SrcBlock		      " SFunction "
+	      SrcPort		      2
+	      DstBlock		      "FuseData"
+	      DstPort		      1
+	    }
+	    Line {
+	      Name		      "StatesAtMeasTime"
+	      Labels		      [0, 0]
+	      SrcBlock		      " SFunction "
+	      SrcPort		      3
+	      DstBlock		      "StatesAtMeasTime"
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      " Demux "
+	      SrcPort		      1
+	      DstBlock		      " Terminator "
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      " SFunction "
+	      SrcPort		      1
+	      DstBlock		      " Demux "
+	      DstPort		      1
+	    }
+	  }
+	}
+	Block {
+	  BlockType		  SubSystem
+	  Name			  "Store States at Meas Time4"
+	  SID			  "1304"
+	  Ports			  [4, 2]
+	  Position		  [640, 1132, 820, 1233]
+	  ZOrder		  39
+	  ErrorFcn		  "Stateflow.Translate.translate"
+	  PermitHierarchicalResolution "ExplicitOnly"
+	  TreatAsAtomicUnit	  on
+	  MinAlgLoopOccurrences	  off
+	  PropExecContextOutsideSubsystem off
+	  RTWSystemCode		  "Auto"
+	  FunctionWithSeparateData off
+	  Opaque		  off
+	  RequestExecContextInheritance	off
+	  MaskHideContents	  off
+	  SFBlockType		  "MATLAB Function"
+	  MaskType		  "Stateflow"
+	  MaskDescription	  "Embedded MATLAB block"
+	  MaskSelfModifiable	  on
+	  MaskDisplay		  "bgColor = Simulink.Root.ColorString2Rgb(get_param(gcbh, 'BackgroundColor')); image(imread('private/"
+	  "eml_membrane_16.png','png','BackgroundColor',bgColor(1:3)),'center'); disp([10 10 'StoreStatesAtMeasTime']);"
+	  MaskIconFrame		  on
+	  MaskIconOpaque	  off
+	  MaskIconRotate	  "none"
+	  MaskPortRotate	  "default"
+	  MaskIconUnits		  "normalized"
+	  System {
+	    Name		    "Store States at Meas Time4"
+	    Location		    [137, 52, 916, 1048]
+	    Open		    off
+	    ModelBrowserVisibility  on
+	    ModelBrowserWidth	    200
+	    ScreenColor		    "white"
+	    PaperOrientation	    "landscape"
+	    PaperPositionMode	    "auto"
+	    PaperType		    "A4"
+	    PaperUnits		    "centimeters"
+	    TiledPaperMargins	    [1.270000, 1.270000, 1.270000, 1.270000]
+	    TiledPageScale	    1
+	    ShowPageBoundaries	    off
+	    ZoomFactor		    "100"
+	    SIDHighWatermark	    "64"
+	    Block {
+	      BlockType		      Inport
+	      Name		      "States"
+	      SID		      "1304::1"
+	      Position		      [20, 101, 40, 119]
+	      ZOrder		      -1
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "measDataArrived"
+	      SID		      "1304::2"
+	      Position		      [20, 136, 40, 154]
+	      ZOrder		      -2
+	      Port		      "2"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "Ndelay"
+	      SID		      "1304::55"
+	      Position		      [20, 171, 40, 189]
+	      ZOrder		      29
+	      Port		      "3"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Inport
+	      Name		      "ratio"
+	      SID		      "1304::56"
+	      Position		      [20, 206, 40, 224]
+	      ZOrder		      30
+	      Port		      "4"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Demux
+	      Name		      " Demux "
+	      SID		      "1304::62"
+	      Ports		      [1, 1]
+	      Position		      [270, 205, 320, 245]
+	      ZOrder		      36
+	      Outputs		      "1"
+	    }
+	    Block {
+	      BlockType		      S-Function
+	      Name		      " SFunction "
+	      SID		      "1304::61"
+	      Tag		      "Stateflow S-Function NavFilterTestHarness 8"
+	      Ports		      [4, 3]
+	      Position		      [180, 102, 230, 203]
+	      ZOrder		      35
+	      FunctionName	      "sf_sfun"
+	      PortCounts	      "[4 3]"
+	      EnableBusSupport	      on
+	      Port {
+		PortNumber		2
+		Name			"FuseData"
+		RTWStorageClass		"Auto"
+		DataLoggingNameMode	"SignalName"
+	      }
+	      Port {
+		PortNumber		3
+		Name			"StatesAtMeasTime"
+		RTWStorageClass		"Auto"
+		DataLoggingNameMode	"SignalName"
+	      }
+	    }
+	    Block {
+	      BlockType		      Terminator
+	      Name		      " Terminator "
+	      SID		      "1304::64"
+	      Position		      [460, 216, 480, 234]
+	      ZOrder		      38
+	    }
+	    Block {
+	      BlockType		      Outport
+	      Name		      "FuseData"
+	      SID		      "1304::46"
+	      Position		      [460, 101, 480, 119]
+	      ZOrder		      20
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
+	      BlockType		      Outport
+	      Name		      "StatesAtMeasTime"
+	      SID		      "1304::8"
+	      Position		      [460, 136, 480, 154]
+	      ZOrder		      -9
+	      Port		      "2"
+	      IconDisplay	      "Port number"
+	    }
+	    Line {
+	      SrcBlock		      "States"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      1
+	    }
+	    Line {
+	      SrcBlock		      "measDataArrived"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      2
+	    }
+	    Line {
+	      SrcBlock		      "Ndelay"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      3
+	    }
+	    Line {
+	      SrcBlock		      "ratio"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      4
 	    }
 	    Line {
 	      Name		      "FuseData"
@@ -5896,6 +6206,85 @@ Model {
 	  tsamp			  "-1"
 	}
 	Block {
+	  BlockType		  Constant
+	  Name			  "delay1"
+	  SID			  "1294"
+	  Position		  [415, 730, 445, 760]
+	  ZOrder		  31
+	  Value			  "25"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "delay2"
+	  SID			  "1297"
+	  Position		  [415, 875, 445, 905]
+	  ZOrder		  34
+	  Value			  "10"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "delay3"
+	  SID			  "1302"
+	  Position		  [415, 1035, 445, 1065]
+	  ZOrder		  37
+	  Value			  "25"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "delay4"
+	  SID			  "1308"
+	  Position		  [415, 1180, 445, 1210]
+	  ZOrder		  44
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "ratio1"
+	  SID			  "1295"
+	  Position		  [500, 755, 530, 785]
+	  ZOrder		  32
+	  Value			  "10"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "ratio2"
+	  SID			  "1298"
+	  Position		  [500, 900, 530, 930]
+	  ZOrder		  35
+	  Value			  "5"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "ratio3"
+	  SID			  "1303"
+	  Position		  [500, 1060, 530, 1090]
+	  ZOrder		  38
+	  Value			  "10"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
+	  BlockType		  Constant
+	  Name			  "ratio4"
+	  SID			  "1309"
+	  Position		  [500, 1205, 530, 1235]
+	  ZOrder		  45
+	  Value			  "5"
+	  OutDataTypeStr	  "int32"
+	  SampleTime		  "-1"
+	}
+	Block {
 	  BlockType		  Outport
 	  Name			  "States"
 	  SID			  "569"
@@ -5945,22 +6334,29 @@ Model {
 	    DstPort		    1
 	  }
 	  Branch {
-	    Points		    [0, -66; -605, 0; 0, 636]
+	    Points		    [0, -66; -605, 0; 0, 631]
 	    Branch {
-	      DstBlock		      "Store States at GPS Meas Time"
-	      DstPort		      1
+	      Points		      [0, 145]
+	      Branch {
+		Points			[0, 160; 1, 0]
+		Branch {
+		  Points		  [0, 145]
+		  DstBlock		  "Store States at Meas Time4"
+		  DstPort		  1
+		}
+		Branch {
+		  DstBlock		  "Store States at Meas Time3"
+		  DstPort		  1
+		}
+	      }
+	      Branch {
+		DstBlock		"Store States at Meas Time2"
+		DstPort			1
+	      }
 	    }
 	    Branch {
-	      Points		      [0, 215]
-	      Branch {
-		DstBlock		"Store States at Vtas Meas Time"
-		DstPort			1
-	      }
-	      Branch {
-		Points			[0, 220]
-		DstBlock		"Store States at Height Meas Time"
-		DstPort			1
-	      }
+	      DstBlock		      "Store States at Meas Time1"
+	      DstPort		      1
 	    }
 	  }
 	  Branch {
@@ -6040,7 +6436,7 @@ Model {
 	Line {
 	  SrcBlock		  "GPS_DataArrived"
 	  SrcPort		  1
-	  DstBlock		  "Store States at GPS Meas Time"
+	  DstBlock		  "Store States at Meas Time1"
 	  DstPort		  2
 	}
 	Line {
@@ -6086,7 +6482,7 @@ Model {
 	Line {
 	  SrcBlock		  "Fuse Vel Pos Measurements"
 	  SrcPort		  3
-	  Points		  [20, 0; 0, 310; -215, 0; 0, 105]
+	  Points		  [20, 0; 0, 310; -236, 0; 0, 105]
 	  Branch {
 	    DstBlock		    "Log VelNED and PosNE Innovations"
 	    DstPort		    1
@@ -6098,45 +6494,45 @@ Model {
 	  }
 	}
 	Line {
-	  SrcBlock		  "Store States at GPS Meas Time"
+	  SrcBlock		  "Store States at Meas Time1"
 	  SrcPort		  1
-	  Points		  [35, 0]
+	  Points		  [75, 0]
 	  Branch {
-	    Points		    [0, 251; 200, 0]
-	    DstBlock		    "Log VelNED and PosNE Innovations"
-	    DstPort		    trigger
-	  }
-	  Branch {
-	    Points		    [0, -260]
+	    Points		    [0, -270]
 	    DstBlock		    "Fuse Vel Pos Measurements"
 	    DstPort		    4
+	  }
+	  Branch {
+	    Points		    [0, 241; 200, 0]
+	    DstBlock		    "Log VelNED and PosNE Innovations"
+	    DstPort		    trigger
 	  }
 	}
 	Line {
 	  SrcBlock		  "TAS_DataArrived"
 	  SrcPort		  1
-	  DstBlock		  "Store States at Vtas Meas Time"
+	  DstBlock		  "Store States at Meas Time2"
 	  DstPort		  2
 	}
 	Line {
-	  SrcBlock		  "Store States at Vtas Meas Time"
+	  SrcBlock		  "Store States at Meas Time2"
 	  SrcPort		  1
-	  Points		  [790, 0]
+	  Points		  [35, 0; 0, 60; 795, 0]
 	  Branch {
 	    Points		    [0, -420]
 	    DstBlock		    "Fuse True Airspeed Measurements"
 	    DstPort		    3
 	  }
 	  Branch {
-	    Points		    [200, 0]
+	    Points		    [0, 86; 200, 0]
 	    DstBlock		    "Log Airspeed Innovations"
 	    DstPort		    trigger
 	  }
 	}
 	Line {
-	  SrcBlock		  "Store States at Vtas Meas Time"
+	  SrcBlock		  "Store States at Meas Time2"
 	  SrcPort		  2
-	  Points		  [805, 0; 0, -285]
+	  Points		  [845, 0; 0, -190]
 	  DstBlock		  "Fuse True Airspeed Measurements"
 	  DstPort		  5
 	}
@@ -6148,9 +6544,9 @@ Model {
 	  DstPort		  1
 	}
 	Line {
-	  SrcBlock		  "Store States at GPS Meas Time"
+	  SrcBlock		  "Store States at Meas Time1"
 	  SrcPort		  2
-	  Points		  [25, 0; 0, -150]
+	  Points		  [63, 0; 0, -125]
 	  DstBlock		  "Fuse Vel Pos Measurements"
 	  DstPort		  7
 	}
@@ -6190,28 +6586,28 @@ Model {
 	Line {
 	  SrcBlock		  "HGT_DataArrived"
 	  SrcPort		  1
-	  DstBlock		  "Store States at Height Meas Time"
+	  DstBlock		  "Store States at Meas Time3"
 	  DstPort		  2
 	}
 	Line {
-	  SrcBlock		  "Store States at Height Meas Time"
+	  SrcBlock		  "Store States at Meas Time3"
 	  SrcPort		  1
-	  Points		  [45, 0; 0, -40]
+	  Points		  [85, 0]
 	  Branch {
-	    Points		    [0, -395]
-	    DstBlock		    "Fuse Vel Pos Measurements"
-	    DstPort		    8
-	  }
-	  Branch {
-	    Points		    [190, 0]
+	    Points		    [0, 80; 190, 0]
 	    DstBlock		    "Log PosD Innovations"
 	    DstPort		    trigger
 	  }
+	  Branch {
+	    Points		    [0, -315]
+	    DstBlock		    "Fuse Vel Pos Measurements"
+	    DstPort		    8
+	  }
 	}
 	Line {
-	  SrcBlock		  "Store States at Height Meas Time"
+	  SrcBlock		  "Store States at Meas Time3"
 	  SrcPort		  2
-	  Points		  [105, 0]
+	  Points		  [95, 0; 0, -235]
 	  DstBlock		  "Fuse Vel Pos Measurements"
 	  DstPort		  10
 	}
@@ -6222,15 +6618,16 @@ Model {
 	  DstPort		  9
 	}
 	Line {
-	  SrcBlock		  "MAG_DataArrived"
+	  SrcBlock		  "Store States at Meas Time4"
 	  SrcPort		  1
-	  Points		  [15, 0]
+	  Points		  [95, 0; 0, 67; 331, 0; 0, -225]
 	  Branch {
+	    Points		    [0, -517]
 	    DstBlock		    "Fuse Magnetometer Measurements"
 	    DstPort		    3
 	  }
 	  Branch {
-	    Points		    [0, 395; 160, 0]
+	    Points		    [234, 0]
 	    DstBlock		    "Log MagInnovations"
 	    DstPort		    trigger
 	  }
@@ -6266,22 +6663,22 @@ Model {
 	Line {
 	  SrcBlock		  "time"
 	  SrcPort		  1
-	  Points		  [70, 0]
+	  Points		  [59, 0]
 	  Branch {
 	    Points		    [0, -55]
 	    DstBlock		    "Log VelNED and PosNE Innovations"
 	    DstPort		    3
 	  }
 	  Branch {
-	    Points		    [255, 0]
+	    Points		    [261, 0]
 	    Branch {
-	      Points		      [0, 0; 0, -55]
-	      DstBlock		      "Log MagInnovations"
+	      Points		      [425, 0; 0, -55]
+	      DstBlock		      "Log Airspeed Innovations"
 	      DstPort		      3
 	    }
 	    Branch {
-	      Points		      [420, 0; 0, -55]
-	      DstBlock		      "Log Airspeed Innovations"
+	      Points		      [0, -55]
+	      DstBlock		      "Log MagInnovations"
 	      DstPort		      3
 	    }
 	  }
@@ -6354,9 +6751,9 @@ Model {
 	    DstPort		    8
 	  }
 	  Branch {
-	    Points		    [0, 250; 350, 0; 0, 40; 385, 0; 0, -95]
+	    Points		    [0, 202; 350, 0; 0, 88; 385, 0; 0, -80]
 	    DstBlock		    "Fuse Magnetometer Measurements"
-	    DstPort		    5
+	    DstPort		    6
 	  }
 	}
 	Line {
@@ -6368,10 +6765,81 @@ Model {
 	    DstPort		    7
 	  }
 	  Branch {
-	    Points		    [0, 485; 330, 0; 0, -100; 795, 0; 0, -140]
+	    Points		    [0, 385; 1125, 0; 0, -140]
 	    DstBlock		    "Fuse True Airspeed Measurements"
 	    DstPort		    6
 	  }
+	}
+	Line {
+	  SrcBlock		  "delay1"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time1"
+	  DstPort		  3
+	}
+	Line {
+	  SrcBlock		  "ratio1"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time1"
+	  DstPort		  4
+	}
+	Line {
+	  SrcBlock		  "delay2"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time2"
+	  DstPort		  3
+	}
+	Line {
+	  SrcBlock		  "ratio2"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time2"
+	  DstPort		  4
+	}
+	Line {
+	  SrcBlock		  "delay3"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time3"
+	  DstPort		  3
+	}
+	Line {
+	  SrcBlock		  "ratio3"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time3"
+	  DstPort		  4
+	}
+	Line {
+	  SrcBlock		  "MAG_DataArrived"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time4"
+	  DstPort		  2
+	}
+	Line {
+	  SrcBlock		  "Store States at Meas Time4"
+	  SrcPort		  2
+	  Points		  [45, 0; 0, 32; 394, 0; 0, -537]
+	  DstBlock		  "Fuse Magnetometer Measurements"
+	  DstPort		  5
+	}
+	Line {
+	  SrcBlock		  "ratio4"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time4"
+	  DstPort		  4
+	}
+	Line {
+	  SrcBlock		  "delay4"
+	  SrcPort		  1
+	  DstBlock		  "Store States at Meas Time4"
+	  DstPort		  3
+	}
+	Annotation {
+	  SID			  "1300"
+	  Name			  "ratio of imu to GPS \nupdate rate"
+	  Position		  [514, 816]
+	}
+	Annotation {
+	  SID			  "1299"
+	  Name			  "GPS measurement delay \nspecified in 20ms units"
+	  Position		  [427, 785]
 	}
 	Annotation {
 	  SID			  "1190"
@@ -6396,7 +6864,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"LoadTestData"
-	Location		[-444, 262, 1256, 1367]
+	Location		[16, 150, 1772, 1439]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -6425,7 +6893,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "AlignWithIMU1"
-	    Location		    [498, 147, 864, 544]
+	    Location		    [468, 52, 890, 633]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -6568,7 +7036,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "AlignWithIMU2"
-	    Location		    [498, 147, 864, 544]
+	    Location		    [468, 52, 890, 633]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -6711,7 +7179,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "AlignWithIMU4"
-	    Location		    [498, 147, 864, 544]
+	    Location		    [468, 52, 890, 633]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -7113,10 +7581,10 @@ Model {
 	Block {
 	  BlockType		  Reference
 	  Name			  "Manual Switch"
-	  SID			  "1265"
+	  SID			  "1310"
 	  Ports			  [2, 1]
 	  Position		  [860, 922, 890, 958]
-	  ZOrder		  3
+	  ZOrder		  5
 	  LibraryVersion	  "1.260"
 	  SourceBlock		  "simulink/Signal\nRouting/Manual Switch"
 	  SourceType		  "Manual Switch"
@@ -7127,10 +7595,10 @@ Model {
 	Block {
 	  BlockType		  Reference
 	  Name			  "Manual Switch1"
-	  SID			  "1266"
+	  SID			  "1311"
 	  Ports			  [2, 1]
 	  Position		  [860, 1017, 890, 1053]
-	  ZOrder		  4
+	  ZOrder		  6
 	  LibraryVersion	  "1.260"
 	  SourceBlock		  "simulink/Signal\nRouting/Manual Switch"
 	  SourceType		  "Manual Switch"
@@ -7391,7 +7859,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "wrapAng to +-pi"
-	    Location		    [419, 126, 1156, 669]
+	    Location		    [389, 52, 1182, 779]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -7441,7 +7909,7 @@ Model {
 	      MaskHideContents	      off
 	      System {
 		Name			"If Action\nSubsystem"
-		Location		[282, 247, 892, 915]
+		Location		[252, 135, 918, 987]
 		Open			off
 		ModelBrowserVisibility	on
 		ModelBrowserWidth	200
@@ -7503,7 +7971,7 @@ Model {
 	      MaskHideContents	      off
 	      System {
 		Name			"If Action\nSubsystem1"
-		Location		[307, 52, 917, 720]
+		Location		[277, 52, 943, 904]
 		Open			off
 		ModelBrowserVisibility	on
 		ModelBrowserWidth	200
@@ -8354,7 +8822,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"LogData"
-	Location		[-659, 118, 1041, 1223]
+	Location		[16, 52, 1772, 1341]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -8644,7 +9112,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "Embedded\nMATLAB Function"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -8657,7 +9125,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "53"
+	    SIDHighWatermark	    "61"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "states"
@@ -8678,20 +9146,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "1254::51"
+	      SID		      "1254::59"
 	      Ports		      [1, 1]
 	      Position		      [270, 160, 320, 200]
-	      ZOrder		      26
+	      ZOrder		      34
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "1254::50"
+	      SID		      "1254::58"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 10"
 	      Ports		      [2, 2]
 	      Position		      [180, 100, 230, 160]
-	      ZOrder		      25
+	      ZOrder		      33
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[2 2]"
 	      EnableBusSupport	      on
@@ -8705,9 +9173,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "1254::53"
+	      SID		      "1254::61"
 	      Position		      [460, 171, 480, 189]
-	      ZOrder		      28
+	      ZOrder		      36
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -8768,7 +9236,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "For Iterator\nSubsystem"
-	    Location		    [417, 110, 971, 594]
+	    Location		    [387, 52, 997, 720]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -8944,7 +9412,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Quat2Eul"
-	    Location		    [174, 52, 1198, 1182]
+	    Location		    [144, 52, 1224, 1366]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -9907,6 +10375,7 @@ Model {
       SID		      "1272"
       Ports		      [2, 1]
       Position		      [805, 519, 925, 566]
+      ZOrder		      -25
       TreatAsAtomicUnit	      on
       MinAlgLoopOccurrences   off
       PropExecContextOutsideSubsystem off
@@ -9917,7 +10386,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"Simple OnGroundTest"
-	Location		[450, 303, 1251, 648]
+	Location		[420, 191, 1277, 720]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -9935,6 +10404,7 @@ Model {
 	  Name			  "VelNED"
 	  SID			  "1273"
 	  Position		  [25, 33, 55, 47]
+	  ZOrder		  -1
 	  IconDisplay		  "Port number"
 	}
 	Block {
@@ -9942,6 +10412,7 @@ Model {
 	  Name			  "VtasMea"
 	  SID			  "1275"
 	  Position		  [25, 113, 55, 127]
+	  ZOrder		  -2
 	  Port			  "2"
 	  IconDisplay		  "Port number"
 	}
@@ -9998,6 +10469,7 @@ Model {
 	  Name			  "onGround"
 	  SID			  "1274"
 	  Position		  [455, 108, 485, 122]
+	  ZOrder		  -21
 	  IconDisplay		  "Port number"
 	}
 	Line {
@@ -10069,7 +10541,7 @@ Model {
       MaskValueString	      "30"
       System {
 	Name			"StartNavTimeDelay"
-	Location		[16, 77, 1772, 1366]
+	Location		[16, 52, 1828, 1525]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -10143,7 +10615,7 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"WatchDog"
-	Location		[-292, -834, 1420, 455]
+	Location		[16, 52, 1784, 1525]
 	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
@@ -10289,7 +10761,7 @@ Model {
 	  MaskHideContents	  off
 	  System {
 	    Name		    "Quat2Eul"
-	    Location		    [174, 52, 1198, 1182]
+	    Location		    [144, 52, 1224, 1366]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -10565,7 +11037,7 @@ Model {
 	  MaskIconUnits		  "normalized"
 	  System {
 	    Name		    "wrapAnglePi"
-	    Location		    [167, 121, 890, 933]
+	    Location		    [137, 52, 916, 1048]
 	    Open		    off
 	    ModelBrowserVisibility  on
 	    ModelBrowserWidth	    200
@@ -10578,7 +11050,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "54"
+	    SIDHighWatermark	    "62"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "angleIn"
@@ -10590,20 +11062,20 @@ Model {
 	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
-	      SID		      "1216::52"
+	      SID		      "1216::60"
 	      Ports		      [1, 1]
 	      Position		      [270, 160, 320, 200]
-	      ZOrder		      26
+	      ZOrder		      34
 	      Outputs		      "1"
 	    }
 	    Block {
 	      BlockType		      S-Function
 	      Name		      " SFunction "
-	      SID		      "1216::51"
+	      SID		      "1216::59"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 1"
 	      Ports		      [1, 2]
 	      Position		      [180, 100, 230, 160]
-	      ZOrder		      25
+	      ZOrder		      33
 	      FunctionName	      "sf_sfun"
 	      PortCounts	      "[1 2]"
 	      EnableBusSupport	      on
@@ -10617,9 +11089,9 @@ Model {
 	    Block {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
-	      SID		      "1216::54"
+	      SID		      "1216::62"
 	      Position		      [460, 171, 480, 189]
-	      ZOrder		      28
+	      ZOrder		      36
 	    }
 	    Block {
 	      BlockType		      Outport
@@ -10975,9 +11447,9 @@ Model {
       SrcPort		      2
       Points		      [10, 0]
       Branch {
-	Points			[70, 0; 0, -125]
+	Points			[70, 0; 0, -95]
 	DstBlock		"InertialNavFilter"
-	DstPort			6
+	DstPort			7
       }
       Branch {
 	Points			[0, -190]
@@ -10995,7 +11467,7 @@ Model {
       SrcPort		      1
       Points		      [25, 0]
       Branch {
-	Points			[40, 0; 0, -70]
+	Points			[29, 0; 0, -70]
 	DstBlock		"InertialNavFilter"
 	DstPort			5
       }
@@ -11020,7 +11492,7 @@ Model {
     Line {
       SrcBlock		      "LoadTestData"
       SrcPort		      12
-      Points		      [165, 0; 0, 0]
+      Points		      [165, 0]
       Branch {
 	Points			[0, -525]
 	DstBlock		"CalculateInitialStates"
@@ -11043,7 +11515,7 @@ Model {
     Line {
       SrcBlock		      "LoadTestData"
       SrcPort		      6
-      Points		      [180, 0; 0, 0]
+      Points		      [180, 0]
       Branch {
 	Points			[0, -185]
 	DstBlock		"CalculateInitialStates"
@@ -11086,23 +11558,23 @@ Model {
     Line {
       SrcBlock		      "LoadTestData"
       SrcPort		      3
-      Points		      [145, 0; 0, -105; 545, 0; 0, 15; 205, 0]
+      Points		      [145, 0; 0, -90; 663, 0; 0, 15]
       DstBlock		      "InertialNavFilter"
       DstPort		      1
     }
     Line {
       SrcBlock		      "LoadTestData"
       SrcPort		      4
-      Points		      [130, 0; 0, -145; 545, 0; 0, 15; 145, 0; 0, 30]
+      Points		      [41, 0; 0, -130; 744, 0; 0, 30]
       DstBlock		      "InertialNavFilter"
       DstPort		      2
     }
     Line {
       SrcBlock		      "LoadTestData"
       SrcPort		      5
-      Points		      [215, 0; 0, 165; 455, 0; 0, -170]
+      Points		      [55, 0; 0, -53; 782, 0; 0, 18]
       DstBlock		      "InertialNavFilter"
-      DstPort		      7
+      DstPort		      6
     }
     Line {
       SrcBlock		      "LoadTestData"
@@ -11129,7 +11601,7 @@ Model {
       Labels		      [0, 0]
       SrcBlock		      "LoadTestData"
       SrcPort		      11
-      Points		      [795, 0; 0, -215]
+      Points		      [55, 0; 0, -190; 718, 0; 0, -25]
       DstBlock		      "InertialNavFilter"
       DstPort		      11
     }
@@ -11234,6 +11706,29 @@ Model {
     }
   }
 }
+MatData {
+  NumRecords		  1
+  DataRecord {
+    Tag			    DataTag0
+    Data		    "  %)30     .    8 4   8    (     @         %    \"     $    !     0         %  0 \"     $    8    =F5R<"
+    "VEO;@!C;VYT96YT &9O<FUA=   #@   #@    &    \"     8         !0    @    !     0    $         \"0    @    S,S,S,S/S/"
+    "PX   \"0!   !@    @    $          4    (     0   %\\$   !         !    !?!   ,C0@4W1A=&4@17AT96YD960@2V%L;6%N($9I;"
+    "'1E<@H*4W1A=&5S(#H*,2 N+BX@-\" @(#H@475A=&5R;FEO;B!P87)A;65T97)S(&1E9FEN:6YG('1H92!R;W1A=&EO;B!F<F]M(&QO8V%L($Y%1\""
+    "!T86YG96YT(&9R86UE('1O(%A96B!B;V1Y(&%X97,*-2 N+BX@-R @(#H@3F]R=&@L($5A<W0L($1O=VX@=F5L;V-I='D@<F5L871I=F4@=&\\@86Y"
+    "D(&5A<G1H(&9I>&5D(')E9F5R96YC92!P;VEN=\" H;2D*.\" N+BX@,3 @(#H@3F]R=&@L($5A<W0L($1O=VX@<&]S:71I;VX@<F5L871I=F4@=&\\"
+    "@86YD(&5A<G1H(&9I>&5D(')E9F5R96YC92!P;VEN=\" H;2D*,3$@+BXN(#$S(#H@24U5(&1E;'1A(&%N9VQE(&)I87,@97)R;W)S(\"AR860I\"C"
+    "$T(\"XN+B Q-B Z($E-52!D96QT82!V96QO8VET>2!B:6%S(&5R<F]R<R H;2]S*0HQ-RPQ.\" @(\" @.B!.;W)T:\"P@16%S=\"!W:6YD('9E;&]"
+    "C:71Y(\"AM+W,I\"C$Y(\"XN+B R,2 Z($YO<G1H+\"!%87-T+\"!$;W=N(&5A<G1H(&UA9VYE=&EC(&9I96QD(\"AS86UE('5N:71S(&%S(&UA9VY"
+    "E=&]M971E<B!O=71P=70I\"C(R(\"XN+B R-\" Z(%@L(%DL(%H@0F]D>2!F:7AE9\"!M86=N971I8R!F:65L9\"!B:6%S(\"T@;W!P;W-I=&4@<VE"
+    "G;B!T;R!!4$T@;V9F<V5T<R H<V%M92!U;FET<R!A<R!M86=N971O;65T97(@;W5T<'5T*0H*5&EM92!687)Y:6YG(%!A<F%M971E<G,@.@I)354@9"
+    "&5L=&$@86YG;&5S(\"AR860I\"DE-52!D96QT82!V96QO8VET>2 H<F%D*0H*3V)S97)V871I;VYS(#H*3F]R=&@L($5A<W0L($1O=VX@=F5L;V-I="
+    "'D@*&TO<RD*3F]R=&@L($5A<W0@<&]S:71I;VX@*&TI\"DAE:6=H=\" H;2D*5')U92!!:7)S<&5E9\" H;2]S*2 M(&]P=&EO;F%L\"E@L(%DL(%H"
+    "@8F]D>2!F:7AE9\"!M86=N971I8R!F;'5X(&UE87-U<F5M96YT<R H<V%M92!U;FET<R!A<R!M86=N971O;65T97(@;W5T<'5T*2 M(&]P=&EO;F%L"
+    "\"@I.;W1E(#H@=VET:&]U=\"!C;VUP87-S+VUA9VYE=&]M971E<B!M96%S=7)E;65N=',L('1H92!H96%D:6YG(&%L:6=N;65N=\"!C86YN;W0@8F4"
+    "@;6%I;G1A:6YE9\"!O;B!T:&4@9W)O=6YD+\"!S;R!T:&4@9FEL=&5R('=I;&P@;F5E9\"!T;R!B92!R92US=&%R=&5D('=H96X@9FQI9VAT(&-O;6"
+    "UE;F-E<RX*  X    P    !@    @    $          4    (     0    ,    !         !   P!46%0 "
+  }
+}
 # Finite State Machines
 #
 #    Stateflow Version 7.6 (R2011b) dated Jan 25 2012, 21:03:37
@@ -11247,13 +11742,13 @@ Stateflow {
     name		    "NavFilterTestHarness"
     created		    "27-Nov-2013 17:56:29"
     isLibrary		    0
-    firstTarget		    144
+    firstTarget		    162
     sfVersion		    76014001.00040001
   }
   chart {
     id			    2
     name		    "WatchDog/wrapAnglePi"
-    windowPosition	    [612 43.75 253 800]
+    windowPosition	    [816 -355.25 283 1199]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
     treeNode		    [0 3 0 0]
@@ -11380,7 +11875,7 @@ Stateflow {
   chart {
     id			    9
     name		    "InertialNavFilter/Predict States"
-    windowPosition	    [784 -148.25 253 992]
+    windowPosition	    [1045 -611.25 283 1455]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
     treeNode		    [0 10 0 0]
@@ -11709,7 +12204,7 @@ Stateflow {
   chart {
     id			    24
     name		    "InertialNavFilter/Predict Covariance"
-    windowPosition	    [807 -148.25 253 992]
+    windowPosition	    [1076 -611.25 283 1455]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
     treeNode		    [0 25 0 0]
@@ -12861,7 +13356,7 @@ Stateflow {
   chart {
     id			    38
     name		    "InertialNavFilter/Fuse True Airspeed Measurements"
-    windowPosition	    [558 43.75 253 800]
+    windowPosition	    [744 -355.25 283 1199]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
     treeNode		    [0 39 0 0]
@@ -12984,7 +13479,7 @@ Stateflow {
     midPoint		    [23.5747 24.9468]
     chart		    38
     linkNode		    [38 0 0]
-    dataLimits		    [23.575 23.575 14.625 34.575]
+    dataLimits		    [21.175 25.975 14.625 42.575]
     subviewer		    38
     drawStyle		    SMART
     slide {
@@ -13216,8 +13711,8 @@ Stateflow {
   }
   chart {
     id			    53
-    name		    "InertialNavFilter/Store States at GPS Meas Time"
-    windowPosition	    [572 43.75 253 800]
+    name		    "InertialNavFilter/Store States at Meas Time2"
+    windowPosition	    [577 43.75 283 800]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
     treeNode		    [0 54 0 0]
@@ -13225,7 +13720,7 @@ Stateflow {
     firstJunction	    55
     viewObj		    53
     machine		    1
-    ssIdHighWaterMark	    7
+    ssIdHighWaterMark	    9
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
     firstData		    57
@@ -13250,21 +13745,36 @@ Stateflow {
     decomposition	    CLUSTER_STATE
     eml {
       isEML		      1
-      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,dataArrived)\n\n"
-      "% define persistent variables for previous state vector storage\n% store states as an array of 24 x Ndelay, wher"
-      "e Ndelay is the effective delay\n% in units of measurement time interval. Ndelay can be a positive non-zero\n% i"
-      "nteger\nNdelay = int32(2);\n\n% Define the maximum interval between measurements. For example if the\n% measurem"
-      "ent was at a 5 Hz rate and this process is called at 50 Hz, then\n% the counter would increment by 10 each measu"
-      "rement, so a value of 15\n% would be suitable to allow for jitter. This prevents dropouts in\n% measurements fro"
-      "m causing very stale state data being used.\nmaxCountInterval = int32(15);\n\npersistent prevStatesMatrix;\nif i"
-      "sempty(prevStatesMatrix)\n    prevStatesMatrix = single(zeros(24,Ndelay));\nend\npersistent counter;\nif isempty"
-      "(counter)\n    counter = int32(0);\nend\ncounter = counter + 1;\npersistent measCounter;\nif isempty(measCounter"
-      ")\n    measCounter = int32(zeros(1,Ndelay));\nend\n\nif dataArrived\n    if Ndelay > 1\n        for index = Ndel"
-      "ay-1:-1:1\n            prevStatesMatrix(:,index+1) = prevStatesMatrix(:,index);\n            measCounter(index+1"
-      ") = measCounter(index);\n        end\n    end\n    prevStatesMatrix(:,1) = States;\n    measCounter(1) = counter"
-      ";\n    if ((counter - measCounter(Ndelay)) < Ndelay*maxCountInterval)\n        StatesAtMeasTime = prevStatesMatr"
-      "ix(:,Ndelay);\n    else\n        StatesAtMeasTime = single(States);\n    end\n    FuseData = logical(1);\nelse\n"
-      "    StatesAtMeasTime = single(zeros(24,1));\n    FuseData = logical(0);\nend\n\nend"
+      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,measDataArrived,"
+      "Ndelay,ratio)\n\n% Implement a state sampler that stores the state inoput from Ndelay \n% samples before the mea"
+      "surement is predicted to arrive. When the\n% measurement arrives, the stored state is output along with a data f"
+      "usion\n% request. This enables the filter to account for lag in sensors that can\n% in some cases be greater tha"
+      "n 1 measurement time step. the delay time si\n% specified in units of the state prediction delta time. For examp"
+      "le if a \n% delay of 0.16 seconds was required, and the state prediction ran at 50 Hz\n% then Ndelay would be se"
+      "t to 50*0.15 = 8.\n% It is assumed that this function is called the same rate as the state \n% prediction, and t"
+      "hat the measurement data comes in at a constant\n% rate.\n% The 'ratio'specifies the ratio of the state predicti"
+      "on to measurement\n% data rates. For example if the state prediction occurres at 50Hz and the\n% measurements ar"
+      "e being received at 5Hz, then 'ratio' = 50/5 = 10\n\n% This function avoids the need to use large data buffers\n"
+      "% It is generic function that can be used for states required by all\n% measurement fusion processes, and as suc"
+      "h has not been optimised to only\n% includes the specific states required, or the buffer arry length trimmed\n% "
+      "to the minimum required.\n\n% Ndelay cannot be zero and cannot exceed a value of 10*ratio-1\nNdelay = max(min(Nd"
+      "elay,int32(10*ratio)),int32(1));\n\nmajorStepDelay = int32(ceil(single(Ndelay)/single(ratio)));\nminorStepDelay "
+      "= int32(rem(single(Ndelay),single(ratio)));\n\npersistent prevStatesMatrix;\nif isempty(prevStatesMatrix)\n    p"
+      "revStatesMatrix = single(zeros(24,11));\nend\n\npersistent totalFrameCount;\nif isempty(totalFrameCount)\n    to"
+      "talFrameCount = int32(0);\nend\n\npersistent measID;\nif isempty(measID)\n    measID = int32(zeros(1,11));\nend\n"
+      "\npersistent minorFrameCount;\nif isempty(minorFrameCount)\n    minorFrameCount = int32(0);\nend\n\ntotalFrameCo"
+      "unt = totalFrameCount + int32(1);\nminorFrameCount = minorFrameCount + int32(1);\n\nif measDataArrived\n    if m"
+      "easID(1) ~= 0\n        FuseData = logical(1);\n    else\n        FuseData = logical(0);\n    end\n    if abs(sin"
+      "gle(totalFrameCount - measID(1) - Ndelay)) < 0.5*single(ratio)\n        StatesAtMeasTime = prevStatesMatrix(:,1)"
+      ";\n    else\n        frameErrors = abs(measID - totalFrameCount + Ndelay);\n        bestError = Ndelay;\n       "
+      " bestIndex = int32(1);\n        for index = 1:majorStepDelay\n            if frameErrors(index) < bestError\n   "
+      "             bestError = frameErrors(index);\n                bestIndex = index;\n            end\n        end\n"
+      "        StatesAtMeasTime = prevStatesMatrix(:,bestIndex);\n    end\nelse\n    StatesAtMeasTime = single(zeros(24"
+      ",1));\n    FuseData = logical(0);\nend\n\nif minorFrameCount == (ratio - minorStepDelay)\n    if majorStepDelay "
+      "> int32(0)\n        for index = 1:majorStepDelay\n            prevStatesMatrix(:,index) = prevStatesMatrix(:,ind"
+      "ex+1);\n            measID(index) = measID(index+1);\n        end\n    end\n    prevStatesMatrix(:,majorStepDela"
+      "y) = States;\n    measID(majorStepDelay) = totalFrameCount;\nend\n\nif measDataArrived\n    minorFrameCount = in"
+      "t32(0);\nend\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -13296,7 +13806,7 @@ Stateflow {
     midPoint		    [23.5747 24.9468]
     chart		    53
     linkNode		    [53 0 0]
-    dataLimits		    [23.575 23.575 14.625 34.575]
+    dataLimits		    [21.175 25.975 14.625 42.575]
     subviewer		    53
     drawStyle		    SMART
     slide {
@@ -13350,7 +13860,7 @@ Stateflow {
   data {
     id			    59
     ssIdNumber		    6
-    name		    "dataArrived"
+    name		    "measDataArrived"
     linkNode		    [53 58 60]
     scope		    INPUT_DATA
     machine		    1
@@ -13373,7 +13883,7 @@ Stateflow {
     id			    60
     ssIdNumber		    7
     name		    "StatesAtMeasTime"
-    linkNode		    [53 59 0]
+    linkNode		    [53 59 61]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13391,27 +13901,71 @@ Stateflow {
     }
     dataType		    "Inherit: Same as Simulink"
   }
-  instance {
+  data {
     id			    61
-    name		    "InertialNavFilter/Store States at GPS Meas Time"
+    ssIdNumber		    8
+    name		    "Ndelay"
+    linkNode		    [53 60 62]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    62
+    ssIdNumber		    9
+    name		    "ratio"
+    linkNode		    [53 61 0]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  instance {
+    id			    63
+    name		    "InertialNavFilter/Store States at Meas Time2"
     machine		    1
     chart		    53
   }
   chart {
-    id			    62
+    id			    64
     name		    "InertialNavFilter/Calc Initial Parameters/Embedded\nMATLAB Function"
-    windowPosition	    [760 -148.25 253 992]
+    windowPosition	    [1013 -611.25 283 1455]
     viewLimits		    [0 156.75 0 153.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 63 0 0]
-    firstTransition	    65
-    firstJunction	    64
-    viewObj		    62
+    treeNode		    [0 65 0 0]
+    firstTransition	    67
+    firstJunction	    66
+    viewObj		    64
     machine		    1
     ssIdHighWaterMark	    8
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    66
+    firstData		    68
     chartFileNumber	    6
     disableImplicitCasting  1
     eml {
@@ -13420,14 +13974,14 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    63
+    id			    65
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    62
-    treeNode		    [62 0 0 0]
+    chart		    64
+    treeNode		    [64 0 0 0]
     superState		    SUBCHART
-    subviewer		    62
+    subviewer		    64
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
@@ -13461,16 +14015,16 @@ Stateflow {
     }
   }
   junction {
-    id			    64
+    id			    66
     position		    [23.5747 49.5747 7]
-    chart		    62
-    linkNode		    [62 0 0]
-    subviewer		    62
+    chart		    64
+    linkNode		    [64 0 0]
+    subviewer		    64
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    65
+    id			    67
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.544 14.964]
     fontSize		    12
@@ -13478,14 +14032,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      64
+      id		      66
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    62
-    linkNode		    [62 0 0]
+    chart		    64
+    linkNode		    [64 0 0]
     dataLimits		    [21.175 25.975 14.625 42.575]
-    subviewer		    62
+    subviewer		    64
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -13494,54 +14048,10 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    66
+    id			    68
     ssIdNumber		    4
     name		    "covariance"
-    linkNode		    [62 0 67]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    67
-    ssIdNumber		    5
-    name		    "gravityNED"
-    linkNode		    [62 66 68]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    68
-    ssIdNumber		    6
-    name		    "earthRateNED"
-    linkNode		    [62 67 69]
+    linkNode		    [64 0 69]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13561,9 +14071,53 @@ Stateflow {
   }
   data {
     id			    69
+    ssIdNumber		    5
+    name		    "gravityNED"
+    linkNode		    [64 68 70]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    70
+    ssIdNumber		    6
+    name		    "earthRateNED"
+    linkNode		    [64 69 71]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    71
     ssIdNumber		    7
     name		    "latDeg"
-    linkNode		    [62 68 70]
+    linkNode		    [64 70 72]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -13582,10 +14136,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    70
+    id			    72
     ssIdNumber		    8
     name		    "dt"
-    linkNode		    [62 69 0]
+    linkNode		    [64 71 0]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13604,26 +14158,26 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    71
+    id			    73
     name		    "InertialNavFilter/Calc Initial Parameters/Embedded\nMATLAB Function"
     machine		    1
-    chart		    62
+    chart		    64
   }
   chart {
-    id			    72
-    name		    "InertialNavFilter/Store States at Vtas Meas Time"
-    windowPosition	    [592 43.75 253 800]
+    id			    74
+    name		    "InertialNavFilter/Store States at Meas Time3"
+    windowPosition	    [577 43.75 283 800]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 73 0 0]
-    firstTransition	    75
-    firstJunction	    74
-    viewObj		    72
+    treeNode		    [0 75 0 0]
+    firstTransition	    77
+    firstJunction	    76
+    viewObj		    74
     machine		    1
-    ssIdHighWaterMark	    7
+    ssIdHighWaterMark	    9
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    76
+    firstData		    78
     chartFileNumber	    7
     disableImplicitCasting  1
     eml {
@@ -13632,34 +14186,49 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    73
+    id			    75
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    72
-    treeNode		    [72 0 0 0]
+    chart		    74
+    treeNode		    [74 0 0 0]
     superState		    SUBCHART
-    subviewer		    72
+    subviewer		    74
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
     eml {
       isEML		      1
-      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,dataArrived)\n\n"
-      "% define persistent variables for previous state vector storage\n% store states as an array of 24 x Ndelay, wher"
-      "e Ndelay is the effective delay\n% in units of measurement time interval. Ndelay can be a positive non-zero\n% i"
-      "nteger\nNdelay = int32(1);\n\n% Define the maximum interval between measurements. For example if the\n% measurem"
-      "ent was at a 5 Hz rate and this process is called at 50 Hz, then\n% the counter would increment by 10 each measu"
-      "rement, so a value of 15\n% would be suitable to allow for jitter. This prevents dropouts in\n% measurements fro"
-      "m causing very stale state data being used.\nmaxCountInterval = int32(15);\n\npersistent prevStatesMatrix;\nif i"
-      "sempty(prevStatesMatrix)\n    prevStatesMatrix = single(zeros(24,Ndelay));\nend\npersistent counter;\nif isempty"
-      "(counter)\n    counter = int32(0);\nend\ncounter = counter + 1;\npersistent measCounter;\nif isempty(measCounter"
-      ")\n    measCounter = int32(zeros(1,Ndelay));\nend\n\nif dataArrived\n    if Ndelay > 1\n        for index = Ndel"
-      "ay-1:-1:1\n            prevStatesMatrix(:,index+1) = prevStatesMatrix(:,index);\n            measCounter(index+1"
-      ") = measCounter(index);\n        end\n    end\n    prevStatesMatrix(:,1) = States;\n    measCounter(1) = counter"
-      ";\n    if ((counter - measCounter(Ndelay)) < Ndelay*maxCountInterval)\n        StatesAtMeasTime = prevStatesMatr"
-      "ix(:,Ndelay);\n    else\n        StatesAtMeasTime = single(States);\n    end\n    FuseData = logical(1);\nelse\n"
-      "    StatesAtMeasTime = single(zeros(24,1));\n    FuseData = logical(0);\nend\n\nend"
+      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,measDataArrived,"
+      "Ndelay,ratio)\n\n% Implement a state sampler that stores the state inoput from Ndelay \n% samples before the mea"
+      "surement is predicted to arrive. When the\n% measurement arrives, the stored state is output along with a data f"
+      "usion\n% request. This enables the filter to account for lag in sensors that can\n% in some cases be greater tha"
+      "n 1 measurement time step. the delay time si\n% specified in units of the state prediction delta time. For examp"
+      "le if a \n% delay of 0.16 seconds was required, and the state prediction ran at 50 Hz\n% then Ndelay would be se"
+      "t to 50*0.15 = 8.\n% It is assumed that this function is called the same rate as the state \n% prediction, and t"
+      "hat the measurement data comes in at a constant\n% rate.\n% The 'ratio'specifies the ratio of the state predicti"
+      "on to measurement\n% data rates. For example if the state prediction occurres at 50Hz and the\n% measurements ar"
+      "e being received at 5Hz, then 'ratio' = 50/5 = 10\n\n% This function avoids the need to use large data buffers\n"
+      "% It is generic function that can be used for states required by all\n% measurement fusion processes, and as suc"
+      "h has not been optimised to only\n% includes the specific states required, or the buffer arry length trimmed\n% "
+      "to the minimum required.\n\n% Ndelay cannot be zero and cannot exceed a value of 10*ratio-1\nNdelay = max(min(Nd"
+      "elay,int32(10*ratio)),int32(1));\n\nmajorStepDelay = int32(ceil(single(Ndelay)/single(ratio)));\nminorStepDelay "
+      "= int32(rem(single(Ndelay),single(ratio)));\n\npersistent prevStatesMatrix;\nif isempty(prevStatesMatrix)\n    p"
+      "revStatesMatrix = single(zeros(24,11));\nend\n\npersistent totalFrameCount;\nif isempty(totalFrameCount)\n    to"
+      "talFrameCount = int32(0);\nend\n\npersistent measID;\nif isempty(measID)\n    measID = int32(zeros(1,11));\nend\n"
+      "\npersistent minorFrameCount;\nif isempty(minorFrameCount)\n    minorFrameCount = int32(0);\nend\n\ntotalFrameCo"
+      "unt = totalFrameCount + int32(1);\nminorFrameCount = minorFrameCount + int32(1);\n\nif measDataArrived\n    if m"
+      "easID(1) ~= 0\n        FuseData = logical(1);\n    else\n        FuseData = logical(0);\n    end\n    if abs(sin"
+      "gle(totalFrameCount - measID(1) - Ndelay)) < 0.5*single(ratio)\n        StatesAtMeasTime = prevStatesMatrix(:,1)"
+      ";\n    else\n        frameErrors = abs(measID - totalFrameCount + Ndelay);\n        bestError = Ndelay;\n       "
+      " bestIndex = int32(1);\n        for index = 1:majorStepDelay\n            if frameErrors(index) < bestError\n   "
+      "             bestError = frameErrors(index);\n                bestIndex = index;\n            end\n        end\n"
+      "        StatesAtMeasTime = prevStatesMatrix(:,bestIndex);\n    end\nelse\n    StatesAtMeasTime = single(zeros(24"
+      ",1));\n    FuseData = logical(0);\nend\n\nif minorFrameCount == (ratio - minorStepDelay)\n    if majorStepDelay "
+      "> int32(0)\n        for index = 1:majorStepDelay\n            prevStatesMatrix(:,index) = prevStatesMatrix(:,ind"
+      "ex+1);\n            measID(index) = measID(index+1);\n        end\n    end\n    prevStatesMatrix(:,majorStepDela"
+      "y) = States;\n    measID(majorStepDelay) = totalFrameCount;\nend\n\nif measDataArrived\n    minorFrameCount = in"
+      "t32(0);\nend\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -13668,16 +14237,16 @@ Stateflow {
     }
   }
   junction {
-    id			    74
+    id			    76
     position		    [23.5747 49.5747 7]
-    chart		    72
-    linkNode		    [72 0 0]
-    subviewer		    72
+    chart		    74
+    linkNode		    [74 0 0]
+    subviewer		    74
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    75
+    id			    77
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.7 14.971]
     fontSize		    12
@@ -13685,14 +14254,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      74
+      id		      76
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    72
-    linkNode		    [72 0 0]
-    dataLimits		    [23.575 23.575 14.625 34.575]
-    subviewer		    72
+    chart		    74
+    linkNode		    [74 0 0]
+    dataLimits		    [21.175 25.975 14.625 42.575]
+    subviewer		    74
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -13701,53 +14270,11 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    76
+    id			    78
     ssIdNumber		    4
     name		    "FuseData"
-    linkNode		    [72 0 77]
+    linkNode		    [74 0 79]
     scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    77
-    ssIdNumber		    5
-    name		    "States"
-    linkNode		    [72 76 78]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    78
-    ssIdNumber		    6
-    name		    "dataArrived"
-    linkNode		    [72 77 79]
-    scope		    INPUT_DATA
     machine		    1
     props {
       array {
@@ -13766,9 +14293,51 @@ Stateflow {
   }
   data {
     id			    79
+    ssIdNumber		    5
+    name		    "States"
+    linkNode		    [74 78 80]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    80
+    ssIdNumber		    6
+    name		    "measDataArrived"
+    linkNode		    [74 79 81]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    81
     ssIdNumber		    7
     name		    "StatesAtMeasTime"
-    linkNode		    [72 78 0]
+    linkNode		    [74 80 82]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13786,27 +14355,71 @@ Stateflow {
     }
     dataType		    "Inherit: Same as Simulink"
   }
-  instance {
-    id			    80
-    name		    "InertialNavFilter/Store States at Vtas Meas Time"
+  data {
+    id			    82
+    ssIdNumber		    8
+    name		    "Ndelay"
+    linkNode		    [74 81 83]
+    scope		    INPUT_DATA
     machine		    1
-    chart		    72
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    83
+    ssIdNumber		    9
+    name		    "ratio"
+    linkNode		    [74 82 0]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  instance {
+    id			    84
+    name		    "InertialNavFilter/Store States at Meas Time3"
+    machine		    1
+    chart		    74
   }
   chart {
-    id			    81
-    name		    "InertialNavFilter/Store States at Height Meas Time"
-    windowPosition	    [592 43.75 253 800]
+    id			    85
+    name		    "InertialNavFilter/Store States at Meas Time4"
+    windowPosition	    [577 43.75 283 800]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 82 0 0]
-    firstTransition	    84
-    firstJunction	    83
-    viewObj		    81
+    treeNode		    [0 86 0 0]
+    firstTransition	    88
+    firstJunction	    87
+    viewObj		    85
     machine		    1
-    ssIdHighWaterMark	    7
+    ssIdHighWaterMark	    9
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    85
+    firstData		    89
     chartFileNumber	    8
     disableImplicitCasting  1
     eml {
@@ -13815,34 +14428,49 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    82
+    id			    86
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    81
-    treeNode		    [81 0 0 0]
+    chart		    85
+    treeNode		    [85 0 0 0]
     superState		    SUBCHART
-    subviewer		    81
+    subviewer		    85
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
     eml {
       isEML		      1
-      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,dataArrived)\n\n"
-      "% define persistent variables for previous state vector storage\n% store states as an array of 24 x Ndelay, wher"
-      "e Ndelay is the effective delay\n% in units of measurement time interval. Ndelay can be a positive non-zero\n% i"
-      "nteger\nNdelay = int32(1);\n\n% Define the maximum interval between measurements. For example if the\n% measurem"
-      "ent was at a 5 Hz rate and this process is called at 50 Hz, then\n% the counter would increment by 10 each measu"
-      "rement, so a value of 15\n% would be suitable to allow for jitter. This prevents dropouts in\n% measurements fro"
-      "m causing very stale state data being used.\nmaxCountInterval = int32(15);\n\npersistent prevStatesMatrix;\nif i"
-      "sempty(prevStatesMatrix)\n    prevStatesMatrix = single(zeros(24,Ndelay));\nend\npersistent counter;\nif isempty"
-      "(counter)\n    counter = int32(0);\nend\ncounter = counter + 1;\npersistent measCounter;\nif isempty(measCounter"
-      ")\n    measCounter = int32(zeros(1,Ndelay));\nend\n\nif dataArrived\n    if Ndelay > 1\n        for index = Ndel"
-      "ay-1:-1:1\n            prevStatesMatrix(:,index+1) = prevStatesMatrix(:,index);\n            measCounter(index+1"
-      ") = measCounter(index);\n        end\n    end\n    prevStatesMatrix(:,1) = States;\n    measCounter(1) = counter"
-      ";\n    if ((counter - measCounter(Ndelay)) < Ndelay*maxCountInterval)\n        StatesAtMeasTime = prevStatesMatr"
-      "ix(:,Ndelay);\n    else\n        StatesAtMeasTime = single(States);\n    end\n    FuseData = logical(1);\nelse\n"
-      "    StatesAtMeasTime = single(zeros(24,1));\n    FuseData = logical(0);\nend\n\nend"
+      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,measDataArrived,"
+      "Ndelay,ratio)\n\n% Implement a state sampler that stores the state inoput from Ndelay \n% samples before the mea"
+      "surement is predicted to arrive. When the\n% measurement arrives, the stored state is output along with a data f"
+      "usion\n% request. This enables the filter to account for lag in sensors that can\n% in some cases be greater tha"
+      "n 1 measurement time step. the delay time si\n% specified in units of the state prediction delta time. For examp"
+      "le if a \n% delay of 0.16 seconds was required, and the state prediction ran at 50 Hz\n% then Ndelay would be se"
+      "t to 50*0.15 = 8.\n% It is assumed that this function is called the same rate as the state \n% prediction, and t"
+      "hat the measurement data comes in at a constant\n% rate.\n% The 'ratio'specifies the ratio of the state predicti"
+      "on to measurement\n% data rates. For example if the state prediction occurres at 50Hz and the\n% measurements ar"
+      "e being received at 5Hz, then 'ratio' = 50/5 = 10\n\n% This function avoids the need to use large data buffers\n"
+      "% It is generic function that can be used for states required by all\n% measurement fusion processes, and as suc"
+      "h has not been optimised to only\n% includes the specific states required, or the buffer arry length trimmed\n% "
+      "to the minimum required.\n\n% Ndelay cannot be zero and cannot exceed a value of 10*ratio-1\nNdelay = max(min(Nd"
+      "elay,int32(10*ratio)),int32(1));\n\nmajorStepDelay = int32(ceil(single(Ndelay)/single(ratio)));\nminorStepDelay "
+      "= int32(rem(single(Ndelay),single(ratio)));\n\npersistent prevStatesMatrix;\nif isempty(prevStatesMatrix)\n    p"
+      "revStatesMatrix = single(zeros(24,11));\nend\n\npersistent totalFrameCount;\nif isempty(totalFrameCount)\n    to"
+      "talFrameCount = int32(0);\nend\n\npersistent measID;\nif isempty(measID)\n    measID = int32(zeros(1,11));\nend\n"
+      "\npersistent minorFrameCount;\nif isempty(minorFrameCount)\n    minorFrameCount = int32(0);\nend\n\ntotalFrameCo"
+      "unt = totalFrameCount + int32(1);\nminorFrameCount = minorFrameCount + int32(1);\n\nif measDataArrived\n    if m"
+      "easID(1) ~= 0\n        FuseData = logical(1);\n    else\n        FuseData = logical(0);\n    end\n    if abs(sin"
+      "gle(totalFrameCount - measID(1) - Ndelay)) < 0.5*single(ratio)\n        StatesAtMeasTime = prevStatesMatrix(:,1)"
+      ";\n    else\n        frameErrors = abs(measID - totalFrameCount + Ndelay);\n        bestError = Ndelay;\n       "
+      " bestIndex = int32(1);\n        for index = 1:majorStepDelay\n            if frameErrors(index) < bestError\n   "
+      "             bestError = frameErrors(index);\n                bestIndex = index;\n            end\n        end\n"
+      "        StatesAtMeasTime = prevStatesMatrix(:,bestIndex);\n    end\nelse\n    StatesAtMeasTime = single(zeros(24"
+      ",1));\n    FuseData = logical(0);\nend\n\nif minorFrameCount == (ratio - minorStepDelay)\n    if majorStepDelay "
+      "> int32(0)\n        for index = 1:majorStepDelay\n            prevStatesMatrix(:,index) = prevStatesMatrix(:,ind"
+      "ex+1);\n            measID(index) = measID(index+1);\n        end\n    end\n    prevStatesMatrix(:,majorStepDela"
+      "y) = States;\n    measID(majorStepDelay) = totalFrameCount;\nend\n\nif measDataArrived\n    minorFrameCount = in"
+      "t32(0);\nend\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -13851,16 +14479,16 @@ Stateflow {
     }
   }
   junction {
-    id			    83
+    id			    87
     position		    [23.5747 49.5747 7]
-    chart		    81
-    linkNode		    [81 0 0]
-    subviewer		    81
+    chart		    85
+    linkNode		    [85 0 0]
+    subviewer		    85
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    84
+    id			    88
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.7 14.971]
     fontSize		    12
@@ -13868,14 +14496,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      83
+      id		      87
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    81
-    linkNode		    [81 0 0]
-    dataLimits		    [23.575 23.575 14.625 34.575]
-    subviewer		    81
+    chart		    85
+    linkNode		    [85 0 0]
+    dataLimits		    [21.175 25.975 14.625 42.575]
+    subviewer		    85
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -13884,10 +14512,10 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    85
+    id			    89
     ssIdNumber		    4
     name		    "FuseData"
-    linkNode		    [81 0 86]
+    linkNode		    [85 0 90]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13906,10 +14534,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    86
+    id			    90
     ssIdNumber		    5
     name		    "States"
-    linkNode		    [81 85 87]
+    linkNode		    [85 89 91]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -13926,10 +14554,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    87
+    id			    91
     ssIdNumber		    6
-    name		    "dataArrived"
-    linkNode		    [81 86 88]
+    name		    "measDataArrived"
+    linkNode		    [85 90 92]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -13948,10 +14576,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    88
+    id			    92
     ssIdNumber		    7
     name		    "StatesAtMeasTime"
-    linkNode		    [81 87 0]
+    linkNode		    [85 91 93]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -13966,30 +14594,74 @@ Stateflow {
       }
       complexity	      SF_COMPLEX_INHERITED
       frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    93
+    ssIdNumber		    8
+    name		    "Ndelay"
+    linkNode		    [85 92 94]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    94
+    ssIdNumber		    9
+    name		    "ratio"
+    linkNode		    [85 93 0]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
     }
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    89
-    name		    "InertialNavFilter/Store States at Height Meas Time"
+    id			    95
+    name		    "InertialNavFilter/Store States at Meas Time4"
     machine		    1
-    chart		    81
+    chart		    85
   }
   chart {
-    id			    90
+    id			    96
     name		    "InertialNavFilter/Fuse Magnetometer Measurements"
-    windowPosition	    [558 43.75 253 800]
+    windowPosition	    [744 -355.25 283 1199]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 91 0 0]
-    firstTransition	    93
-    firstJunction	    92
-    viewObj		    90
+    treeNode		    [0 97 0 0]
+    firstTransition	    99
+    firstJunction	    98
+    viewObj		    96
     machine		    1
-    ssIdHighWaterMark	    12
+    ssIdHighWaterMark	    13
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    94
+    firstData		    100
     chartFileNumber	    9
     disableImplicitCasting  1
     eml {
@@ -13998,14 +14670,14 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    91
+    id			    97
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    90
-    treeNode		    [90 0 0 0]
+    chart		    96
+    treeNode		    [96 0 0 0]
     superState		    SUBCHART
-    subviewer		    90
+    subviewer		    96
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
@@ -14015,227 +14687,227 @@ Stateflow {
       "rrP, ... % state covariance matrix after fusion of corrections\n    innovation, ... % Magnetometer innovations -"
       " milligauss\n    varInnov] ... % Innovation variances - millgauss^2\n    = FuseMagnetometer( ...\n    states, .."
       ". % predicted states\n    P, ... % predicted covariance\n    FuseData, ... % Boolean to initiate fusion of magne"
-      "tometer measurements\n    MagData, ... % Magnetic flux measurements (milliGauss)\n    useCompass) % Boolean to i"
-      "ndicate that a Magnetometer is being used\nKHP = single(zeros(24,24));\n% initialise innovation vector\ninnovati"
-      "on = single(zeros(3,1));\n\n% Magnetometer measurement error variance (milligauss).\nR_MAG = single(50^2);\n\n% "
-      "Innovation Variances\nvarInnov = single(zeros(3,1));\n\n% Copy required states to local variable names\nq0 = sta"
-      "tes(1);\nq1 = states(2);\nq2 = states(3);\nq3 = states(4);\n\nmagN = states(19);\nmagE = states(20);\nmagD = sta"
-      "tes(21);\n\n% Perform sequential fusion of Magnetometer measurements.\n% This assumes that the errors in the dff"
-      "erent componenets are\n% uncorrelated which is not true, however in the absence of covariance\n% data fit is the"
-      " only assumption we can make\n% so we might as well take advantage of the computational efficiencies\n% associat"
-      "ed with sequential fusion\nif (useCompass && FuseData)\n    % Sequential fusion of XYZ components\n    \n    % C"
-      "alculate observation jacobians\n    SH_MAG = single(zeros(9,1));\n    SH_MAG(1) = 2*magD*q3 + 2*magE*q2 + 2*magN"
-      "*q1;\n    SH_MAG(2) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n    SH_MAG(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n  "
-      "  SH_MAG(4) = q3^2;\n    SH_MAG(5) = q2^2;\n    SH_MAG(6) = q1^2;\n    SH_MAG(7) = q0^2;\n    SH_MAG(8) = 2*magN"
-      "*q0;\n    SH_MAG(9) = 2*magE*q3;\n    \n    H_MAG = single(zeros(3,24));\n    H_MAG(1,1) = SH_MAG(8) + SH_MAG(9)"
-      " - 2*magD*q2;\n    H_MAG(1,2) = SH_MAG(1);\n    H_MAG(1,3) = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;\n    H_MAG(1,4) "
-      "= SH_MAG(3);\n    H_MAG(1,19) = SH_MAG(6) - SH_MAG(5) - SH_MAG(4) + SH_MAG(7);\n    H_MAG(1,20) = 2*q0*q3 + 2*q1"
-      "*q2;\n    H_MAG(1,21) = 2*q1*q3 - 2*q0*q2;\n    H_MAG(1,22) = 1;\n    \n    H_MAG(2,1) = SH_MAG(3);\n    H_MAG(2"
-      ",2) = SH_MAG(2);\n    H_MAG(2,3) = SH_MAG(1);\n    H_MAG(2,4) = 2*magD*q2 - SH_MAG(9) - SH_MAG(8);\n    H_MAG(2,"
-      "19) = 2*q1*q2 - 2*q0*q3;\n    H_MAG(2,20) = SH_MAG(5) - SH_MAG(4) - SH_MAG(6) + SH_MAG(7);\n    H_MAG(2,21) = 2*"
-      "q0*q1 + 2*q2*q3;\n    H_MAG(2,23) = 1;\n    \n    H_MAG(3,1) = SH_MAG(2);\n    H_MAG(3,2) = 2*magN*q3 - 2*magE*q"
-      "0 - 2*magD*q1;\n    H_MAG(3,3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n    H_MAG(3,4) = SH_MAG(1);\n    H_MAG(3,19"
-      ") = 2*q0*q2 + 2*q1*q3;\n    H_MAG(3,20) = 2*q2*q3 - 2*q0*q1;\n    H_MAG(3,21) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6"
-      ") + SH_MAG(7);\n    H_MAG(3,24) = 1;\n    \n    % calculate Kalman gain matrix\n    SK_MX = single(zeros(6,1));\n"
-      "    SK_MX(1) = 1/(P(22,22) + R_MAG + P(2,22)*SH_MAG(1) + P(4,22)*SH_MAG(3) - P(19,22)*(SH_MAG(4) + SH_MAG(5) - S"
-      "H_MAG(6) - SH_MAG(7)) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P(22,3) + P(2,3)*SH_MAG(1) + P(4,3)*SH_MAG(3) - P(1"
-      "9,3)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,3)*(2*q0*q3 + 2*q1*q2) - P(21,3)*(2*q0*q2 - 2*q1*q3)"
-      " - P(3,3)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MA"
-      "G(9) - 2*magD*q2)*(P(22,1) + P(2,1)*SH_MAG(1) + P(4,1)*SH_MAG(3) - P(19,1)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - "
-      "SH_MAG(7)) + P(20,1)*(2*q0*q3 + 2*q1*q2) - P(21,1)*(2*q0*q2 - 2*q1*q3) - P(3,1)*(2*magD*q0 - 2*magE*q1 + 2*magN*"
-      "q2) + P(1,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(22,2) + P(2,2)*SH_MAG(1) + P(4,2)*SH_MAG(3) - P"
-      "(19,2)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,2)*(2*q0*q3 + 2*q1*q2) - P(21,2)*(2*q0*q2 - 2*q1*q"
-      "3) - P(3,2)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(3)*(P(22,"
-      "4) + P(2,4)*SH_MAG(1) + P(4,4)*SH_MAG(3) - P(19,4)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,4)*(2*"
-      "q0*q3 + 2*q1*q2) - P(21,4)*(2*q0*q2 - 2*q1*q3) - P(3,4)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,4)*(SH_MAG(8) "
-      "+ SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7))*(P(22,19) + P(2,19)*SH_MAG(1) + P(4,"
-      "19)*SH_MAG(3) - P(19,19)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,19)*(2*q0*q3 + 2*q1*q2) - P(21,1"
-      "9)*(2*q0*q2 - 2*q1*q3) - P(3,19)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q"
-      "2)) + P(20,22)*(2*q0*q3 + 2*q1*q2) - P(21,22)*(2*q0*q2 - 2*q1*q3) - P(3,22)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) "
-      "+ (2*q0*q3 + 2*q1*q2)*(P(22,20) + P(2,20)*SH_MAG(1) + P(4,20)*SH_MAG(3) - P(19,20)*(SH_MAG(4) + SH_MAG(5) - SH_M"
-      "AG(6) - SH_MAG(7)) + P(20,20)*(2*q0*q3 + 2*q1*q2) - P(21,20)*(2*q0*q2 - 2*q1*q3) - P(3,20)*(2*magD*q0 - 2*magE*q"
-      "1 + 2*magN*q2) + P(1,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P(22,21) + P(2,21)*SH_MAG(1"
-      ") + P(4,21)*SH_MAG(3) - P(19,21)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,21)*(2*q0*q3 + 2*q1*q2) "
-      "- P(21,21)*(2*q0*q2 - 2*q1*q3) - P(3,21)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,21)*(SH_MAG(8) + SH_MAG(9) - "
-      "2*magD*q2)) + P(1,22)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n    SK_MX(2) = SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - "
-      "SH_MAG(7);\n    SK_MX(3) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n    SK_MX(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;"
-      "\n    SK_MX(5) = 2*q0*q2 - 2*q1*q3;\n    SK_MX(6) = 2*q0*q3 + 2*q1*q2;\n    \n    K_MAG = single(zeros(24,3));\n"
-      "    K_MAG(1,1) = SK_MX(1)*(P(1,22) + P(1,2)*SH_MAG(1) + P(1,4)*SH_MAG(3) + P(1,1)*SK_MX(4) - P(1,3)*SK_MX(3) - P"
-      "(1,19)*SK_MX(2) + P(1,20)*SK_MX(6) - P(1,21)*SK_MX(5));\n    K_MAG(2,1) = SK_MX(1)*(P(2,22) + P(2,2)*SH_MAG(1) +"
-      " P(2,4)*SH_MAG(3) + P(2,1)*SK_MX(4) - P(2,3)*SK_MX(3) - P(2,19)*SK_MX(2) + P(2,20)*SK_MX(6) - P(2,21)*SK_MX(5));"
-      "\n    K_MAG(3,1) = SK_MX(1)*(P(3,22) + P(3,2)*SH_MAG(1) + P(3,4)*SH_MAG(3) + P(3,1)*SK_MX(4) - P(3,3)*SK_MX(3) -"
-      " P(3,19)*SK_MX(2) + P(3,20)*SK_MX(6) - P(3,21)*SK_MX(5));\n    K_MAG(4,1) = SK_MX(1)*(P(4,22) + P(4,2)*SH_MAG(1)"
-      " + P(4,4)*SH_MAG(3) + P(4,1)*SK_MX(4) - P(4,3)*SK_MX(3) - P(4,19)*SK_MX(2) + P(4,20)*SK_MX(6) - P(4,21)*SK_MX(5)"
-      ");\n    K_MAG(5,1) = SK_MX(1)*(P(5,22) + P(5,2)*SH_MAG(1) + P(5,4)*SH_MAG(3) + P(5,1)*SK_MX(4) - P(5,3)*SK_MX(3)"
-      " - P(5,19)*SK_MX(2) + P(5,20)*SK_MX(6) - P(5,21)*SK_MX(5));\n    K_MAG(6,1) = SK_MX(1)*(P(6,22) + P(6,2)*SH_MAG("
-      "1) + P(6,4)*SH_MAG(3) + P(6,1)*SK_MX(4) - P(6,3)*SK_MX(3) - P(6,19)*SK_MX(2) + P(6,20)*SK_MX(6) - P(6,21)*SK_MX("
-      "5));\n    K_MAG(7,1) = SK_MX(1)*(P(7,22) + P(7,2)*SH_MAG(1) + P(7,4)*SH_MAG(3) + P(7,1)*SK_MX(4) - P(7,3)*SK_MX("
-      "3) - P(7,19)*SK_MX(2) + P(7,20)*SK_MX(6) - P(7,21)*SK_MX(5));\n    K_MAG(8,1) = SK_MX(1)*(P(8,22) + P(8,2)*SH_MA"
-      "G(1) + P(8,4)*SH_MAG(3) + P(8,1)*SK_MX(4) - P(8,3)*SK_MX(3) - P(8,19)*SK_MX(2) + P(8,20)*SK_MX(6) - P(8,21)*SK_M"
-      "X(5));\n    K_MAG(9,1) = SK_MX(1)*(P(9,22) + P(9,2)*SH_MAG(1) + P(9,4)*SH_MAG(3) + P(9,1)*SK_MX(4) - P(9,3)*SK_M"
-      "X(3) - P(9,19)*SK_MX(2) + P(9,20)*SK_MX(6) - P(9,21)*SK_MX(5));\n    K_MAG(10,1) = SK_MX(1)*(P(10,22) + P(10,2)*"
-      "SH_MAG(1) + P(10,4)*SH_MAG(3) + P(10,1)*SK_MX(4) - P(10,3)*SK_MX(3) - P(10,19)*SK_MX(2) + P(10,20)*SK_MX(6) - P("
-      "10,21)*SK_MX(5));\n    K_MAG(11,1) = SK_MX(1)*(P(11,22) + P(11,2)*SH_MAG(1) + P(11,4)*SH_MAG(3) + P(11,1)*SK_MX("
-      "4) - P(11,3)*SK_MX(3) - P(11,19)*SK_MX(2) + P(11,20)*SK_MX(6) - P(11,21)*SK_MX(5));\n    K_MAG(12,1) = SK_MX(1)*"
-      "(P(12,22) + P(12,2)*SH_MAG(1) + P(12,4)*SH_MAG(3) + P(12,1)*SK_MX(4) - P(12,3)*SK_MX(3) - P(12,19)*SK_MX(2) + P("
-      "12,20)*SK_MX(6) - P(12,21)*SK_MX(5));\n    K_MAG(13,1) = SK_MX(1)*(P(13,22) + P(13,2)*SH_MAG(1) + P(13,4)*SH_MAG"
-      "(3) + P(13,1)*SK_MX(4) - P(13,3)*SK_MX(3) - P(13,19)*SK_MX(2) + P(13,20)*SK_MX(6) - P(13,21)*SK_MX(5));\n    K_M"
-      "AG(14,1) = SK_MX(1)*(P(14,22) + P(14,2)*SH_MAG(1) + P(14,4)*SH_MAG(3) + P(14,1)*SK_MX(4) - P(14,3)*SK_MX(3) - P("
-      "14,19)*SK_MX(2) + P(14,20)*SK_MX(6) - P(14,21)*SK_MX(5));\n    K_MAG(15,1) = SK_MX(1)*(P(15,22) + P(15,2)*SH_MAG"
-      "(1) + P(15,4)*SH_MAG(3) + P(15,1)*SK_MX(4) - P(15,3)*SK_MX(3) - P(15,19)*SK_MX(2) + P(15,20)*SK_MX(6) - P(15,21)"
-      "*SK_MX(5));\n    K_MAG(16,1) = SK_MX(1)*(P(16,22) + P(16,2)*SH_MAG(1) + P(16,4)*SH_MAG(3) + P(16,1)*SK_MX(4) - P"
-      "(16,3)*SK_MX(3) - P(16,19)*SK_MX(2) + P(16,20)*SK_MX(6) - P(16,21)*SK_MX(5));\n    K_MAG(17,1) = SK_MX(1)*(P(17,"
-      "22) + P(17,2)*SH_MAG(1) + P(17,4)*SH_MAG(3) + P(17,1)*SK_MX(4) - P(17,3)*SK_MX(3) - P(17,19)*SK_MX(2) + P(17,20)"
-      "*SK_MX(6) - P(17,21)*SK_MX(5));\n    K_MAG(18,1) = SK_MX(1)*(P(18,22) + P(18,2)*SH_MAG(1) + P(18,4)*SH_MAG(3) + "
-      "P(18,1)*SK_MX(4) - P(18,3)*SK_MX(3) - P(18,19)*SK_MX(2) + P(18,20)*SK_MX(6) - P(18,21)*SK_MX(5));\n    K_MAG(19,"
-      "1) = SK_MX(1)*(P(19,22) + P(19,2)*SH_MAG(1) + P(19,4)*SH_MAG(3) + P(19,1)*SK_MX(4) - P(19,3)*SK_MX(3) - P(19,19)"
-      "*SK_MX(2) + P(19,20)*SK_MX(6) - P(19,21)*SK_MX(5));\n    K_MAG(20,1) = SK_MX(1)*(P(20,22) + P(20,2)*SH_MAG(1) + "
-      "P(20,4)*SH_MAG(3) + P(20,1)*SK_MX(4) - P(20,3)*SK_MX(3) - P(20,19)*SK_MX(2) + P(20,20)*SK_MX(6) - P(20,21)*SK_MX"
-      "(5));\n    K_MAG(21,1) = SK_MX(1)*(P(21,22) + P(21,2)*SH_MAG(1) + P(21,4)*SH_MAG(3) + P(21,1)*SK_MX(4) - P(21,3)"
-      "*SK_MX(3) - P(21,19)*SK_MX(2) + P(21,20)*SK_MX(6) - P(21,21)*SK_MX(5));\n    K_MAG(22,1) = SK_MX(1)*(P(22,22) + "
-      "P(22,2)*SH_MAG(1) + P(22,4)*SH_MAG(3) + P(22,1)*SK_MX(4) - P(22,3)*SK_MX(3) - P(22,19)*SK_MX(2) + P(22,20)*SK_MX"
-      "(6) - P(22,21)*SK_MX(5));\n    K_MAG(23,1) = SK_MX(1)*(P(23,22) + P(23,2)*SH_MAG(1) + P(23,4)*SH_MAG(3) + P(23,1"
-      ")*SK_MX(4) - P(23,3)*SK_MX(3) - P(23,19)*SK_MX(2) + P(23,20)*SK_MX(6) - P(23,21)*SK_MX(5));\n    K_MAG(24,1) = S"
-      "K_MX(1)*(P(24,22) + P(24,2)*SH_MAG(1) + P(24,4)*SH_MAG(3) + P(24,1)*SK_MX(4) - P(24,3)*SK_MX(3) - P(24,19)*SK_MX"
-      "(2) + P(24,20)*SK_MX(6) - P(24,21)*SK_MX(5));\n    \n    SK_MY = single(zeros(5,1));\n    SK_MY(1) = 1/(P(23,23)"
-      " + R_MAG + P(1,23)*SH_MAG(3) + P(2,23)*SH_MAG(2) + P(3,23)*SH_MAG(1) - P(20,23)*(SH_MAG(4) - SH_MAG(5) + SH_MAG("
-      "6) - SH_MAG(7)) - (2*q0*q3 - 2*q1*q2)*(P(23,19) + P(1,19)*SH_MAG(3) + P(2,19)*SH_MAG(2) + P(3,19)*SH_MAG(1) - P("
-      "20,19)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,19)*(2*q0*q3 - 2*q1*q2) + P(21,19)*(2*q0*q1 + 2*q2"
-      "*q3) - P(4,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P(23,21) + P(1,21)*SH_MAG(3) + P(2,21"
-      ")*SH_MAG(2) + P(3,21)*SH_MAG(1) - P(20,21)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,21)*(2*q0*q3 -"
-      " 2*q1*q2) + P(21,21)*(2*q0*q1 + 2*q2*q3) - P(4,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(8) + SH_MAG(9)"
-      " - 2*magD*q2)*(P(23,4) + P(1,4)*SH_MAG(3) + P(2,4)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P(20,4)*(SH_MAG(4) - SH_MAG(5)"
-      " + SH_MAG(6) - SH_MAG(7)) - P(19,4)*(2*q0*q3 - 2*q1*q2) + P(21,4)*(2*q0*q1 + 2*q2*q3) - P(4,4)*(SH_MAG(8) + SH_M"
-      "AG(9) - 2*magD*q2)) - P(19,23)*(2*q0*q3 - 2*q1*q2) + P(21,23)*(2*q0*q1 + 2*q2*q3) + SH_MAG(3)*(P(23,1) + P(1,1)*"
-      "SH_MAG(3) + P(2,1)*SH_MAG(2) + P(3,1)*SH_MAG(1) - P(20,1)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19"
-      ",1)*(2*q0*q3 - 2*q1*q2) + P(21,1)*(2*q0*q1 + 2*q2*q3) - P(4,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*"
-      "(P(23,2) + P(1,2)*SH_MAG(3) + P(2,2)*SH_MAG(2) + P(3,2)*SH_MAG(1) - P(20,2)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) -"
-      " SH_MAG(7)) - P(19,2)*(2*q0*q3 - 2*q1*q2) + P(21,2)*(2*q0*q1 + 2*q2*q3) - P(4,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD"
-      "*q2)) + SH_MAG(1)*(P(23,3) + P(1,3)*SH_MAG(3) + P(2,3)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(20,3)*(SH_MAG(4) - SH_MA"
-      "G(5) + SH_MAG(6) - SH_MAG(7)) - P(19,3)*(2*q0*q3 - 2*q1*q2) + P(21,3)*(2*q0*q1 + 2*q2*q3) - P(4,3)*(SH_MAG(8) + "
-      "SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7))*(P(23,20) + P(1,20)*SH_MAG(3) + P(2,20"
-      ")*SH_MAG(2) + P(3,20)*SH_MAG(1) - P(20,20)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,20)*(2*q0*q3 -"
-      " 2*q1*q2) + P(21,20)*(2*q0*q1 + 2*q2*q3) - P(4,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(4,23)*(SH_MAG(8) + S"
-      "H_MAG(9) - 2*magD*q2));\n    SK_MY(2) = SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7);\n    SK_MY(3) = SH_MAG(8)"
-      " + SH_MAG(9) - 2*magD*q2;\n    SK_MY(4) = 2*q0*q3 - 2*q1*q2;\n    SK_MY(5) = 2*q0*q1 + 2*q2*q3;\n    \n    K_MAG"
-      "(1,2) = SK_MY(1)*(P(1,23) + P(1,1)*SH_MAG(3) + P(1,2)*SH_MAG(2) + P(1,3)*SH_MAG(1) - P(1,4)*SK_MY(3) - P(1,20)*S"
-      "K_MY(2) - P(1,19)*SK_MY(4) + P(1,21)*SK_MY(5));\n    K_MAG(2,2) = SK_MY(1)*(P(2,23) + P(2,1)*SH_MAG(3) + P(2,2)*"
-      "SH_MAG(2) + P(2,3)*SH_MAG(1) - P(2,4)*SK_MY(3) - P(2,20)*SK_MY(2) - P(2,19)*SK_MY(4) + P(2,21)*SK_MY(5));\n    K"
-      "_MAG(3,2) = SK_MY(1)*(P(3,23) + P(3,1)*SH_MAG(3) + P(3,2)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(3,4)*SK_MY(3) - P(3,2"
-      "0)*SK_MY(2) - P(3,19)*SK_MY(4) + P(3,21)*SK_MY(5));\n    K_MAG(4,2) = SK_MY(1)*(P(4,23) + P(4,1)*SH_MAG(3) + P(4"
-      ",2)*SH_MAG(2) + P(4,3)*SH_MAG(1) - P(4,4)*SK_MY(3) - P(4,20)*SK_MY(2) - P(4,19)*SK_MY(4) + P(4,21)*SK_MY(5));\n "
-      "   K_MAG(5,1) = SK_MY(1)*(P(5,23) + P(5,1)*SH_MAG(3) + P(5,2)*SH_MAG(2) + P(5,3)*SH_MAG(1) - P(5,4)*SK_MY(3) - P"
-      "(5,20)*SK_MY(2) - P(5,19)*SK_MY(4) + P(5,21)*SK_MY(5));\n    K_MAG(6,2) = SK_MY(1)*(P(6,23) + P(6,1)*SH_MAG(3) +"
-      " P(6,2)*SH_MAG(2) + P(6,3)*SH_MAG(1) - P(6,4)*SK_MY(3) - P(6,20)*SK_MY(2) - P(6,19)*SK_MY(4) + P(6,21)*SK_MY(5))"
-      ";\n    K_MAG(7,2) = SK_MY(1)*(P(7,23) + P(7,1)*SH_MAG(3) + P(7,2)*SH_MAG(2) + P(7,3)*SH_MAG(1) - P(7,4)*SK_MY(3)"
-      " - P(7,20)*SK_MY(2) - P(7,19)*SK_MY(4) + P(7,21)*SK_MY(5));\n    K_MAG(8,2) = SK_MY(1)*(P(8,23) + P(8,1)*SH_MAG("
-      "3) + P(8,2)*SH_MAG(2) + P(8,3)*SH_MAG(1) - P(8,4)*SK_MY(3) - P(8,20)*SK_MY(2) - P(8,19)*SK_MY(4) + P(8,21)*SK_MY"
-      "(5));\n    K_MAG(9,2) = SK_MY(1)*(P(9,23) + P(9,1)*SH_MAG(3) + P(9,2)*SH_MAG(2) + P(9,3)*SH_MAG(1) - P(9,4)*SK_M"
-      "Y(3) - P(9,20)*SK_MY(2) - P(9,19)*SK_MY(4) + P(9,21)*SK_MY(5));\n    K_MAG(10,2) = SK_MY(1)*(P(10,23) + P(10,1)*"
-      "SH_MAG(3) + P(10,2)*SH_MAG(2) + P(10,3)*SH_MAG(1) - P(10,4)*SK_MY(3) - P(10,20)*SK_MY(2) - P(10,19)*SK_MY(4) + P"
-      "(10,21)*SK_MY(5));\n    K_MAG(11,2) = SK_MY(1)*(P(11,23) + P(11,1)*SH_MAG(3) + P(11,2)*SH_MAG(2) + P(11,3)*SH_MA"
-      "G(1) - P(11,4)*SK_MY(3) - P(11,20)*SK_MY(2) - P(11,19)*SK_MY(4) + P(11,21)*SK_MY(5));\n    K_MAG(12,2) = SK_MY(1"
-      ")*(P(12,23) + P(12,1)*SH_MAG(3) + P(12,2)*SH_MAG(2) + P(12,3)*SH_MAG(1) - P(12,4)*SK_MY(3) - P(12,20)*SK_MY(2) -"
-      " P(12,19)*SK_MY(4) + P(12,21)*SK_MY(5));\n    K_MAG(13,2) = SK_MY(1)*(P(13,23) + P(13,1)*SH_MAG(3) + P(13,2)*SH_"
-      "MAG(2) + P(13,3)*SH_MAG(1) - P(13,4)*SK_MY(3) - P(13,20)*SK_MY(2) - P(13,19)*SK_MY(4) + P(13,21)*SK_MY(5));\n   "
-      " K_MAG(14,2) = SK_MY(1)*(P(14,23) + P(14,1)*SH_MAG(3) + P(14,2)*SH_MAG(2) + P(14,3)*SH_MAG(1) - P(14,4)*SK_MY(3)"
-      " - P(14,20)*SK_MY(2) - P(14,19)*SK_MY(4) + P(14,21)*SK_MY(5));\n    K_MAG(15,2) = SK_MY(1)*(P(15,23) + P(15,1)*S"
-      "H_MAG(3) + P(15,2)*SH_MAG(2) + P(15,3)*SH_MAG(1) - P(15,4)*SK_MY(3) - P(15,20)*SK_MY(2) - P(15,19)*SK_MY(4) + P("
-      "15,21)*SK_MY(5));\n    K_MAG(16,2) = SK_MY(1)*(P(16,23) + P(16,1)*SH_MAG(3) + P(16,2)*SH_MAG(2) + P(16,3)*SH_MAG"
-      "(1) - P(16,4)*SK_MY(3) - P(16,20)*SK_MY(2) - P(16,19)*SK_MY(4) + P(16,21)*SK_MY(5));\n    K_MAG(17,2) = SK_MY(1)"
-      "*(P(17,23) + P(17,1)*SH_MAG(3) + P(17,2)*SH_MAG(2) + P(17,3)*SH_MAG(1) - P(17,4)*SK_MY(3) - P(17,20)*SK_MY(2) - "
-      "P(17,19)*SK_MY(4) + P(17,21)*SK_MY(5));\n    K_MAG(18,2) = SK_MY(1)*(P(18,23) + P(18,1)*SH_MAG(3) + P(18,2)*SH_M"
-      "AG(2) + P(18,3)*SH_MAG(1) - P(18,4)*SK_MY(3) - P(18,20)*SK_MY(2) - P(18,19)*SK_MY(4) + P(18,21)*SK_MY(5));\n    "
-      "K_MAG(19,2) = SK_MY(1)*(P(19,23) + P(19,1)*SH_MAG(3) + P(19,2)*SH_MAG(2) + P(19,3)*SH_MAG(1) - P(19,4)*SK_MY(3) "
-      "- P(19,20)*SK_MY(2) - P(19,19)*SK_MY(4) + P(19,21)*SK_MY(5));\n    K_MAG(20,2) = SK_MY(1)*(P(20,23) + P(20,1)*SH"
-      "_MAG(3) + P(20,2)*SH_MAG(2) + P(20,3)*SH_MAG(1) - P(20,4)*SK_MY(3) - P(20,20)*SK_MY(2) - P(20,19)*SK_MY(4) + P(2"
-      "0,21)*SK_MY(5));\n    K_MAG(21,2) = SK_MY(1)*(P(21,23) + P(21,1)*SH_MAG(3) + P(21,2)*SH_MAG(2) + P(21,3)*SH_MAG("
-      "1) - P(21,4)*SK_MY(3) - P(21,20)*SK_MY(2) - P(21,19)*SK_MY(4) + P(21,21)*SK_MY(5));\n    K_MAG(22,2) = SK_MY(1)*"
-      "(P(22,23) + P(22,1)*SH_MAG(3) + P(22,2)*SH_MAG(2) + P(22,3)*SH_MAG(1) - P(22,4)*SK_MY(3) - P(22,20)*SK_MY(2) - P"
-      "(22,19)*SK_MY(4) + P(22,21)*SK_MY(5));\n    K_MAG(23,2) = SK_MY(1)*(P(23,23) + P(23,1)*SH_MAG(3) + P(23,2)*SH_MA"
-      "G(2) + P(23,3)*SH_MAG(1) - P(23,4)*SK_MY(3) - P(23,20)*SK_MY(2) - P(23,19)*SK_MY(4) + P(23,21)*SK_MY(5));\n    K"
-      "_MAG(24,2) = SK_MY(1)*(P(24,23) + P(24,1)*SH_MAG(3) + P(24,2)*SH_MAG(2) + P(24,3)*SH_MAG(1) - P(24,4)*SK_MY(3) -"
-      " P(24,20)*SK_MY(2) - P(24,19)*SK_MY(4) + P(24,21)*SK_MY(5));\n    \n    SK_MZ = single(zeros(6,1));\n    SK_MZ(1"
-      ") = 1/(P(24,24) + R_MAG + P(1,24)*SH_MAG(2) + P(4,24)*SH_MAG(1) + P(21,24)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + "
-      "SH_MAG(7)) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P(24,2) + P(1,2)*SH_MAG(2) + P(4,2)*SH_MAG(1) + P(21,2)*(SH_MA"
-      "G(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,2)*(2*q0*q2 + 2*q1*q3) - P(20,2)*(2*q0*q1 - 2*q2*q3) - P(2,2)*("
-      "2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*ma"
-      "gD*q2)*(P(24,3) + P(1,3)*SH_MAG(2) + P(4,3)*SH_MAG(1) + P(21,3)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) "
-      "+ P(19,3)*(2*q0*q2 + 2*q1*q3) - P(20,3)*(2*q0*q1 - 2*q2*q3) - P(2,3)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,3"
-      ")*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(24,1) + P(1,1)*SH_MAG(2) + P(4,1)*SH_MAG(1) + P(21,1)*(SH_"
-      "MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,1)*(2*q0*q2 + 2*q1*q3) - P(20,1)*(2*q0*q1 - 2*q2*q3) - P(2,1)"
-      "*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(24,4) + P(1,4)"
-      "*SH_MAG(2) + P(4,4)*SH_MAG(1) + P(21,4)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,4)*(2*q0*q2 + 2*q"
-      "1*q3) - P(20,4)*(2*q0*q1 - 2*q2*q3) - P(2,4)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,4)*(SH_MAG(8) + SH_MAG(9)"
-      " - 2*magD*q2)) + (SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7))*(P(24,21) + P(1,21)*SH_MAG(2) + P(4,21)*SH_MAG("
-      "1) + P(21,21)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,21)*(2*q0*q2 + 2*q1*q3) - P(20,21)*(2*q0*q1"
-      " - 2*q2*q3) - P(2,21)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(19,"
-      "24)*(2*q0*q2 + 2*q1*q3) - P(20,24)*(2*q0*q1 - 2*q2*q3) - P(2,24)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 "
-      "+ 2*q1*q3)*(P(24,19) + P(1,19)*SH_MAG(2) + P(4,19)*SH_MAG(1) + P(21,19)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_"
-      "MAG(7)) + P(19,19)*(2*q0*q2 + 2*q1*q3) - P(20,19)*(2*q0*q1 - 2*q2*q3) - P(2,19)*(2*magD*q1 + 2*magE*q0 - 2*magN*"
-      "q3) + P(3,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P(24,20) + P(1,20)*SH_MAG(2) + P(4,20)"
-      "*SH_MAG(1) + P(21,20)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,20)*(2*q0*q2 + 2*q1*q3) - P(20,20)*"
-      "(2*q0*q1 - 2*q2*q3) - P(2,20)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2))"
-      " + P(3,24)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n    SK_MZ(2) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n"
-      "    SK_MZ(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n    SK_MZ(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n    SK_MZ("
-      "5) = 2*q0*q1 - 2*q2*q3;\n    SK_MZ(6) = 2*q0*q2 + 2*q1*q3;\n    \n    K_MAG(1,3) = SK_MZ(1)*(P(1,24) + P(1,1)*SH"
-      "_MAG(2) + P(1,4)*SH_MAG(1) - P(1,2)*SK_MZ(3) + P(1,3)*SK_MZ(4) + P(1,21)*SK_MZ(2) + P(1,19)*SK_MZ(6) - P(1,20)*S"
-      "K_MZ(5));\n    K_MAG(2,3) = SK_MZ(1)*(P(2,24) + P(2,1)*SH_MAG(2) + P(2,4)*SH_MAG(1) - P(2,2)*SK_MZ(3) + P(2,3)*S"
-      "K_MZ(4) + P(2,21)*SK_MZ(2) + P(2,19)*SK_MZ(6) - P(2,20)*SK_MZ(5));\n    K_MAG(3,3) = SK_MZ(1)*(P(3,24) + P(3,1)*"
-      "SH_MAG(2) + P(3,4)*SH_MAG(1) - P(3,2)*SK_MZ(3) + P(3,3)*SK_MZ(4) + P(3,21)*SK_MZ(2) + P(3,19)*SK_MZ(6) - P(3,20)"
-      "*SK_MZ(5));\n    K_MAG(4,3) = SK_MZ(1)*(P(4,24) + P(4,1)*SH_MAG(2) + P(4,4)*SH_MAG(1) - P(4,2)*SK_MZ(3) + P(4,3)"
-      "*SK_MZ(4) + P(4,21)*SK_MZ(2) + P(4,19)*SK_MZ(6) - P(4,20)*SK_MZ(5));\n    K_MAG(5,3) = SK_MZ(1)*(P(5,24) + P(5,1"
-      ")*SH_MAG(2) + P(5,4)*SH_MAG(1) - P(5,2)*SK_MZ(3) + P(5,3)*SK_MZ(4) + P(5,21)*SK_MZ(2) + P(5,19)*SK_MZ(6) - P(5,2"
-      "0)*SK_MZ(5));\n    K_MAG(6,3) = SK_MZ(1)*(P(6,24) + P(6,1)*SH_MAG(2) + P(6,4)*SH_MAG(1) - P(6,2)*SK_MZ(3) + P(6,"
-      "3)*SK_MZ(4) + P(6,21)*SK_MZ(2) + P(6,19)*SK_MZ(6) - P(6,20)*SK_MZ(5));\n    K_MAG(7,3) = SK_MZ(1)*(P(7,24) + P(7"
-      ",1)*SH_MAG(2) + P(7,4)*SH_MAG(1) - P(7,2)*SK_MZ(3) + P(7,3)*SK_MZ(4) + P(7,21)*SK_MZ(2) + P(7,19)*SK_MZ(6) - P(7"
-      ",20)*SK_MZ(5));\n    K_MAG(8,3) = SK_MZ(1)*(P(8,24) + P(8,1)*SH_MAG(2) + P(8,4)*SH_MAG(1) - P(8,2)*SK_MZ(3) + P("
-      "8,3)*SK_MZ(4) + P(8,21)*SK_MZ(2) + P(8,19)*SK_MZ(6) - P(8,20)*SK_MZ(5));\n    K_MAG(9,3) = SK_MZ(1)*(P(9,24) + P"
-      "(9,1)*SH_MAG(2) + P(9,4)*SH_MAG(1) - P(9,2)*SK_MZ(3) + P(9,3)*SK_MZ(4) + P(9,21)*SK_MZ(2) + P(9,19)*SK_MZ(6) - P"
-      "(9,20)*SK_MZ(5));\n    K_MAG(10,3) = SK_MZ(1)*(P(10,24) + P(10,1)*SH_MAG(2) + P(10,4)*SH_MAG(1) - P(10,2)*SK_MZ("
-      "3) + P(10,3)*SK_MZ(4) + P(10,21)*SK_MZ(2) + P(10,19)*SK_MZ(6) - P(10,20)*SK_MZ(5));\n    K_MAG(11,3) = SK_MZ(1)*"
-      "(P(11,24) + P(11,1)*SH_MAG(2) + P(11,4)*SH_MAG(1) - P(11,2)*SK_MZ(3) + P(11,3)*SK_MZ(4) + P(11,21)*SK_MZ(2) + P("
-      "11,19)*SK_MZ(6) - P(11,20)*SK_MZ(5));\n    K_MAG(12,3) = SK_MZ(1)*(P(12,24) + P(12,1)*SH_MAG(2) + P(12,4)*SH_MAG"
-      "(1) - P(12,2)*SK_MZ(3) + P(12,3)*SK_MZ(4) + P(12,21)*SK_MZ(2) + P(12,19)*SK_MZ(6) - P(12,20)*SK_MZ(5));\n    K_M"
-      "AG(13,3) = SK_MZ(1)*(P(13,24) + P(13,1)*SH_MAG(2) + P(13,4)*SH_MAG(1) - P(13,2)*SK_MZ(3) + P(13,3)*SK_MZ(4) + P("
-      "13,21)*SK_MZ(2) + P(13,19)*SK_MZ(6) - P(13,20)*SK_MZ(5));\n    K_MAG(14,3) = SK_MZ(1)*(P(14,24) + P(14,1)*SH_MAG"
-      "(2) + P(14,4)*SH_MAG(1) - P(14,2)*SK_MZ(3) + P(14,3)*SK_MZ(4) + P(14,21)*SK_MZ(2) + P(14,19)*SK_MZ(6) - P(14,20)"
-      "*SK_MZ(5));\n    K_MAG(15,3) = SK_MZ(1)*(P(15,24) + P(15,1)*SH_MAG(2) + P(15,4)*SH_MAG(1) - P(15,2)*SK_MZ(3) + P"
-      "(15,3)*SK_MZ(4) + P(15,21)*SK_MZ(2) + P(15,19)*SK_MZ(6) - P(15,20)*SK_MZ(5));\n    K_MAG(16,3) = SK_MZ(1)*(P(16,"
-      "24) + P(16,1)*SH_MAG(2) + P(16,4)*SH_MAG(1) - P(16,2)*SK_MZ(3) + P(16,3)*SK_MZ(4) + P(16,21)*SK_MZ(2) + P(16,19)"
-      "*SK_MZ(6) - P(16,20)*SK_MZ(5));\n    K_MAG(17,3) = SK_MZ(1)*(P(17,24) + P(17,1)*SH_MAG(2) + P(17,4)*SH_MAG(1) - "
-      "P(17,2)*SK_MZ(3) + P(17,3)*SK_MZ(4) + P(17,21)*SK_MZ(2) + P(17,19)*SK_MZ(6) - P(17,20)*SK_MZ(5));\n    K_MAG(18,"
-      "3) = SK_MZ(1)*(P(18,24) + P(18,1)*SH_MAG(2) + P(18,4)*SH_MAG(1) - P(18,2)*SK_MZ(3) + P(18,3)*SK_MZ(4) + P(18,21)"
-      "*SK_MZ(2) + P(18,19)*SK_MZ(6) - P(18,20)*SK_MZ(5));\n    K_MAG(19,3) = SK_MZ(1)*(P(19,24) + P(19,1)*SH_MAG(2) + "
-      "P(19,4)*SH_MAG(1) - P(19,2)*SK_MZ(3) + P(19,3)*SK_MZ(4) + P(19,21)*SK_MZ(2) + P(19,19)*SK_MZ(6) - P(19,20)*SK_MZ"
-      "(5));\n    K_MAG(20,3) = SK_MZ(1)*(P(20,24) + P(20,1)*SH_MAG(2) + P(20,4)*SH_MAG(1) - P(20,2)*SK_MZ(3) + P(20,3)"
-      "*SK_MZ(4) + P(20,21)*SK_MZ(2) + P(20,19)*SK_MZ(6) - P(20,20)*SK_MZ(5));\n    K_MAG(21,3) = SK_MZ(1)*(P(21,24) + "
-      "P(21,1)*SH_MAG(2) + P(21,4)*SH_MAG(1) - P(21,2)*SK_MZ(3) + P(21,3)*SK_MZ(4) + P(21,21)*SK_MZ(2) + P(21,19)*SK_MZ"
-      "(6) - P(21,20)*SK_MZ(5));\n    K_MAG(22,3) = SK_MZ(1)*(P(22,24) + P(22,1)*SH_MAG(2) + P(22,4)*SH_MAG(1) - P(22,2"
-      ")*SK_MZ(3) + P(22,3)*SK_MZ(4) + P(22,21)*SK_MZ(2) + P(22,19)*SK_MZ(6) - P(22,20)*SK_MZ(5));\n    K_MAG(23,3) = S"
-      "K_MZ(1)*(P(23,24) + P(23,1)*SH_MAG(2) + P(23,4)*SH_MAG(1) - P(23,2)*SK_MZ(3) + P(23,3)*SK_MZ(4) + P(23,21)*SK_MZ"
-      "(2) + P(23,19)*SK_MZ(6) - P(23,20)*SK_MZ(5));\n    K_MAG(24,3) = SK_MZ(1)*(P(24,24) + P(24,1)*SH_MAG(2) + P(24,4"
-      ")*SH_MAG(1) - P(24,2)*SK_MZ(3) + P(24,3)*SK_MZ(4) + P(24,21)*SK_MZ(2) + P(24,19)*SK_MZ(6) - P(24,20)*SK_MZ(5));\n"
-      "    \n    % Calculate innovations variance vector\n    varInnov = [1/SK_MX(1);1/SK_MY(1);1/SK_MZ(1)];\n    \n   "
-      " % Loop through the X, Y and Z measurements, fusing them sequentially\n    for obsIndex = 1:3\n        % correct"
-      " the state vector\n        % rotate predicted earth components into body axes\n        Cnb = [states(1)^2 + stat"
-      "es(2)^2 - states(3)^2 - states(4)^2, 2*(states(2)*states(3) + states(1)*states(4)) , 2*(states(2)*states(4)-stat"
-      "es(1)*states(3)) ;...\n            2*(states(2)*states(3) - states(1)*states(4)), states(1)^2 - states(2)^2 + st"
-      "ates(3)^2 - states(4)^2, 2*(states(3)*states(4) + states(1)*states(2));...\n            2*(states(2)*states(4) +"
-      " states(1)*states(3)) , 2*(states(3)*states(4) - states(1)*states(2)) , states(1)^2 - states(2)^2 - states(3)^2 "
-      "+ states(4)^2];\n        MagPred = Cnb*states(19:21) + states(22:24);\n        innovation(obsIndex) = MagPred(ob"
-      "sIndex) - MagData(obsIndex);\n        % Check the innovation for consistencey and don't fuse if > 5Sigma\n      "
-      "  if ((innovation(obsIndex)^2) / varInnov(obsIndex)) < +inf\n            xk = K_MAG(:,obsIndex) * innovation(obs"
-      "Index);\n            states = states - xk;\n            % normalise the quaternion states\n            quatMag ="
-      " sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)^2);\n            if (quatMag > 1e-12)\n               "
-      " states(1:4) = states(1:4) / quatMag;\n            end\n            % correct the covariance P = (I - K*H)*P\n  "
-      "          % take advantage of the empty columns in KH to reduce the\n            % number of operations\n       "
-      "     KH = K_MAG(:,obsIndex) * H_MAG(obsIndex,:);\n            for i = 1:24\n                for j = 1:24\n      "
-      "              for k = 1:4\n                        KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n                    en"
-      "d\n                    for k = 19:24\n                        KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n           "
-      "         end\n                end\n            end\n            P = P - KHP;\n            P = 0.5*(P + transpose"
-      "(P));\n        end\n    end\nend\n\n% Set default output for states and covariance\ncorrP = P;\ncorrStates = sta"
-      "tes;\n\nend"
+      "tometer measurements\n    MagData, ... % Magnetic flux measurements (milliGauss)\n    StatesAtMeasTime, ... % st"
+      "ates at time of airspeed measurement\n    useCompass) % Boolean to indicate that a Magnetometer is being used\n\n"
+      "% Initialise array used to calculate intermediate result in covariance\n% update\nKHP = single(zeros(24,24));\n\n"
+      "% initialise innovation vector\ninnovation = single(zeros(3,1));\n\n% Magnetometer measurement error variance (m"
+      "illigauss).\nR_MAG = single(50^2);\n\n% Innovation Variances\nvarInnov = single(zeros(3,1));\n\n% Copy required "
+      "states to local variable names\nq0 = StatesAtMeasTime(1);\nq1 = StatesAtMeasTime(2);\nq2 = StatesAtMeasTime(3);\n"
+      "q3 = StatesAtMeasTime(4);\n\nmagN = StatesAtMeasTime(19);\nmagE = StatesAtMeasTime(20);\nmagD = StatesAtMeasTime"
+      "(21);\n\n% Perform sequential fusion of Magnetometer measurements.\n% This assumes that the errors in the dffere"
+      "nt componenets are\n% uncorrelated which is not true, however in the absence of covariance\n% data fit is the on"
+      "ly assumption we can make\n% so we might as well take advantage of the computational efficiencies\n% associated "
+      "with sequential fusion\nif (useCompass && FuseData)\n    % Sequential fusion of XYZ components\n    \n    % Calc"
+      "ulate observation jacobians\n    SH_MAG = single(zeros(9,1));\n    SH_MAG(1) = 2*magD*q3 + 2*magE*q2 + 2*magN*q1"
+      ";\n    SH_MAG(2) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n    SH_MAG(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n    S"
+      "H_MAG(4) = q3^2;\n    SH_MAG(5) = q2^2;\n    SH_MAG(6) = q1^2;\n    SH_MAG(7) = q0^2;\n    SH_MAG(8) = 2*magN*q0"
+      ";\n    SH_MAG(9) = 2*magE*q3;\n    \n    H_MAG = single(zeros(3,24));\n    H_MAG(1,1) = SH_MAG(8) + SH_MAG(9) - "
+      "2*magD*q2;\n    H_MAG(1,2) = SH_MAG(1);\n    H_MAG(1,3) = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;\n    H_MAG(1,4) = S"
+      "H_MAG(3);\n    H_MAG(1,19) = SH_MAG(6) - SH_MAG(5) - SH_MAG(4) + SH_MAG(7);\n    H_MAG(1,20) = 2*q0*q3 + 2*q1*q2"
+      ";\n    H_MAG(1,21) = 2*q1*q3 - 2*q0*q2;\n    H_MAG(1,22) = 1;\n    \n    H_MAG(2,1) = SH_MAG(3);\n    H_MAG(2,2)"
+      " = SH_MAG(2);\n    H_MAG(2,3) = SH_MAG(1);\n    H_MAG(2,4) = 2*magD*q2 - SH_MAG(9) - SH_MAG(8);\n    H_MAG(2,19)"
+      " = 2*q1*q2 - 2*q0*q3;\n    H_MAG(2,20) = SH_MAG(5) - SH_MAG(4) - SH_MAG(6) + SH_MAG(7);\n    H_MAG(2,21) = 2*q0*"
+      "q1 + 2*q2*q3;\n    H_MAG(2,23) = 1;\n    \n    H_MAG(3,1) = SH_MAG(2);\n    H_MAG(3,2) = 2*magN*q3 - 2*magE*q0 -"
+      " 2*magD*q1;\n    H_MAG(3,3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n    H_MAG(3,4) = SH_MAG(1);\n    H_MAG(3,19) ="
+      " 2*q0*q2 + 2*q1*q3;\n    H_MAG(3,20) = 2*q2*q3 - 2*q0*q1;\n    H_MAG(3,21) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) +"
+      " SH_MAG(7);\n    H_MAG(3,24) = 1;\n    \n    % calculate Kalman gain matrix\n    SK_MX = single(zeros(6,1));\n  "
+      "  SK_MX(1) = 1/(P(22,22) + R_MAG + P(2,22)*SH_MAG(1) + P(4,22)*SH_MAG(3) - P(19,22)*(SH_MAG(4) + SH_MAG(5) - SH_"
+      "MAG(6) - SH_MAG(7)) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P(22,3) + P(2,3)*SH_MAG(1) + P(4,3)*SH_MAG(3) - P(19,"
+      "3)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,3)*(2*q0*q3 + 2*q1*q2) - P(21,3)*(2*q0*q2 - 2*q1*q3) -"
+      " P(3,3)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG("
+      "9) - 2*magD*q2)*(P(22,1) + P(2,1)*SH_MAG(1) + P(4,1)*SH_MAG(3) - P(19,1)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH"
+      "_MAG(7)) + P(20,1)*(2*q0*q3 + 2*q1*q2) - P(21,1)*(2*q0*q2 - 2*q1*q3) - P(3,1)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2"
+      ") + P(1,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(22,2) + P(2,2)*SH_MAG(1) + P(4,2)*SH_MAG(3) - P(1"
+      "9,2)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,2)*(2*q0*q3 + 2*q1*q2) - P(21,2)*(2*q0*q2 - 2*q1*q3)"
+      " - P(3,2)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(3)*(P(22,4)"
+      " + P(2,4)*SH_MAG(1) + P(4,4)*SH_MAG(3) - P(19,4)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,4)*(2*q0"
+      "*q3 + 2*q1*q2) - P(21,4)*(2*q0*q2 - 2*q1*q3) - P(3,4)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,4)*(SH_MAG(8) + "
+      "SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7))*(P(22,19) + P(2,19)*SH_MAG(1) + P(4,19"
+      ")*SH_MAG(3) - P(19,19)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,19)*(2*q0*q3 + 2*q1*q2) - P(21,19)"
+      "*(2*q0*q2 - 2*q1*q3) - P(3,19)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)"
+      ") + P(20,22)*(2*q0*q3 + 2*q1*q2) - P(21,22)*(2*q0*q2 - 2*q1*q3) - P(3,22)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + "
+      "(2*q0*q3 + 2*q1*q2)*(P(22,20) + P(2,20)*SH_MAG(1) + P(4,20)*SH_MAG(3) - P(19,20)*(SH_MAG(4) + SH_MAG(5) - SH_MAG"
+      "(6) - SH_MAG(7)) + P(20,20)*(2*q0*q3 + 2*q1*q2) - P(21,20)*(2*q0*q2 - 2*q1*q3) - P(3,20)*(2*magD*q0 - 2*magE*q1 "
+      "+ 2*magN*q2) + P(1,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P(22,21) + P(2,21)*SH_MAG(1) "
+      "+ P(4,21)*SH_MAG(3) - P(19,21)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,21)*(2*q0*q3 + 2*q1*q2) - "
+      "P(21,21)*(2*q0*q2 - 2*q1*q3) - P(3,21)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,21)*(SH_MAG(8) + SH_MAG(9) - 2*"
+      "magD*q2)) + P(1,22)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n    SK_MX(2) = SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH"
+      "_MAG(7);\n    SK_MX(3) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n    SK_MX(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n"
+      "    SK_MX(5) = 2*q0*q2 - 2*q1*q3;\n    SK_MX(6) = 2*q0*q3 + 2*q1*q2;\n    \n    K_MAG = single(zeros(24,3));\n  "
+      "  K_MAG(1,1) = SK_MX(1)*(P(1,22) + P(1,2)*SH_MAG(1) + P(1,4)*SH_MAG(3) + P(1,1)*SK_MX(4) - P(1,3)*SK_MX(3) - P(1"
+      ",19)*SK_MX(2) + P(1,20)*SK_MX(6) - P(1,21)*SK_MX(5));\n    K_MAG(2,1) = SK_MX(1)*(P(2,22) + P(2,2)*SH_MAG(1) + P"
+      "(2,4)*SH_MAG(3) + P(2,1)*SK_MX(4) - P(2,3)*SK_MX(3) - P(2,19)*SK_MX(2) + P(2,20)*SK_MX(6) - P(2,21)*SK_MX(5));\n"
+      "    K_MAG(3,1) = SK_MX(1)*(P(3,22) + P(3,2)*SH_MAG(1) + P(3,4)*SH_MAG(3) + P(3,1)*SK_MX(4) - P(3,3)*SK_MX(3) - P"
+      "(3,19)*SK_MX(2) + P(3,20)*SK_MX(6) - P(3,21)*SK_MX(5));\n    K_MAG(4,1) = SK_MX(1)*(P(4,22) + P(4,2)*SH_MAG(1) +"
+      " P(4,4)*SH_MAG(3) + P(4,1)*SK_MX(4) - P(4,3)*SK_MX(3) - P(4,19)*SK_MX(2) + P(4,20)*SK_MX(6) - P(4,21)*SK_MX(5));"
+      "\n    K_MAG(5,1) = SK_MX(1)*(P(5,22) + P(5,2)*SH_MAG(1) + P(5,4)*SH_MAG(3) + P(5,1)*SK_MX(4) - P(5,3)*SK_MX(3) -"
+      " P(5,19)*SK_MX(2) + P(5,20)*SK_MX(6) - P(5,21)*SK_MX(5));\n    K_MAG(6,1) = SK_MX(1)*(P(6,22) + P(6,2)*SH_MAG(1)"
+      " + P(6,4)*SH_MAG(3) + P(6,1)*SK_MX(4) - P(6,3)*SK_MX(3) - P(6,19)*SK_MX(2) + P(6,20)*SK_MX(6) - P(6,21)*SK_MX(5)"
+      ");\n    K_MAG(7,1) = SK_MX(1)*(P(7,22) + P(7,2)*SH_MAG(1) + P(7,4)*SH_MAG(3) + P(7,1)*SK_MX(4) - P(7,3)*SK_MX(3)"
+      " - P(7,19)*SK_MX(2) + P(7,20)*SK_MX(6) - P(7,21)*SK_MX(5));\n    K_MAG(8,1) = SK_MX(1)*(P(8,22) + P(8,2)*SH_MAG("
+      "1) + P(8,4)*SH_MAG(3) + P(8,1)*SK_MX(4) - P(8,3)*SK_MX(3) - P(8,19)*SK_MX(2) + P(8,20)*SK_MX(6) - P(8,21)*SK_MX("
+      "5));\n    K_MAG(9,1) = SK_MX(1)*(P(9,22) + P(9,2)*SH_MAG(1) + P(9,4)*SH_MAG(3) + P(9,1)*SK_MX(4) - P(9,3)*SK_MX("
+      "3) - P(9,19)*SK_MX(2) + P(9,20)*SK_MX(6) - P(9,21)*SK_MX(5));\n    K_MAG(10,1) = SK_MX(1)*(P(10,22) + P(10,2)*SH"
+      "_MAG(1) + P(10,4)*SH_MAG(3) + P(10,1)*SK_MX(4) - P(10,3)*SK_MX(3) - P(10,19)*SK_MX(2) + P(10,20)*SK_MX(6) - P(10"
+      ",21)*SK_MX(5));\n    K_MAG(11,1) = SK_MX(1)*(P(11,22) + P(11,2)*SH_MAG(1) + P(11,4)*SH_MAG(3) + P(11,1)*SK_MX(4)"
+      " - P(11,3)*SK_MX(3) - P(11,19)*SK_MX(2) + P(11,20)*SK_MX(6) - P(11,21)*SK_MX(5));\n    K_MAG(12,1) = SK_MX(1)*(P"
+      "(12,22) + P(12,2)*SH_MAG(1) + P(12,4)*SH_MAG(3) + P(12,1)*SK_MX(4) - P(12,3)*SK_MX(3) - P(12,19)*SK_MX(2) + P(12"
+      ",20)*SK_MX(6) - P(12,21)*SK_MX(5));\n    K_MAG(13,1) = SK_MX(1)*(P(13,22) + P(13,2)*SH_MAG(1) + P(13,4)*SH_MAG(3"
+      ") + P(13,1)*SK_MX(4) - P(13,3)*SK_MX(3) - P(13,19)*SK_MX(2) + P(13,20)*SK_MX(6) - P(13,21)*SK_MX(5));\n    K_MAG"
+      "(14,1) = SK_MX(1)*(P(14,22) + P(14,2)*SH_MAG(1) + P(14,4)*SH_MAG(3) + P(14,1)*SK_MX(4) - P(14,3)*SK_MX(3) - P(14"
+      ",19)*SK_MX(2) + P(14,20)*SK_MX(6) - P(14,21)*SK_MX(5));\n    K_MAG(15,1) = SK_MX(1)*(P(15,22) + P(15,2)*SH_MAG(1"
+      ") + P(15,4)*SH_MAG(3) + P(15,1)*SK_MX(4) - P(15,3)*SK_MX(3) - P(15,19)*SK_MX(2) + P(15,20)*SK_MX(6) - P(15,21)*S"
+      "K_MX(5));\n    K_MAG(16,1) = SK_MX(1)*(P(16,22) + P(16,2)*SH_MAG(1) + P(16,4)*SH_MAG(3) + P(16,1)*SK_MX(4) - P(1"
+      "6,3)*SK_MX(3) - P(16,19)*SK_MX(2) + P(16,20)*SK_MX(6) - P(16,21)*SK_MX(5));\n    K_MAG(17,1) = SK_MX(1)*(P(17,22"
+      ") + P(17,2)*SH_MAG(1) + P(17,4)*SH_MAG(3) + P(17,1)*SK_MX(4) - P(17,3)*SK_MX(3) - P(17,19)*SK_MX(2) + P(17,20)*S"
+      "K_MX(6) - P(17,21)*SK_MX(5));\n    K_MAG(18,1) = SK_MX(1)*(P(18,22) + P(18,2)*SH_MAG(1) + P(18,4)*SH_MAG(3) + P("
+      "18,1)*SK_MX(4) - P(18,3)*SK_MX(3) - P(18,19)*SK_MX(2) + P(18,20)*SK_MX(6) - P(18,21)*SK_MX(5));\n    K_MAG(19,1)"
+      " = SK_MX(1)*(P(19,22) + P(19,2)*SH_MAG(1) + P(19,4)*SH_MAG(3) + P(19,1)*SK_MX(4) - P(19,3)*SK_MX(3) - P(19,19)*S"
+      "K_MX(2) + P(19,20)*SK_MX(6) - P(19,21)*SK_MX(5));\n    K_MAG(20,1) = SK_MX(1)*(P(20,22) + P(20,2)*SH_MAG(1) + P("
+      "20,4)*SH_MAG(3) + P(20,1)*SK_MX(4) - P(20,3)*SK_MX(3) - P(20,19)*SK_MX(2) + P(20,20)*SK_MX(6) - P(20,21)*SK_MX(5"
+      "));\n    K_MAG(21,1) = SK_MX(1)*(P(21,22) + P(21,2)*SH_MAG(1) + P(21,4)*SH_MAG(3) + P(21,1)*SK_MX(4) - P(21,3)*S"
+      "K_MX(3) - P(21,19)*SK_MX(2) + P(21,20)*SK_MX(6) - P(21,21)*SK_MX(5));\n    K_MAG(22,1) = SK_MX(1)*(P(22,22) + P("
+      "22,2)*SH_MAG(1) + P(22,4)*SH_MAG(3) + P(22,1)*SK_MX(4) - P(22,3)*SK_MX(3) - P(22,19)*SK_MX(2) + P(22,20)*SK_MX(6"
+      ") - P(22,21)*SK_MX(5));\n    K_MAG(23,1) = SK_MX(1)*(P(23,22) + P(23,2)*SH_MAG(1) + P(23,4)*SH_MAG(3) + P(23,1)*"
+      "SK_MX(4) - P(23,3)*SK_MX(3) - P(23,19)*SK_MX(2) + P(23,20)*SK_MX(6) - P(23,21)*SK_MX(5));\n    K_MAG(24,1) = SK_"
+      "MX(1)*(P(24,22) + P(24,2)*SH_MAG(1) + P(24,4)*SH_MAG(3) + P(24,1)*SK_MX(4) - P(24,3)*SK_MX(3) - P(24,19)*SK_MX(2"
+      ") + P(24,20)*SK_MX(6) - P(24,21)*SK_MX(5));\n    \n    SK_MY = single(zeros(5,1));\n    SK_MY(1) = 1/(P(23,23) +"
+      " R_MAG + P(1,23)*SH_MAG(3) + P(2,23)*SH_MAG(2) + P(3,23)*SH_MAG(1) - P(20,23)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6)"
+      " - SH_MAG(7)) - (2*q0*q3 - 2*q1*q2)*(P(23,19) + P(1,19)*SH_MAG(3) + P(2,19)*SH_MAG(2) + P(3,19)*SH_MAG(1) - P(20"
+      ",19)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,19)*(2*q0*q3 - 2*q1*q2) + P(21,19)*(2*q0*q1 + 2*q2*q"
+      "3) - P(4,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P(23,21) + P(1,21)*SH_MAG(3) + P(2,21)*"
+      "SH_MAG(2) + P(3,21)*SH_MAG(1) - P(20,21)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,21)*(2*q0*q3 - 2"
+      "*q1*q2) + P(21,21)*(2*q0*q1 + 2*q2*q3) - P(4,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(8) + SH_MAG(9) -"
+      " 2*magD*q2)*(P(23,4) + P(1,4)*SH_MAG(3) + P(2,4)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P(20,4)*(SH_MAG(4) - SH_MAG(5) +"
+      " SH_MAG(6) - SH_MAG(7)) - P(19,4)*(2*q0*q3 - 2*q1*q2) + P(21,4)*(2*q0*q1 + 2*q2*q3) - P(4,4)*(SH_MAG(8) + SH_MAG"
+      "(9) - 2*magD*q2)) - P(19,23)*(2*q0*q3 - 2*q1*q2) + P(21,23)*(2*q0*q1 + 2*q2*q3) + SH_MAG(3)*(P(23,1) + P(1,1)*SH"
+      "_MAG(3) + P(2,1)*SH_MAG(2) + P(3,1)*SH_MAG(1) - P(20,1)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,1"
+      ")*(2*q0*q3 - 2*q1*q2) + P(21,1)*(2*q0*q1 + 2*q2*q3) - P(4,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P"
+      "(23,2) + P(1,2)*SH_MAG(3) + P(2,2)*SH_MAG(2) + P(3,2)*SH_MAG(1) - P(20,2)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - S"
+      "H_MAG(7)) - P(19,2)*(2*q0*q3 - 2*q1*q2) + P(21,2)*(2*q0*q1 + 2*q2*q3) - P(4,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q"
+      "2)) + SH_MAG(1)*(P(23,3) + P(1,3)*SH_MAG(3) + P(2,3)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(20,3)*(SH_MAG(4) - SH_MAG("
+      "5) + SH_MAG(6) - SH_MAG(7)) - P(19,3)*(2*q0*q3 - 2*q1*q2) + P(21,3)*(2*q0*q1 + 2*q2*q3) - P(4,3)*(SH_MAG(8) + SH"
+      "_MAG(9) - 2*magD*q2)) - (SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7))*(P(23,20) + P(1,20)*SH_MAG(3) + P(2,20)*"
+      "SH_MAG(2) + P(3,20)*SH_MAG(1) - P(20,20)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,20)*(2*q0*q3 - 2"
+      "*q1*q2) + P(21,20)*(2*q0*q1 + 2*q2*q3) - P(4,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(4,23)*(SH_MAG(8) + SH_"
+      "MAG(9) - 2*magD*q2));\n    SK_MY(2) = SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7);\n    SK_MY(3) = SH_MAG(8) +"
+      " SH_MAG(9) - 2*magD*q2;\n    SK_MY(4) = 2*q0*q3 - 2*q1*q2;\n    SK_MY(5) = 2*q0*q1 + 2*q2*q3;\n    \n    K_MAG(1"
+      ",2) = SK_MY(1)*(P(1,23) + P(1,1)*SH_MAG(3) + P(1,2)*SH_MAG(2) + P(1,3)*SH_MAG(1) - P(1,4)*SK_MY(3) - P(1,20)*SK_"
+      "MY(2) - P(1,19)*SK_MY(4) + P(1,21)*SK_MY(5));\n    K_MAG(2,2) = SK_MY(1)*(P(2,23) + P(2,1)*SH_MAG(3) + P(2,2)*SH"
+      "_MAG(2) + P(2,3)*SH_MAG(1) - P(2,4)*SK_MY(3) - P(2,20)*SK_MY(2) - P(2,19)*SK_MY(4) + P(2,21)*SK_MY(5));\n    K_M"
+      "AG(3,2) = SK_MY(1)*(P(3,23) + P(3,1)*SH_MAG(3) + P(3,2)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(3,4)*SK_MY(3) - P(3,20)"
+      "*SK_MY(2) - P(3,19)*SK_MY(4) + P(3,21)*SK_MY(5));\n    K_MAG(4,2) = SK_MY(1)*(P(4,23) + P(4,1)*SH_MAG(3) + P(4,2"
+      ")*SH_MAG(2) + P(4,3)*SH_MAG(1) - P(4,4)*SK_MY(3) - P(4,20)*SK_MY(2) - P(4,19)*SK_MY(4) + P(4,21)*SK_MY(5));\n   "
+      " K_MAG(5,1) = SK_MY(1)*(P(5,23) + P(5,1)*SH_MAG(3) + P(5,2)*SH_MAG(2) + P(5,3)*SH_MAG(1) - P(5,4)*SK_MY(3) - P(5"
+      ",20)*SK_MY(2) - P(5,19)*SK_MY(4) + P(5,21)*SK_MY(5));\n    K_MAG(6,2) = SK_MY(1)*(P(6,23) + P(6,1)*SH_MAG(3) + P"
+      "(6,2)*SH_MAG(2) + P(6,3)*SH_MAG(1) - P(6,4)*SK_MY(3) - P(6,20)*SK_MY(2) - P(6,19)*SK_MY(4) + P(6,21)*SK_MY(5));\n"
+      "    K_MAG(7,2) = SK_MY(1)*(P(7,23) + P(7,1)*SH_MAG(3) + P(7,2)*SH_MAG(2) + P(7,3)*SH_MAG(1) - P(7,4)*SK_MY(3) - "
+      "P(7,20)*SK_MY(2) - P(7,19)*SK_MY(4) + P(7,21)*SK_MY(5));\n    K_MAG(8,2) = SK_MY(1)*(P(8,23) + P(8,1)*SH_MAG(3) "
+      "+ P(8,2)*SH_MAG(2) + P(8,3)*SH_MAG(1) - P(8,4)*SK_MY(3) - P(8,20)*SK_MY(2) - P(8,19)*SK_MY(4) + P(8,21)*SK_MY(5)"
+      ");\n    K_MAG(9,2) = SK_MY(1)*(P(9,23) + P(9,1)*SH_MAG(3) + P(9,2)*SH_MAG(2) + P(9,3)*SH_MAG(1) - P(9,4)*SK_MY(3"
+      ") - P(9,20)*SK_MY(2) - P(9,19)*SK_MY(4) + P(9,21)*SK_MY(5));\n    K_MAG(10,2) = SK_MY(1)*(P(10,23) + P(10,1)*SH_"
+      "MAG(3) + P(10,2)*SH_MAG(2) + P(10,3)*SH_MAG(1) - P(10,4)*SK_MY(3) - P(10,20)*SK_MY(2) - P(10,19)*SK_MY(4) + P(10"
+      ",21)*SK_MY(5));\n    K_MAG(11,2) = SK_MY(1)*(P(11,23) + P(11,1)*SH_MAG(3) + P(11,2)*SH_MAG(2) + P(11,3)*SH_MAG(1"
+      ") - P(11,4)*SK_MY(3) - P(11,20)*SK_MY(2) - P(11,19)*SK_MY(4) + P(11,21)*SK_MY(5));\n    K_MAG(12,2) = SK_MY(1)*("
+      "P(12,23) + P(12,1)*SH_MAG(3) + P(12,2)*SH_MAG(2) + P(12,3)*SH_MAG(1) - P(12,4)*SK_MY(3) - P(12,20)*SK_MY(2) - P("
+      "12,19)*SK_MY(4) + P(12,21)*SK_MY(5));\n    K_MAG(13,2) = SK_MY(1)*(P(13,23) + P(13,1)*SH_MAG(3) + P(13,2)*SH_MAG"
+      "(2) + P(13,3)*SH_MAG(1) - P(13,4)*SK_MY(3) - P(13,20)*SK_MY(2) - P(13,19)*SK_MY(4) + P(13,21)*SK_MY(5));\n    K_"
+      "MAG(14,2) = SK_MY(1)*(P(14,23) + P(14,1)*SH_MAG(3) + P(14,2)*SH_MAG(2) + P(14,3)*SH_MAG(1) - P(14,4)*SK_MY(3) - "
+      "P(14,20)*SK_MY(2) - P(14,19)*SK_MY(4) + P(14,21)*SK_MY(5));\n    K_MAG(15,2) = SK_MY(1)*(P(15,23) + P(15,1)*SH_M"
+      "AG(3) + P(15,2)*SH_MAG(2) + P(15,3)*SH_MAG(1) - P(15,4)*SK_MY(3) - P(15,20)*SK_MY(2) - P(15,19)*SK_MY(4) + P(15,"
+      "21)*SK_MY(5));\n    K_MAG(16,2) = SK_MY(1)*(P(16,23) + P(16,1)*SH_MAG(3) + P(16,2)*SH_MAG(2) + P(16,3)*SH_MAG(1)"
+      " - P(16,4)*SK_MY(3) - P(16,20)*SK_MY(2) - P(16,19)*SK_MY(4) + P(16,21)*SK_MY(5));\n    K_MAG(17,2) = SK_MY(1)*(P"
+      "(17,23) + P(17,1)*SH_MAG(3) + P(17,2)*SH_MAG(2) + P(17,3)*SH_MAG(1) - P(17,4)*SK_MY(3) - P(17,20)*SK_MY(2) - P(1"
+      "7,19)*SK_MY(4) + P(17,21)*SK_MY(5));\n    K_MAG(18,2) = SK_MY(1)*(P(18,23) + P(18,1)*SH_MAG(3) + P(18,2)*SH_MAG("
+      "2) + P(18,3)*SH_MAG(1) - P(18,4)*SK_MY(3) - P(18,20)*SK_MY(2) - P(18,19)*SK_MY(4) + P(18,21)*SK_MY(5));\n    K_M"
+      "AG(19,2) = SK_MY(1)*(P(19,23) + P(19,1)*SH_MAG(3) + P(19,2)*SH_MAG(2) + P(19,3)*SH_MAG(1) - P(19,4)*SK_MY(3) - P"
+      "(19,20)*SK_MY(2) - P(19,19)*SK_MY(4) + P(19,21)*SK_MY(5));\n    K_MAG(20,2) = SK_MY(1)*(P(20,23) + P(20,1)*SH_MA"
+      "G(3) + P(20,2)*SH_MAG(2) + P(20,3)*SH_MAG(1) - P(20,4)*SK_MY(3) - P(20,20)*SK_MY(2) - P(20,19)*SK_MY(4) + P(20,2"
+      "1)*SK_MY(5));\n    K_MAG(21,2) = SK_MY(1)*(P(21,23) + P(21,1)*SH_MAG(3) + P(21,2)*SH_MAG(2) + P(21,3)*SH_MAG(1) "
+      "- P(21,4)*SK_MY(3) - P(21,20)*SK_MY(2) - P(21,19)*SK_MY(4) + P(21,21)*SK_MY(5));\n    K_MAG(22,2) = SK_MY(1)*(P("
+      "22,23) + P(22,1)*SH_MAG(3) + P(22,2)*SH_MAG(2) + P(22,3)*SH_MAG(1) - P(22,4)*SK_MY(3) - P(22,20)*SK_MY(2) - P(22"
+      ",19)*SK_MY(4) + P(22,21)*SK_MY(5));\n    K_MAG(23,2) = SK_MY(1)*(P(23,23) + P(23,1)*SH_MAG(3) + P(23,2)*SH_MAG(2"
+      ") + P(23,3)*SH_MAG(1) - P(23,4)*SK_MY(3) - P(23,20)*SK_MY(2) - P(23,19)*SK_MY(4) + P(23,21)*SK_MY(5));\n    K_MA"
+      "G(24,2) = SK_MY(1)*(P(24,23) + P(24,1)*SH_MAG(3) + P(24,2)*SH_MAG(2) + P(24,3)*SH_MAG(1) - P(24,4)*SK_MY(3) - P("
+      "24,20)*SK_MY(2) - P(24,19)*SK_MY(4) + P(24,21)*SK_MY(5));\n    \n    SK_MZ = single(zeros(6,1));\n    SK_MZ(1) ="
+      " 1/(P(24,24) + R_MAG + P(1,24)*SH_MAG(2) + P(4,24)*SH_MAG(1) + P(21,24)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_"
+      "MAG(7)) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P(24,2) + P(1,2)*SH_MAG(2) + P(4,2)*SH_MAG(1) + P(21,2)*(SH_MAG(4"
+      ") - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,2)*(2*q0*q2 + 2*q1*q3) - P(20,2)*(2*q0*q1 - 2*q2*q3) - P(2,2)*(2*m"
+      "agD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*"
+      "q2)*(P(24,3) + P(1,3)*SH_MAG(2) + P(4,3)*SH_MAG(1) + P(21,3)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P"
+      "(19,3)*(2*q0*q2 + 2*q1*q3) - P(20,3)*(2*q0*q1 - 2*q2*q3) - P(2,3)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,3)*("
+      "SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(24,1) + P(1,1)*SH_MAG(2) + P(4,1)*SH_MAG(1) + P(21,1)*(SH_MAG"
+      "(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,1)*(2*q0*q2 + 2*q1*q3) - P(20,1)*(2*q0*q1 - 2*q2*q3) - P(2,1)*(2"
+      "*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(24,4) + P(1,4)*SH"
+      "_MAG(2) + P(4,4)*SH_MAG(1) + P(21,4)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,4)*(2*q0*q2 + 2*q1*q"
+      "3) - P(20,4)*(2*q0*q1 - 2*q2*q3) - P(2,4)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,4)*(SH_MAG(8) + SH_MAG(9) - "
+      "2*magD*q2)) + (SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7))*(P(24,21) + P(1,21)*SH_MAG(2) + P(4,21)*SH_MAG(1) "
+      "+ P(21,21)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,21)*(2*q0*q2 + 2*q1*q3) - P(20,21)*(2*q0*q1 - "
+      "2*q2*q3) - P(2,21)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(19,24)"
+      "*(2*q0*q2 + 2*q1*q3) - P(20,24)*(2*q0*q1 - 2*q2*q3) - P(2,24)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2"
+      "*q1*q3)*(P(24,19) + P(1,19)*SH_MAG(2) + P(4,19)*SH_MAG(1) + P(21,19)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG"
+      "(7)) + P(19,19)*(2*q0*q2 + 2*q1*q3) - P(20,19)*(2*q0*q1 - 2*q2*q3) - P(2,19)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3)"
+      " + P(3,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P(24,20) + P(1,20)*SH_MAG(2) + P(4,20)*SH"
+      "_MAG(1) + P(21,20)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,20)*(2*q0*q2 + 2*q1*q3) - P(20,20)*(2*"
+      "q0*q1 - 2*q2*q3) - P(2,20)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + "
+      "P(3,24)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n    SK_MZ(2) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n  "
+      "  SK_MZ(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n    SK_MZ(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n    SK_MZ(5)"
+      " = 2*q0*q1 - 2*q2*q3;\n    SK_MZ(6) = 2*q0*q2 + 2*q1*q3;\n    \n    K_MAG(1,3) = SK_MZ(1)*(P(1,24) + P(1,1)*SH_M"
+      "AG(2) + P(1,4)*SH_MAG(1) - P(1,2)*SK_MZ(3) + P(1,3)*SK_MZ(4) + P(1,21)*SK_MZ(2) + P(1,19)*SK_MZ(6) - P(1,20)*SK_"
+      "MZ(5));\n    K_MAG(2,3) = SK_MZ(1)*(P(2,24) + P(2,1)*SH_MAG(2) + P(2,4)*SH_MAG(1) - P(2,2)*SK_MZ(3) + P(2,3)*SK_"
+      "MZ(4) + P(2,21)*SK_MZ(2) + P(2,19)*SK_MZ(6) - P(2,20)*SK_MZ(5));\n    K_MAG(3,3) = SK_MZ(1)*(P(3,24) + P(3,1)*SH"
+      "_MAG(2) + P(3,4)*SH_MAG(1) - P(3,2)*SK_MZ(3) + P(3,3)*SK_MZ(4) + P(3,21)*SK_MZ(2) + P(3,19)*SK_MZ(6) - P(3,20)*S"
+      "K_MZ(5));\n    K_MAG(4,3) = SK_MZ(1)*(P(4,24) + P(4,1)*SH_MAG(2) + P(4,4)*SH_MAG(1) - P(4,2)*SK_MZ(3) + P(4,3)*S"
+      "K_MZ(4) + P(4,21)*SK_MZ(2) + P(4,19)*SK_MZ(6) - P(4,20)*SK_MZ(5));\n    K_MAG(5,3) = SK_MZ(1)*(P(5,24) + P(5,1)*"
+      "SH_MAG(2) + P(5,4)*SH_MAG(1) - P(5,2)*SK_MZ(3) + P(5,3)*SK_MZ(4) + P(5,21)*SK_MZ(2) + P(5,19)*SK_MZ(6) - P(5,20)"
+      "*SK_MZ(5));\n    K_MAG(6,3) = SK_MZ(1)*(P(6,24) + P(6,1)*SH_MAG(2) + P(6,4)*SH_MAG(1) - P(6,2)*SK_MZ(3) + P(6,3)"
+      "*SK_MZ(4) + P(6,21)*SK_MZ(2) + P(6,19)*SK_MZ(6) - P(6,20)*SK_MZ(5));\n    K_MAG(7,3) = SK_MZ(1)*(P(7,24) + P(7,1"
+      ")*SH_MAG(2) + P(7,4)*SH_MAG(1) - P(7,2)*SK_MZ(3) + P(7,3)*SK_MZ(4) + P(7,21)*SK_MZ(2) + P(7,19)*SK_MZ(6) - P(7,2"
+      "0)*SK_MZ(5));\n    K_MAG(8,3) = SK_MZ(1)*(P(8,24) + P(8,1)*SH_MAG(2) + P(8,4)*SH_MAG(1) - P(8,2)*SK_MZ(3) + P(8,"
+      "3)*SK_MZ(4) + P(8,21)*SK_MZ(2) + P(8,19)*SK_MZ(6) - P(8,20)*SK_MZ(5));\n    K_MAG(9,3) = SK_MZ(1)*(P(9,24) + P(9"
+      ",1)*SH_MAG(2) + P(9,4)*SH_MAG(1) - P(9,2)*SK_MZ(3) + P(9,3)*SK_MZ(4) + P(9,21)*SK_MZ(2) + P(9,19)*SK_MZ(6) - P(9"
+      ",20)*SK_MZ(5));\n    K_MAG(10,3) = SK_MZ(1)*(P(10,24) + P(10,1)*SH_MAG(2) + P(10,4)*SH_MAG(1) - P(10,2)*SK_MZ(3)"
+      " + P(10,3)*SK_MZ(4) + P(10,21)*SK_MZ(2) + P(10,19)*SK_MZ(6) - P(10,20)*SK_MZ(5));\n    K_MAG(11,3) = SK_MZ(1)*(P"
+      "(11,24) + P(11,1)*SH_MAG(2) + P(11,4)*SH_MAG(1) - P(11,2)*SK_MZ(3) + P(11,3)*SK_MZ(4) + P(11,21)*SK_MZ(2) + P(11"
+      ",19)*SK_MZ(6) - P(11,20)*SK_MZ(5));\n    K_MAG(12,3) = SK_MZ(1)*(P(12,24) + P(12,1)*SH_MAG(2) + P(12,4)*SH_MAG(1"
+      ") - P(12,2)*SK_MZ(3) + P(12,3)*SK_MZ(4) + P(12,21)*SK_MZ(2) + P(12,19)*SK_MZ(6) - P(12,20)*SK_MZ(5));\n    K_MAG"
+      "(13,3) = SK_MZ(1)*(P(13,24) + P(13,1)*SH_MAG(2) + P(13,4)*SH_MAG(1) - P(13,2)*SK_MZ(3) + P(13,3)*SK_MZ(4) + P(13"
+      ",21)*SK_MZ(2) + P(13,19)*SK_MZ(6) - P(13,20)*SK_MZ(5));\n    K_MAG(14,3) = SK_MZ(1)*(P(14,24) + P(14,1)*SH_MAG(2"
+      ") + P(14,4)*SH_MAG(1) - P(14,2)*SK_MZ(3) + P(14,3)*SK_MZ(4) + P(14,21)*SK_MZ(2) + P(14,19)*SK_MZ(6) - P(14,20)*S"
+      "K_MZ(5));\n    K_MAG(15,3) = SK_MZ(1)*(P(15,24) + P(15,1)*SH_MAG(2) + P(15,4)*SH_MAG(1) - P(15,2)*SK_MZ(3) + P(1"
+      "5,3)*SK_MZ(4) + P(15,21)*SK_MZ(2) + P(15,19)*SK_MZ(6) - P(15,20)*SK_MZ(5));\n    K_MAG(16,3) = SK_MZ(1)*(P(16,24"
+      ") + P(16,1)*SH_MAG(2) + P(16,4)*SH_MAG(1) - P(16,2)*SK_MZ(3) + P(16,3)*SK_MZ(4) + P(16,21)*SK_MZ(2) + P(16,19)*S"
+      "K_MZ(6) - P(16,20)*SK_MZ(5));\n    K_MAG(17,3) = SK_MZ(1)*(P(17,24) + P(17,1)*SH_MAG(2) + P(17,4)*SH_MAG(1) - P("
+      "17,2)*SK_MZ(3) + P(17,3)*SK_MZ(4) + P(17,21)*SK_MZ(2) + P(17,19)*SK_MZ(6) - P(17,20)*SK_MZ(5));\n    K_MAG(18,3)"
+      " = SK_MZ(1)*(P(18,24) + P(18,1)*SH_MAG(2) + P(18,4)*SH_MAG(1) - P(18,2)*SK_MZ(3) + P(18,3)*SK_MZ(4) + P(18,21)*S"
+      "K_MZ(2) + P(18,19)*SK_MZ(6) - P(18,20)*SK_MZ(5));\n    K_MAG(19,3) = SK_MZ(1)*(P(19,24) + P(19,1)*SH_MAG(2) + P("
+      "19,4)*SH_MAG(1) - P(19,2)*SK_MZ(3) + P(19,3)*SK_MZ(4) + P(19,21)*SK_MZ(2) + P(19,19)*SK_MZ(6) - P(19,20)*SK_MZ(5"
+      "));\n    K_MAG(20,3) = SK_MZ(1)*(P(20,24) + P(20,1)*SH_MAG(2) + P(20,4)*SH_MAG(1) - P(20,2)*SK_MZ(3) + P(20,3)*S"
+      "K_MZ(4) + P(20,21)*SK_MZ(2) + P(20,19)*SK_MZ(6) - P(20,20)*SK_MZ(5));\n    K_MAG(21,3) = SK_MZ(1)*(P(21,24) + P("
+      "21,1)*SH_MAG(2) + P(21,4)*SH_MAG(1) - P(21,2)*SK_MZ(3) + P(21,3)*SK_MZ(4) + P(21,21)*SK_MZ(2) + P(21,19)*SK_MZ(6"
+      ") - P(21,20)*SK_MZ(5));\n    K_MAG(22,3) = SK_MZ(1)*(P(22,24) + P(22,1)*SH_MAG(2) + P(22,4)*SH_MAG(1) - P(22,2)*"
+      "SK_MZ(3) + P(22,3)*SK_MZ(4) + P(22,21)*SK_MZ(2) + P(22,19)*SK_MZ(6) - P(22,20)*SK_MZ(5));\n    K_MAG(23,3) = SK_"
+      "MZ(1)*(P(23,24) + P(23,1)*SH_MAG(2) + P(23,4)*SH_MAG(1) - P(23,2)*SK_MZ(3) + P(23,3)*SK_MZ(4) + P(23,21)*SK_MZ(2"
+      ") + P(23,19)*SK_MZ(6) - P(23,20)*SK_MZ(5));\n    K_MAG(24,3) = SK_MZ(1)*(P(24,24) + P(24,1)*SH_MAG(2) + P(24,4)*"
+      "SH_MAG(1) - P(24,2)*SK_MZ(3) + P(24,3)*SK_MZ(4) + P(24,21)*SK_MZ(2) + P(24,19)*SK_MZ(6) - P(24,20)*SK_MZ(5));\n "
+      "   \n    % Calculate innovation variance vector\n    varInnov = [1/SK_MX(1);1/SK_MY(1);1/SK_MZ(1)];\n    \n    %"
+      " rotate predicted earth components into body axes and calculate\n    % predicted measurments\n    Tnb = [q0^2 + "
+      "q1^2 - q2^2 - q3^2, 2*(q1*q2 + q0*q3) , 2*(q1*q3-q0*q2) ;...\n        2*(q1*q2 - q0*q3), q0^2 - q1^2 + q2^2 - q3"
+      "^2, 2*(q2*q3 + q0*q1);...\n        2*(q1*q3 + q0*q2) , 2*(q2*q3 - q0*q1) , q0^2 - q1^2 - q2^2 + q3^2];\n    MagP"
+      "red = Tnb*states(19:21) + states(22:24);\n    \n    % Loop through the X, Y and Z measurements, fusing them sequ"
+      "entially\n    for obsIndex = 1:3\n        % Calculate the measurement innovation\n        innovation(obsIndex) ="
+      " MagPred(obsIndex) - MagData(obsIndex);\n        % Check the innovation for consistencey and don't fuse if > 5Si"
+      "gma\n        if ((innovation(obsIndex)^2) / varInnov(obsIndex)) < +inf\n            xk = K_MAG(:,obsIndex) * inn"
+      "ovation(obsIndex);\n            states = states - xk;\n            % normalise the quaternion states\n          "
+      "  quatMag = sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)^2);\n            if (quatMag > 1e-12)\n    "
+      "            states(1:4) = states(1:4) / quatMag;\n            end\n            % correct the covariance P = (I -"
+      " K*H)*P\n            % take advantage of the empty columns in KH to reduce the\n            % number of operatio"
+      "ns\n            KH = K_MAG(:,obsIndex) * H_MAG(obsIndex,:);\n            for i = 1:24\n                for j = 1"
+      ":24\n                    for k = 1:4\n                        KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n           "
+      "         end\n                    for k = 19:24\n                        KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n"
+      "                    end\n                end\n            end\n            P = P - KHP;\n            P = 0.5*(P "
+      "+ transpose(P));\n        end\n    end\nend\n\n% Set default output for states and covariance\ncorrP = P;\ncorrS"
+      "tates = states;\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -14244,16 +14916,16 @@ Stateflow {
     }
   }
   junction {
-    id			    92
+    id			    98
     position		    [23.5747 49.5747 7]
-    chart		    90
-    linkNode		    [90 0 0]
-    subviewer		    90
+    chart		    96
+    linkNode		    [96 0 0]
+    subviewer		    96
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    93
+    id			    99
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.7 14.971]
     fontSize		    12
@@ -14261,14 +14933,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      92
+      id		      98
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    90
-    linkNode		    [90 0 0]
-    dataLimits		    [23.575 23.575 14.625 34.575]
-    subviewer		    90
+    chart		    96
+    linkNode		    [96 0 0]
+    dataLimits		    [21.175 25.975 14.625 42.575]
+    subviewer		    96
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -14277,10 +14949,10 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    94
+    id			    100
     ssIdNumber		    4
     name		    "states"
-    linkNode		    [90 0 95]
+    linkNode		    [96 0 101]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -14292,144 +14964,122 @@ Stateflow {
 	primitive		SF_DOUBLE_TYPE
       }
       complexity	      SF_COMPLEX_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    95
-    ssIdNumber		    5
-    name		    "P"
-    linkNode		    [90 94 96]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    96
-    ssIdNumber		    6
-    name		    "FuseData"
-    linkNode		    [90 95 97]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    97
-    ssIdNumber		    7
-    name		    "MagData"
-    linkNode		    [90 96 98]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    98
-    ssIdNumber		    8
-    name		    "corrStates"
-    linkNode		    [90 97 99]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    99
-    ssIdNumber		    9
-    name		    "corrP"
-    linkNode		    [90 98 100]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    100
-    ssIdNumber		    10
-    name		    "innovation"
-    linkNode		    [90 99 101]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
     }
     dataType		    "Inherit: Same as Simulink"
   }
   data {
     id			    101
-    ssIdNumber		    11
-    name		    "varInnov"
-    linkNode		    [90 100 102]
+    ssIdNumber		    5
+    name		    "P"
+    linkNode		    [96 100 102]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    102
+    ssIdNumber		    6
+    name		    "FuseData"
+    linkNode		    [96 101 103]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    103
+    ssIdNumber		    7
+    name		    "MagData"
+    linkNode		    [96 102 104]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    104
+    ssIdNumber		    8
+    name		    "StatesAtMeasTime"
+    linkNode		    [96 103 105]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    105
+    ssIdNumber		    9
+    name		    "corrStates"
+    linkNode		    [96 104 106]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    106
+    ssIdNumber		    10
+    name		    "corrP"
+    linkNode		    [96 105 107]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -14448,10 +15098,54 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    102
+    id			    107
+    ssIdNumber		    11
+    name		    "innovation"
+    linkNode		    [96 106 108]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    108
     ssIdNumber		    12
+    name		    "varInnov"
+    linkNode		    [96 107 109]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    109
+    ssIdNumber		    13
     name		    "useCompass"
-    linkNode		    [90 101 0]
+    linkNode		    [96 108 0]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -14470,26 +15164,26 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    103
+    id			    110
     name		    "InertialNavFilter/Fuse Magnetometer Measurements"
     machine		    1
-    chart		    90
+    chart		    96
   }
   chart {
-    id			    104
+    id			    111
     name		    "LogData/Embedded\nMATLAB Function"
-    windowPosition	    [760 -148.25 253 992]
+    windowPosition	    [1013 -611.25 283 1455]
     viewLimits		    [0 156.75 0 153.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 105 0 0]
-    firstTransition	    107
-    firstJunction	    106
-    viewObj		    104
+    treeNode		    [0 112 0 0]
+    firstTransition	    114
+    firstJunction	    113
+    viewObj		    111
     machine		    1
     ssIdHighWaterMark	    6
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    108
+    firstData		    115
     chartFileNumber	    10
     disableImplicitCasting  1
     eml {
@@ -14498,14 +15192,14 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    105
+    id			    112
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    104
-    treeNode		    [104 0 0 0]
+    chart		    111
+    treeNode		    [111 0 0 0]
     superState		    SUBCHART
-    subviewer		    104
+    subviewer		    111
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
@@ -14529,16 +15223,16 @@ Stateflow {
     }
   }
   junction {
-    id			    106
+    id			    113
     position		    [23.5747 49.5747 7]
-    chart		    104
-    linkNode		    [104 0 0]
-    subviewer		    104
+    chart		    111
+    linkNode		    [111 0 0]
+    subviewer		    111
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    107
+    id			    114
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.544 14.964]
     fontSize		    12
@@ -14546,14 +15240,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      106
+      id		      113
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    104
-    linkNode		    [104 0 0]
+    chart		    111
+    linkNode		    [111 0 0]
     dataLimits		    [21.175 25.975 14.625 42.575]
-    subviewer		    104
+    subviewer		    111
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -14562,10 +15256,10 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    108
+    id			    115
     ssIdNumber		    4
     name		    "eulVar"
-    linkNode		    [104 0 109]
+    linkNode		    [111 0 116]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -14584,10 +15278,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    109
+    id			    116
     ssIdNumber		    5
     name		    "states"
-    linkNode		    [104 108 110]
+    linkNode		    [111 115 117]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -14606,10 +15300,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    110
+    id			    117
     ssIdNumber		    6
     name		    "quatCov"
-    linkNode		    [104 109 0]
+    linkNode		    [111 116 0]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -14628,26 +15322,26 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    111
+    id			    118
     name		    "LogData/Embedded\nMATLAB Function"
     machine		    1
-    chart		    104
+    chart		    111
   }
   chart {
-    id			    112
+    id			    119
     name		    "Convert GPS Data"
-    windowPosition	    [462.626 -38.12 253 501]
+    windowPosition	    [617 43.75 283 800]
     viewLimits		    [0 169.5 0 348.75]
-    screen		    [1 1 1366 768 1.333333333333333]
-    treeNode		    [0 113 0 0]
-    firstTransition	    115
-    firstJunction	    114
-    viewObj		    112
+    screen		    [1 1 1920 1200 1.333333333333333]
+    treeNode		    [0 120 0 0]
+    firstTransition	    122
+    firstJunction	    121
+    viewObj		    119
     machine		    1
     ssIdHighWaterMark	    11
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    116
+    firstData		    123
     chartFileNumber	    11
     disableImplicitCasting  1
     eml {
@@ -14656,14 +15350,14 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    113
+    id			    120
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    112
-    treeNode		    [112 0 0 0]
+    chart		    119
+    treeNode		    [119 0 0 0]
     superState		    SUBCHART
-    subviewer		    112
+    subviewer		    119
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
@@ -14684,16 +15378,16 @@ Stateflow {
     }
   }
   junction {
-    id			    114
+    id			    121
     position		    [23.5747 49.5747 7]
-    chart		    112
-    linkNode		    [112 0 0]
-    subviewer		    112
+    chart		    119
+    linkNode		    [119 0 0]
+    subviewer		    119
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    115
+    id			    122
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.7 14.971]
     fontSize		    12
@@ -14701,14 +15395,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      114
+      id		      121
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    112
-    linkNode		    [112 0 0]
+    chart		    119
+    linkNode		    [119 0 0]
     dataLimits		    [23.575 23.575 14.625 34.575]
-    subviewer		    112
+    subviewer		    119
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -14717,162 +15411,162 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    116
-    ssIdNumber		    7
-    name		    "VelNED"
-    linkNode		    [112 0 117]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    117
-    ssIdNumber		    4
-    name		    "PosNE"
-    linkNode		    [112 116 118]
-    scope		    OUTPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    118
-    ssIdNumber		    5
-    name		    "GPS_DataArrived"
-    linkNode		    [112 117 119]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    119
-    ssIdNumber		    11
-    name		    "RefLatLongDeg"
-    linkNode		    [112 118 120]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    120
-    ssIdNumber		    6
-    name		    "LatLongDeg"
-    linkNode		    [112 119 121]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_NO
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    121
-    ssIdNumber		    8
-    name		    "GndSpd"
-    linkNode		    [112 120 122]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
-    id			    122
-    ssIdNumber		    9
-    name		    "CourseDeg"
-    linkNode		    [112 121 123]
-    scope		    INPUT_DATA
-    machine		    1
-    props {
-      array {
-	size			"-1"
-      }
-      type {
-	method			SF_INHERITED_TYPE
-	primitive		SF_DOUBLE_TYPE
-	isSigned		1
-	wordLength		"16"
-      }
-      complexity	      SF_COMPLEX_INHERITED
-      frame		      SF_FRAME_INHERITED
-    }
-    dataType		    "Inherit: Same as Simulink"
-  }
-  data {
     id			    123
+    ssIdNumber		    4
+    name		    "VelNED"
+    linkNode		    [119 0 124]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    124
+    ssIdNumber		    5
+    name		    "PosNE"
+    linkNode		    [119 123 125]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    125
+    ssIdNumber		    6
+    name		    "GPS_DataArrived"
+    linkNode		    [119 124 126]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    126
+    ssIdNumber		    7
+    name		    "RefLatLongDeg"
+    linkNode		    [119 125 127]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    127
+    ssIdNumber		    8
+    name		    "LatLongDeg"
+    linkNode		    [119 126 128]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    128
+    ssIdNumber		    9
+    name		    "GndSpd"
+    linkNode		    [119 127 129]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    129
     ssIdNumber		    10
+    name		    "CourseDeg"
+    linkNode		    [119 128 130]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    130
+    ssIdNumber		    11
     name		    "VelD"
-    linkNode		    [112 122 0]
+    linkNode		    [119 129 0]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -14891,26 +15585,268 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    124
+    id			    131
     name		    "Convert GPS Data"
     machine		    1
-    chart		    112
+    chart		    119
   }
   chart {
-    id			    125
-    name		    "InertialNavFilter/Fuse Vel Pos Measurements"
-    windowPosition	    [736 -148.25 253 992]
+    id			    132
+    name		    "InertialNavFilter/Store States at Meas Time1"
+    windowPosition	    [577 43.75 283 800]
     viewLimits		    [0 169.5 0 348.75]
     screen		    [1 1 1920 1200 1.333333333333333]
-    treeNode		    [0 126 0 0]
-    firstTransition	    128
-    firstJunction	    127
-    viewObj		    125
+    treeNode		    [0 133 0 0]
+    firstTransition	    135
+    firstJunction	    134
+    viewObj		    132
+    machine		    1
+    ssIdHighWaterMark	    9
+    decomposition	    CLUSTER_CHART
+    type		    EML_CHART
+    firstData		    136
+    chartFileNumber	    12
+    disableImplicitCasting  1
+    eml {
+      name		      "StoreStatesAtMeasTime"
+    }
+    supportVariableSizing   0
+  }
+  state {
+    id			    133
+    labelString		    "eML_blk_kernel()"
+    position		    [18 64.5 118 66]
+    fontSize		    12
+    chart		    132
+    treeNode		    [132 0 0 0]
+    superState		    SUBCHART
+    subviewer		    132
+    ssIdNumber		    1
+    type		    FUNC_STATE
+    decomposition	    CLUSTER_STATE
+    eml {
+      isEML		      1
+      script		      "%#codegen\nfunction [FuseData,StatesAtMeasTime]   = StoreStatesAtMeasTime(States,measDataArrived,"
+      "Ndelay,ratio)\n\n% Implement a state sampler that stores the state inoput from Ndelay \n% samples before the mea"
+      "surement is predicted to arrive. When the\n% measurement arrives, the stored state is output along with a data f"
+      "usion\n% request. This enables the filter to account for lag in sensors that can\n% in some cases be greater tha"
+      "n 1 measurement time step. the delay time si\n% specified in units of the state prediction delta time. For examp"
+      "le if a \n% delay of 0.16 seconds was required, and the state prediction ran at 50 Hz\n% then Ndelay would be se"
+      "t to 50*0.15 = 8.\n% It is assumed that this function is called the same rate as the state \n% prediction, and t"
+      "hat the measurement data comes in at a constant\n% rate.\n% The 'ratio'specifies the ratio of the state predicti"
+      "on to measurement\n% data rates. For example if the state prediction occurres at 50Hz and the\n% measurements ar"
+      "e being received at 5Hz, then 'ratio' = 50/5 = 10\n\n% This function avoids the need to use large data buffers\n"
+      "% It is generic function that can be used for states required by all\n% measurement fusion processes, and as suc"
+      "h has not been optimised to only\n% includes the specific states required, or the buffer arry length trimmed\n% "
+      "to the minimum required.\n\n% Ndelay cannot be zero and cannot exceed a value of 10*ratio-1\nNdelay = max(min(Nd"
+      "elay,int32(10*ratio)),int32(1));\n\nmajorStepDelay = int32(ceil(single(Ndelay)/single(ratio)));\nminorStepDelay "
+      "= int32(rem(single(Ndelay),single(ratio)));\n\npersistent prevStatesMatrix;\nif isempty(prevStatesMatrix)\n    p"
+      "revStatesMatrix = single(zeros(24,11));\nend\n\npersistent totalFrameCount;\nif isempty(totalFrameCount)\n    to"
+      "talFrameCount = int32(0);\nend\n\npersistent measID;\nif isempty(measID)\n    measID = int32(zeros(1,11));\nend\n"
+      "\npersistent minorFrameCount;\nif isempty(minorFrameCount)\n    minorFrameCount = int32(0);\nend\n\ntotalFrameCo"
+      "unt = totalFrameCount + int32(1);\nminorFrameCount = minorFrameCount + int32(1);\n\nif measDataArrived\n    if m"
+      "easID(1) ~= 0\n        FuseData = logical(1);\n    else\n        FuseData = logical(0);\n    end\n    if abs(sin"
+      "gle(totalFrameCount - measID(1) - Ndelay)) < 0.5*single(ratio)\n        StatesAtMeasTime = prevStatesMatrix(:,1)"
+      ";\n    else\n        frameErrors = abs(measID - totalFrameCount + Ndelay);\n        bestError = Ndelay;\n       "
+      " bestIndex = int32(1);\n        for index = 1:majorStepDelay\n            if frameErrors(index) < bestError\n   "
+      "             bestError = frameErrors(index);\n                bestIndex = index;\n            end\n        end\n"
+      "        StatesAtMeasTime = prevStatesMatrix(:,bestIndex);\n    end\nelse\n    StatesAtMeasTime = single(zeros(24"
+      ",1));\n    FuseData = logical(0);\nend\n\nif minorFrameCount == (ratio - minorStepDelay)\n    if majorStepDelay "
+      "> int32(0)\n        for index = 1:majorStepDelay\n            prevStatesMatrix(:,index) = prevStatesMatrix(:,ind"
+      "ex+1);\n            measID(index) = measID(index+1);\n        end\n    end\n    prevStatesMatrix(:,majorStepDela"
+      "y) = States;\n    measID(majorStepDelay) = totalFrameCount;\nend\n\nif measDataArrived\n    minorFrameCount = in"
+      "t32(0);\nend\n\nend"
+      editorLayout	      "100 M4x1[10 5 700 500]"
+      fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
+      "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
+      fimathForFiConstructors FimathMatlabFactoryDefault
+      emlDefaultFimath	      FimathUserSpecified
+    }
+  }
+  junction {
+    id			    134
+    position		    [23.5747 49.5747 7]
+    chart		    132
+    linkNode		    [132 0 0]
+    subviewer		    132
+    ssIdNumber		    3
+    type		    CONNECTIVE_JUNCTION
+  }
+  transition {
+    id			    135
+    labelString		    "{eML_blk_kernel();}"
+    labelPosition	    [32.125 19.875 102.7 14.971]
+    fontSize		    12
+    src {
+      intersection	      [0 0 1 0 23.5747 14.625 0 0]
+    }
+    dst {
+      id		      134
+      intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
+    }
+    midPoint		    [23.5747 24.9468]
+    chart		    132
+    linkNode		    [132 0 0]
+    dataLimits		    [21.175 25.975 14.625 42.575]
+    subviewer		    132
+    drawStyle		    SMART
+    slide {
+      sticky		      BOTH_STICK
+    }
+    executionOrder	    1
+    ssIdNumber		    2
+  }
+  data {
+    id			    136
+    ssIdNumber		    4
+    name		    "FuseData"
+    linkNode		    [132 0 137]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    137
+    ssIdNumber		    5
+    name		    "States"
+    linkNode		    [132 136 138]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    138
+    ssIdNumber		    6
+    name		    "measDataArrived"
+    linkNode		    [132 137 139]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    139
+    ssIdNumber		    7
+    name		    "StatesAtMeasTime"
+    linkNode		    [132 138 140]
+    scope		    OUTPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_NO
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    140
+    ssIdNumber		    8
+    name		    "Ndelay"
+    linkNode		    [132 139 141]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    141
+    ssIdNumber		    9
+    name		    "ratio"
+    linkNode		    [132 140 0]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  instance {
+    id			    142
+    name		    "InertialNavFilter/Store States at Meas Time1"
+    machine		    1
+    chart		    132
+  }
+  chart {
+    id			    143
+    name		    "InertialNavFilter/Fuse Vel Pos Measurements"
+    windowPosition	    [981 -611.25 283 1455]
+    viewLimits		    [0 169.5 0 348.75]
+    screen		    [1 1 1920 1200 1.333333333333333]
+    treeNode		    [0 144 0 0]
+    firstTransition	    146
+    firstJunction	    145
+    viewObj		    143
     machine		    1
     ssIdHighWaterMark	    17
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
-    firstData		    129
+    firstData		    147
     chartFileNumber	    19
     disableImplicitCasting  1
     eml {
@@ -14919,14 +15855,14 @@ Stateflow {
     supportVariableSizing   0
   }
   state {
-    id			    126
+    id			    144
     labelString		    "eML_blk_kernel()"
     position		    [18 64.5 118 66]
     fontSize		    12
-    chart		    125
-    treeNode		    [125 0 0 0]
+    chart		    143
+    treeNode		    [143 0 0 0]
     superState		    SUBCHART
-    subviewer		    125
+    subviewer		    143
     ssIdNumber		    1
     type		    FUNC_STATE
     decomposition	    CLUSTER_STATE
@@ -14979,16 +15915,16 @@ Stateflow {
     }
   }
   junction {
-    id			    127
+    id			    145
     position		    [23.5747 49.5747 7]
-    chart		    125
-    linkNode		    [125 0 0]
-    subviewer		    125
+    chart		    143
+    linkNode		    [143 0 0]
+    subviewer		    143
     ssIdNumber		    3
     type		    CONNECTIVE_JUNCTION
   }
   transition {
-    id			    128
+    id			    146
     labelString		    "{eML_blk_kernel();}"
     labelPosition	    [32.125 19.875 102.7 14.971]
     fontSize		    12
@@ -14996,14 +15932,14 @@ Stateflow {
       intersection	      [0 0 1 0 23.5747 14.625 0 0]
     }
     dst {
-      id		      127
+      id		      145
       intersection	      [1 0 -1 0 23.5747 42.5747 0 0]
     }
     midPoint		    [23.5747 24.9468]
-    chart		    125
-    linkNode		    [125 0 0]
+    chart		    143
+    linkNode		    [143 0 0]
     dataLimits		    [21.175 25.975 14.625 42.575]
-    subviewer		    125
+    subviewer		    143
     drawStyle		    SMART
     slide {
       sticky		      BOTH_STICK
@@ -15012,10 +15948,10 @@ Stateflow {
     ssIdNumber		    2
   }
   data {
-    id			    129
+    id			    147
     ssIdNumber		    4
     name		    "states"
-    linkNode		    [125 0 130]
+    linkNode		    [143 0 148]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15034,10 +15970,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    130
+    id			    148
     ssIdNumber		    5
     name		    "P"
-    linkNode		    [125 129 131]
+    linkNode		    [143 147 149]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15056,10 +15992,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    131
+    id			    149
     ssIdNumber		    6
     name		    "accNavMag"
-    linkNode		    [125 130 132]
+    linkNode		    [143 148 150]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15078,10 +16014,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    132
+    id			    150
     ssIdNumber		    7
     name		    "FuseGPSData"
-    linkNode		    [125 131 133]
+    linkNode		    [143 149 151]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15100,10 +16036,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    133
+    id			    151
     ssIdNumber		    8
     name		    "VelNED"
-    linkNode		    [125 132 134]
+    linkNode		    [143 150 152]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15122,10 +16058,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    134
+    id			    152
     ssIdNumber		    9
     name		    "PosNE"
-    linkNode		    [125 133 135]
+    linkNode		    [143 151 153]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15144,10 +16080,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    135
+    id			    153
     ssIdNumber		    10
     name		    "StatesAtGpsTime"
-    linkNode		    [125 134 136]
+    linkNode		    [143 152 154]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15166,10 +16102,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    136
+    id			    154
     ssIdNumber		    11
     name		    "FuseHgtData"
-    linkNode		    [125 135 137]
+    linkNode		    [143 153 155]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15188,10 +16124,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    137
+    id			    155
     ssIdNumber		    12
     name		    "HgtMea"
-    linkNode		    [125 136 138]
+    linkNode		    [143 154 156]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15210,10 +16146,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    138
+    id			    156
     ssIdNumber		    13
     name		    "corrStates"
-    linkNode		    [125 137 139]
+    linkNode		    [143 155 157]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -15232,10 +16168,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    139
+    id			    157
     ssIdNumber		    14
     name		    "corrP"
-    linkNode		    [125 138 140]
+    linkNode		    [143 156 158]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -15254,10 +16190,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    140
+    id			    158
     ssIdNumber		    15
     name		    "innovation"
-    linkNode		    [125 139 141]
+    linkNode		    [143 157 159]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -15276,10 +16212,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    141
+    id			    159
     ssIdNumber		    16
     name		    "varInnov"
-    linkNode		    [125 140 142]
+    linkNode		    [143 158 160]
     scope		    OUTPUT_DATA
     machine		    1
     props {
@@ -15296,10 +16232,10 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   data {
-    id			    142
+    id			    160
     ssIdNumber		    17
     name		    "StatesAtHgtTime"
-    linkNode		    [125 141 0]
+    linkNode		    [143 159 0]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -15318,22 +16254,22 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    143
+    id			    161
     name		    "InertialNavFilter/Fuse Vel Pos Measurements"
     machine		    1
-    chart		    125
+    chart		    143
   }
   target {
-    id			    144
+    id			    162
     name		    "sfun"
     codeFlags		    ""
     machine		    1
-    linkNode		    [1 0 145]
+    linkNode		    [1 0 163]
   }
   target {
-    id			    145
+    id			    163
     name		    "rtw"
     machine		    1
-    linkNode		    [1 144 0]
+    linkNode		    [1 162 0]
   }
 }
