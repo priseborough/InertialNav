@@ -163,7 +163,7 @@ saveas(gcf,strcat(dirName,fileName,'.fig'));
 saveas(gcf,strcat(dirName,fileName,'.pdf'));
 
 %% Wind Velocity
-fileName = 'WindVelEstimates'
+fileName = 'WindVelEstimates';
 figure;
 subplot(2,1,1);
 plot(time_est,velWN_est);
