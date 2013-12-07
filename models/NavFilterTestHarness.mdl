@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.616"
+    ComputedModelVersion    "1.644"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -38,9 +38,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "user"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Sat Dec 07 12:54:11 2013"
+  LastModifiedDate	  "Sat Dec 07 18:18:58 2013"
   RTWModifiedTimeStamp	  308297656
-  ModelVersionFormat	  "1.%<AutoIncrement:616>"
+  ModelVersionFormat	  "1.%<AutoIncrement:644>"
   ConfigurationManager	  "None"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -711,10 +711,32 @@ Model {
       PreserveConstantTs      off
     }
     Block {
+      BlockType		      DataTypeConversion
+      OutMin		      "[]"
+      OutMax		      "[]"
+      OutDataTypeStr	      "Inherit: Inherit via back propagation"
+      LockScale		      off
+      ConvertRealWorld	      "Real World Value (RWV)"
+      RndMeth		      "Zero"
+      SaturateOnIntegerOverflow	on
+      SampleTime	      "-1"
+    }
+    Block {
       BlockType		      Demux
       Outputs		      "4"
       DisplayOption	      "none"
       BusSelectionMode	      off
+    }
+    Block {
+      BlockType		      DiscretePulseGenerator
+      PulseType		      "Sample based"
+      TimeSource	      "Use simulation time"
+      Amplitude		      "1"
+      Period		      "2"
+      PulseWidth	      "1"
+      PhaseDelay	      "0"
+      SampleTime	      "1"
+      VectorParams1D	      on
     }
     Block {
       BlockType		      DiscreteTransferFcn
@@ -1165,8 +1187,8 @@ Model {
   }
   System {
     Name		    "NavFilterTestHarness"
-    Location		    [200, 82, 1916, 1187]
-    Open		    off
+    Location		    [-101, -1126, 1615, -21]
+    Open		    on
     ModelBrowserVisibility  on
     ModelBrowserWidth	    200
     ScreenColor		    "white"
@@ -1179,7 +1201,7 @@ Model {
     ShowPageBoundaries	    off
     ZoomFactor		    "100"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "1361"
+    SIDHighWatermark	    "1364"
     Block {
       BlockType		      SubSystem
       Name		      "CalculateInitialStates"
@@ -2238,8 +2260,8 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"InertialNavFilter"
-	Location		[200, 82, 1329, 722]
-	Open			on
+	Location		[-101, -1126, 1598, -38]
+	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
 	ScreenColor		"white"
@@ -2298,7 +2320,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "VelNED"
 	  SID			  "604"
-	  Position		  [915, 498, 945, 512]
+	  Position		  [915, 473, 945, 487]
 	  ZOrder		  12
 	  Port			  "5"
 	  IconDisplay		  "Port number"
@@ -2320,7 +2342,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "PosNE"
 	  SID			  "605"
-	  Position		  [915, 563, 945, 577]
+	  Position		  [915, 533, 945, 547]
 	  ZOrder		  13
 	  Port			  "7"
 	  IconDisplay		  "Port number"
@@ -2375,7 +2397,7 @@ Model {
 	  BlockType		  Inport
 	  Name			  "HgtMea"
 	  SID			  "803"
-	  Position		  [925, 758, 955, 772]
+	  Position		  [925, 713, 955, 727]
 	  ZOrder		  13
 	  Port			  "12"
 	  IconDisplay		  "Port number"
@@ -3321,8 +3343,8 @@ Model {
 	  BlockType		  SubSystem
 	  Name			  "Fuse Vel Pos Measurements"
 	  SID			  "645"
-	  Ports			  [10, 4]
-	  Position		  [985, 208, 1215, 867]
+	  Ports			  [11, 4]
+	  Position		  [985, 210, 1215, 870]
 	  ZOrder		  21
 	  ErrorFcn		  "Stateflow.Translate.translate"
 	  PermitHierarchicalResolution "ExplicitOnly"
@@ -3360,7 +3382,7 @@ Model {
 	    TiledPageScale	    1
 	    ShowPageBoundaries	    off
 	    ZoomFactor		    "100"
-	    SIDHighWatermark	    "112"
+	    SIDHighWatermark	    "113"
 	    Block {
 	      BlockType		      Inport
 	      Name		      "states"
@@ -3451,11 +3473,20 @@ Model {
 	      IconDisplay	      "Port number"
 	    }
 	    Block {
+	      BlockType		      Inport
+	      Name		      "useAirspeed"
+	      SID		      "645::113"
+	      Position		      [20, 461, 40, 479]
+	      ZOrder		      50
+	      Port		      "11"
+	      IconDisplay	      "Port number"
+	    }
+	    Block {
 	      BlockType		      Demux
 	      Name		      " Demux "
 	      SID		      "645::110"
 	      Ports		      [1, 1]
-	      Position		      [270, 320, 320, 360]
+	      Position		      [270, 345, 320, 385]
 	      ZOrder		      47
 	      Outputs		      "1"
 	    }
@@ -3464,11 +3495,11 @@ Model {
 	      Name		      " SFunction "
 	      SID		      "645::109"
 	      Tag		      "Stateflow S-Function NavFilterTestHarness 19"
-	      Ports		      [10, 5]
-	      Position		      [180, 100, 230, 320]
+	      Ports		      [11, 5]
+	      Position		      [180, 104, 230, 346]
 	      ZOrder		      46
 	      FunctionName	      "sf_sfun"
-	      PortCounts	      "[10 5]"
+	      PortCounts	      "[11 5]"
 	      EnableBusSupport	      on
 	      Port {
 		PortNumber		2
@@ -3499,7 +3530,7 @@ Model {
 	      BlockType		      Terminator
 	      Name		      " Terminator "
 	      SID		      "645::112"
-	      Position		      [460, 331, 480, 349]
+	      Position		      [460, 356, 480, 374]
 	      ZOrder		      49
 	    }
 	    Block {
@@ -3596,6 +3627,12 @@ Model {
 	      SrcPort		      1
 	      DstBlock		      " SFunction "
 	      DstPort		      10
+	    }
+	    Line {
+	      SrcBlock		      "useAirspeed"
+	      SrcPort		      1
+	      DstBlock		      " SFunction "
+	      DstPort		      11
 	    }
 	    Line {
 	      Name		      "corrStates"
@@ -6668,7 +6705,7 @@ Model {
 	    }
 	  }
 	  Branch {
-	    Points		    [0, 115]
+	    Points		    [0, 110]
 	    DstBlock		    "Fuse Vel Pos Measurements"
 	    DstPort		    1
 	  }
@@ -6790,7 +6827,7 @@ Model {
 	Line {
 	  SrcBlock		  "Fuse Vel Pos Measurements"
 	  SrcPort		  3
-	  Points		  [20, 0; 0, 310; -236, 0; 0, 105]
+	  Points		  [20, 0; 0, 305; -236, 0; 0, 105]
 	  Branch {
 	    DstBlock		    "Log VelNED and PosNE Innovations"
 	    DstPort		    1
@@ -6806,7 +6843,7 @@ Model {
 	  SrcPort		  1
 	  Points		  [75, 0]
 	  Branch {
-	    Points		    [0, -270]
+	    Points		    [0, -290]
 	    DstBlock		    "Fuse Vel Pos Measurements"
 	    DstPort		    4
 	  }
@@ -6854,7 +6891,7 @@ Model {
 	Line {
 	  SrcBlock		  "Store States at Meas Time1"
 	  SrcPort		  2
-	  Points		  [63, 0; 0, -125]
+	  Points		  [63, 0; 0, -160]
 	  DstBlock		  "Fuse Vel Pos Measurements"
 	  DstPort		  7
 	}
@@ -6873,7 +6910,7 @@ Model {
 	Line {
 	  SrcBlock		  "Fuse Vel Pos Measurements"
 	  SrcPort		  4
-	  Points		  [10, 0; 0, 155; -195, 0; 0, 110]
+	  Points		  [10, 0; 0, 150; -195, 0; 0, 110]
 	  Branch {
 	    DstBlock		    "Log VelNED and PosNE Innovations"
 	    DstPort		    2
@@ -6907,7 +6944,7 @@ Model {
 	    DstPort		    trigger
 	  }
 	  Branch {
-	    Points		    [0, -315]
+	    Points		    [0, -355]
 	    DstBlock		    "Fuse Vel Pos Measurements"
 	    DstPort		    8
 	  }
@@ -6915,7 +6952,7 @@ Model {
 	Line {
 	  SrcBlock		  "Store States at Meas Time3"
 	  SrcPort		  2
-	  Points		  [95, 0; 0, -235]
+	  Points		  [95, 0; 0, -285]
 	  DstBlock		  "Fuse Vel Pos Measurements"
 	  DstPort		  10
 	}
@@ -7034,9 +7071,9 @@ Model {
 	Line {
 	  SrcBlock		  "Predict Covariance"
 	  SrcPort		  1
-	  Points		  [25, 0; 0, -210; 65, 0]
+	  Points		  [25, 0; 0, -220; 65, 0]
 	  Branch {
-	    Points		    [0, -140]
+	    Points		    [0, -130]
 	    DstBlock		    "Covariance"
 	    DstPort		    1
 	  }
@@ -7048,7 +7085,7 @@ Model {
 	Line {
 	  SrcBlock		  "Predict States"
 	  SrcPort		  4
-	  Points		  [75, 0; 0, 125]
+	  Points		  [75, 0; 0, 110]
 	  DstBlock		  "Fuse Vel Pos Measurements"
 	  DstPort		  3
 	}
@@ -7108,9 +7145,17 @@ Model {
 	    DstPort		    7
 	  }
 	  Branch {
-	    Points		    [0, 385; 1125, 0; 0, -140]
-	    DstBlock		    "Fuse True Airspeed Measurements"
-	    DstPort		    6
+	    Points		    [0, 385; 380, 0]
+	    Branch {
+	      Points		      [745, 0; 0, -140]
+	      DstBlock		      "Fuse True Airspeed Measurements"
+	      DstPort		      6
+	    }
+	    Branch {
+	      Points		      [0, -125]
+	      DstBlock		      "Fuse Vel Pos Measurements"
+	      DstPort		      11
+	    }
 	  }
 	}
 	Line {
@@ -7228,8 +7273,8 @@ Model {
       MaskHideContents	      off
       System {
 	Name			"LoadTestData"
-	Location		[16, 150, 1772, 1439]
-	Open			on
+	Location		[202, 74, 1347, 690]
+	Open			off
 	ModelBrowserVisibility	on
 	ModelBrowserWidth	200
 	ScreenColor		"white"
@@ -7241,6 +7286,17 @@ Model {
 	TiledPageScale		1
 	ShowPageBoundaries	off
 	ZoomFactor		"100"
+	Block {
+	  BlockType		  Sum
+	  Name			  "Add"
+	  SID			  "1363"
+	  Ports			  [2, 1]
+	  Position		  [625, 522, 655, 553]
+	  ZOrder		  -2
+	  InputSameDT		  off
+	  OutDataTypeStr	  "Inherit: Inherit via internal rule"
+	  SaturateOnIntegerOverflow off
+	}
 	Block {
 	  BlockType		  SubSystem
 	  Name			  "AlignWithIMU1"
@@ -7687,6 +7743,16 @@ Model {
 	  OutDataTypeStr	  "boolean"
 	}
 	Block {
+	  BlockType		  DataTypeConversion
+	  Name			  "Data Type Conversion"
+	  SID			  "1364"
+	  Position		  [470, 599, 540, 631]
+	  ZOrder		  -7
+	  OutDataTypeStr	  "single"
+	  RndMeth		  "Floor"
+	  SaturateOnIntegerOverflow off
+	}
+	Block {
 	  BlockType		  Reference
 	  Name			  "Detect\nChange"
 	  SID			  "100"
@@ -7753,13 +7819,25 @@ Model {
 	  SaturateOnIntegerOverflow off
 	}
 	Block {
+	  BlockType		  DiscretePulseGenerator
+	  Name			  "Error Pulse\nGenerator"
+	  SID			  "1362"
+	  Ports			  [0, 1]
+	  Position		  [395, 599, 425, 631]
+	  ZOrder		  -13
+	  PulseType		  "Time based"
+	  Amplitude		  "0"
+	  Period		  "30"
+	  PhaseDelay		  "5"
+	}
+	Block {
 	  BlockType		  Switch
 	  Name			  "Fail GPS"
 	  SID			  "1264"
 	  Position		  [895, 795, 945, 835]
 	  ZOrder		  2
 	  BackgroundColor	  "red"
-	  Threshold		  "800"
+	  Threshold		  "1e6"
 	  InputSameDT		  off
 	  SaturateOnIntegerOverflow off
 	}
@@ -8602,7 +8680,7 @@ Model {
 	  BlockType		  Outport
 	  Name			  "HgtMea"
 	  SID			  "808"
-	  Position		  [600, 523, 630, 537]
+	  Position		  [750, 533, 780, 547]
 	  ZOrder		  -9
 	  Port			  "12"
 	  IconDisplay		  "Port number"
@@ -9133,12 +9211,6 @@ Model {
 	  }
 	}
 	Line {
-	  SrcBlock		  "Hgt"
-	  SrcPort		  1
-	  DstBlock		  "HgtMea"
-	  DstPort		  1
-	}
-	Line {
 	  SrcBlock		  "LatDeg"
 	  SrcPort		  1
 	  DstBlock		  "Mux7"
@@ -9168,6 +9240,31 @@ Model {
 	  SrcPort		  1
 	  DstBlock		  "CourseDeg"
 	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Hgt"
+	  SrcPort		  1
+	  DstBlock		  "Add"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Add"
+	  SrcPort		  1
+	  DstBlock		  "HgtMea"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Error Pulse\nGenerator"
+	  SrcPort		  1
+	  DstBlock		  "Data Type Conversion"
+	  DstPort		  1
+	}
+	Line {
+	  SrcBlock		  "Data Type Conversion"
+	  SrcPort		  1
+	  Points		  [65, 0]
+	  DstBlock		  "Add"
+	  DstPort		  2
 	}
       }
     }
@@ -12107,7 +12204,7 @@ Stateflow {
     name		    "NavFilterTestHarness"
     created		    "27-Nov-2013 17:56:29"
     isLibrary		    0
-    firstTarget		    162
+    firstTarget		    163
     sfVersion		    76014001.00040001
   }
   chart {
@@ -15060,234 +15157,234 @@ Stateflow {
       "\n    magN = single(0);\nend\nif isempty(magE)\n    magE = single(0);\nend\nif isempty(magD)\n    magD = single("
       "0);\nend\npersistent obsIndex\nif isempty(obsIndex)\n    obsIndex = 1;\nend\npersistent SH_MAG\nif isempty(SH_MA"
       "G)\n    SH_MAG = single(zeros(1,9));\nend\npersistent Tnb\nif isempty(Tnb)\n    Tnb = single(eye(3,3));\nend\npe"
-      "rsistent MagPred\nif isempty(MagPred)\n    MagPred = single(zeros(3,1));\nend\n\n% Initialise array used to calc"
-      "ulate intermediate result in covariance\n% update\nKHP = single(zeros(24,24));\n\n% Magnetometer measurement err"
-      "or variance (milligauss).\nR_MAG = single(50^2);\n\n% Innovation Variances\nvarInnov = single(zeros(3,1));\n\n% "
-      "innovation vector\ninnovation = single(zeros(1,3));\n\n% Calculate terms common to fusion of all three axes\nif "
-      "FuseData\nend\n\n% Perform sequential fusion of Magnetometer measurements.\n% This assumes that the errors in th"
-      "e dfferent componenets are\n% uncorrelated which is not true, however in the absence of covariance\n% data fit i"
-      "s the only assumption we can make\n% so we might as well take advantage of the computational efficiencies\n% ass"
-      "ociated with sequential fusion\nif (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))\n"
-      "    \n    % Sequential fusion of XYZ components to spread processing load across\n    % three prediction time st"
-      "eps. \n    \n    % Calculate observation jacobians and Kalman gains\n    K_MAG = single(zeros(24,1));\n    H_MAG"
-      " = single(zeros(1,24));\n    if FuseData\n        % Copy required states to local variable names\n        q0 = S"
-      "tatesAtMeasTime(1);\n        q1 = StatesAtMeasTime(2);\n        q2 = StatesAtMeasTime(3);\n        q3 = StatesAt"
-      "MeasTime(4);\n        magN = StatesAtMeasTime(19);\n        magE = StatesAtMeasTime(20);\n        magD = StatesA"
-      "tMeasTime(21);\n        % rotate predicted earth components into body axes and calculate\n        % predicted me"
-      "asurments\n        Tnb = single([q0^2 + q1^2 - q2^2 - q3^2, 2*(q1*q2 + q0*q3) , 2*(q1*q3-q0*q2) ;...\n          "
-      "  2*(q1*q2 - q0*q3), q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);...\n            2*(q1*q3 + q0*q2) , 2*(q2*q3 "
-      "- q0*q1) , q0^2 - q1^2 - q2^2 + q3^2]);\n        MagPred = Tnb*states(19:21) + states(22:24);\n        % Calcula"
-      "te observation jacobian common terms\n        SH_MAG(1) = 2*magD*q3 + 2*magE*q2 + 2*magN*q1;\n        SH_MAG(2) "
-      "= 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n        SH_MAG(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n        SH_MAG(4) "
-      "= q3^2;\n        SH_MAG(5) = q2^2;\n        SH_MAG(6) = q1^2;\n        SH_MAG(7) = q0^2;\n        SH_MAG(8) = 2*"
-      "magN*q0;\n        SH_MAG(9) = 2*magE*q3;\n        % calculate observation jacobian\n        H_MAG(1,1) = SH_MAG("
-      "8) + SH_MAG(9) - 2*magD*q2;\n        H_MAG(1,2) = SH_MAG(1);\n        H_MAG(1,3) = 2*magE*q1 - 2*magD*q0 - 2*mag"
-      "N*q2;\n        H_MAG(1,4) = SH_MAG(3);\n        H_MAG(1,19) = SH_MAG(6) - SH_MAG(5) - SH_MAG(4) + SH_MAG(7);\n  "
-      "      H_MAG(1,20) = 2*q0*q3 + 2*q1*q2;\n        H_MAG(1,21) = 2*q1*q3 - 2*q0*q2;\n        H_MAG(1,22) = 1;\n    "
-      "    % calculate Kalman gain\n        SK_MX = single(zeros(1,6));\n        SK_MX(1) = 1/(P(22,22) + R_MAG + P(2,2"
-      "2)*SH_MAG(1) + P(4,22)*SH_MAG(3) - P(19,22)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) - (2*magD*q0 - 2*mag"
-      "E*q1 + 2*magN*q2)*(P(22,3) + P(2,3)*SH_MAG(1) + P(4,3)*SH_MAG(3) - P(19,3)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - "
-      "SH_MAG(7)) + P(20,3)*(2*q0*q3 + 2*q1*q2) - P(21,3)*(2*q0*q2 - 2*q1*q3) - P(3,3)*(2*magD*q0 - 2*magE*q1 + 2*magN*"
-      "q2) + P(1,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(22,1) + P(2,1)*SH_MAG"
-      "(1) + P(4,1)*SH_MAG(3) - P(19,1)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,1)*(2*q0*q3 + 2*q1*q2) -"
-      " P(21,1)*(2*q0*q2 - 2*q1*q3) - P(3,1)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,1)*(SH_MAG(8) + SH_MAG(9) - 2*ma"
-      "gD*q2)) + SH_MAG(1)*(P(22,2) + P(2,2)*SH_MAG(1) + P(4,2)*SH_MAG(3) - P(19,2)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) "
-      "- SH_MAG(7)) + P(20,2)*(2*q0*q3 + 2*q1*q2) - P(21,2)*(2*q0*q2 - 2*q1*q3) - P(3,2)*(2*magD*q0 - 2*magE*q1 + 2*mag"
-      "N*q2) + P(1,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(3)*(P(22,4) + P(2,4)*SH_MAG(1) + P(4,4)*SH_MAG(3) -"
-      " P(19,4)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,4)*(2*q0*q3 + 2*q1*q2) - P(21,4)*(2*q0*q2 - 2*q1"
-      "*q3) - P(3,4)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) + S"
-      "H_MAG(5) - SH_MAG(6) - SH_MAG(7))*(P(22,19) + P(2,19)*SH_MAG(1) + P(4,19)*SH_MAG(3) - P(19,19)*(SH_MAG(4) + SH_M"
-      "AG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,19)*(2*q0*q3 + 2*q1*q2) - P(21,19)*(2*q0*q2 - 2*q1*q3) - P(3,19)*(2*magD*q"
-      "0 - 2*magE*q1 + 2*magN*q2) + P(1,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(20,22)*(2*q0*q3 + 2*q1*q2) - P(21,"
-      "22)*(2*q0*q2 - 2*q1*q3) - P(3,22)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*q0*q3 + 2*q1*q2)*(P(22,20) + P(2,20)*"
-      "SH_MAG(1) + P(4,20)*SH_MAG(3) - P(19,20)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,20)*(2*q0*q3 + 2"
-      "*q1*q2) - P(21,20)*(2*q0*q2 - 2*q1*q3) - P(3,20)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,20)*(SH_MAG(8) + SH_M"
-      "AG(9) - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P(22,21) + P(2,21)*SH_MAG(1) + P(4,21)*SH_MAG(3) - P(19,21)*(SH_MAG(4"
-      ") + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,21)*(2*q0*q3 + 2*q1*q2) - P(21,21)*(2*q0*q2 - 2*q1*q3) - P(3,21)*("
-      "2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(1,22)*(SH_MAG(8) + SH_MAG("
-      "9) - 2*magD*q2));\n        SK_MX(2) = SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7);\n        SK_MX(3) = 2*magD*"
-      "q0 - 2*magE*q1 + 2*magN*q2;\n        SK_MX(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n        SK_MX(5) = 2*q0*q2 -"
-      " 2*q1*q3;\n        SK_MX(6) = 2*q0*q3 + 2*q1*q2;\n        K_MAG(1,1) = SK_MX(1)*(P(1,22) + P(1,2)*SH_MAG(1) + P("
-      "1,4)*SH_MAG(3) + P(1,1)*SK_MX(4) - P(1,3)*SK_MX(3) - P(1,19)*SK_MX(2) + P(1,20)*SK_MX(6) - P(1,21)*SK_MX(5));\n "
-      "       K_MAG(2,1) = SK_MX(1)*(P(2,22) + P(2,2)*SH_MAG(1) + P(2,4)*SH_MAG(3) + P(2,1)*SK_MX(4) - P(2,3)*SK_MX(3) "
-      "- P(2,19)*SK_MX(2) + P(2,20)*SK_MX(6) - P(2,21)*SK_MX(5));\n        K_MAG(3,1) = SK_MX(1)*(P(3,22) + P(3,2)*SH_M"
-      "AG(1) + P(3,4)*SH_MAG(3) + P(3,1)*SK_MX(4) - P(3,3)*SK_MX(3) - P(3,19)*SK_MX(2) + P(3,20)*SK_MX(6) - P(3,21)*SK_"
-      "MX(5));\n        K_MAG(4,1) = SK_MX(1)*(P(4,22) + P(4,2)*SH_MAG(1) + P(4,4)*SH_MAG(3) + P(4,1)*SK_MX(4) - P(4,3)"
-      "*SK_MX(3) - P(4,19)*SK_MX(2) + P(4,20)*SK_MX(6) - P(4,21)*SK_MX(5));\n        K_MAG(5,1) = SK_MX(1)*(P(5,22) + P"
-      "(5,2)*SH_MAG(1) + P(5,4)*SH_MAG(3) + P(5,1)*SK_MX(4) - P(5,3)*SK_MX(3) - P(5,19)*SK_MX(2) + P(5,20)*SK_MX(6) - P"
-      "(5,21)*SK_MX(5));\n        K_MAG(6,1) = SK_MX(1)*(P(6,22) + P(6,2)*SH_MAG(1) + P(6,4)*SH_MAG(3) + P(6,1)*SK_MX(4"
-      ") - P(6,3)*SK_MX(3) - P(6,19)*SK_MX(2) + P(6,20)*SK_MX(6) - P(6,21)*SK_MX(5));\n        K_MAG(7,1) = SK_MX(1)*(P"
-      "(7,22) + P(7,2)*SH_MAG(1) + P(7,4)*SH_MAG(3) + P(7,1)*SK_MX(4) - P(7,3)*SK_MX(3) - P(7,19)*SK_MX(2) + P(7,20)*SK"
-      "_MX(6) - P(7,21)*SK_MX(5));\n        K_MAG(8,1) = SK_MX(1)*(P(8,22) + P(8,2)*SH_MAG(1) + P(8,4)*SH_MAG(3) + P(8,"
-      "1)*SK_MX(4) - P(8,3)*SK_MX(3) - P(8,19)*SK_MX(2) + P(8,20)*SK_MX(6) - P(8,21)*SK_MX(5));\n        K_MAG(9,1) = S"
-      "K_MX(1)*(P(9,22) + P(9,2)*SH_MAG(1) + P(9,4)*SH_MAG(3) + P(9,1)*SK_MX(4) - P(9,3)*SK_MX(3) - P(9,19)*SK_MX(2) + "
-      "P(9,20)*SK_MX(6) - P(9,21)*SK_MX(5));\n        K_MAG(10,1) = SK_MX(1)*(P(10,22) + P(10,2)*SH_MAG(1) + P(10,4)*SH"
-      "_MAG(3) + P(10,1)*SK_MX(4) - P(10,3)*SK_MX(3) - P(10,19)*SK_MX(2) + P(10,20)*SK_MX(6) - P(10,21)*SK_MX(5));\n   "
-      "     K_MAG(11,1) = SK_MX(1)*(P(11,22) + P(11,2)*SH_MAG(1) + P(11,4)*SH_MAG(3) + P(11,1)*SK_MX(4) - P(11,3)*SK_MX"
-      "(3) - P(11,19)*SK_MX(2) + P(11,20)*SK_MX(6) - P(11,21)*SK_MX(5));\n        K_MAG(12,1) = SK_MX(1)*(P(12,22) + P("
-      "12,2)*SH_MAG(1) + P(12,4)*SH_MAG(3) + P(12,1)*SK_MX(4) - P(12,3)*SK_MX(3) - P(12,19)*SK_MX(2) + P(12,20)*SK_MX(6"
-      ") - P(12,21)*SK_MX(5));\n        K_MAG(13,1) = SK_MX(1)*(P(13,22) + P(13,2)*SH_MAG(1) + P(13,4)*SH_MAG(3) + P(13"
-      ",1)*SK_MX(4) - P(13,3)*SK_MX(3) - P(13,19)*SK_MX(2) + P(13,20)*SK_MX(6) - P(13,21)*SK_MX(5));\n        K_MAG(14,"
-      "1) = SK_MX(1)*(P(14,22) + P(14,2)*SH_MAG(1) + P(14,4)*SH_MAG(3) + P(14,1)*SK_MX(4) - P(14,3)*SK_MX(3) - P(14,19)"
-      "*SK_MX(2) + P(14,20)*SK_MX(6) - P(14,21)*SK_MX(5));\n        K_MAG(15,1) = SK_MX(1)*(P(15,22) + P(15,2)*SH_MAG(1"
-      ") + P(15,4)*SH_MAG(3) + P(15,1)*SK_MX(4) - P(15,3)*SK_MX(3) - P(15,19)*SK_MX(2) + P(15,20)*SK_MX(6) - P(15,21)*S"
-      "K_MX(5));\n        K_MAG(16,1) = SK_MX(1)*(P(16,22) + P(16,2)*SH_MAG(1) + P(16,4)*SH_MAG(3) + P(16,1)*SK_MX(4) -"
-      " P(16,3)*SK_MX(3) - P(16,19)*SK_MX(2) + P(16,20)*SK_MX(6) - P(16,21)*SK_MX(5));\n        K_MAG(17,1) = SK_MX(1)*"
-      "(P(17,22) + P(17,2)*SH_MAG(1) + P(17,4)*SH_MAG(3) + P(17,1)*SK_MX(4) - P(17,3)*SK_MX(3) - P(17,19)*SK_MX(2) + P("
-      "17,20)*SK_MX(6) - P(17,21)*SK_MX(5));\n        K_MAG(18,1) = SK_MX(1)*(P(18,22) + P(18,2)*SH_MAG(1) + P(18,4)*SH"
-      "_MAG(3) + P(18,1)*SK_MX(4) - P(18,3)*SK_MX(3) - P(18,19)*SK_MX(2) + P(18,20)*SK_MX(6) - P(18,21)*SK_MX(5));\n   "
-      "     K_MAG(19,1) = SK_MX(1)*(P(19,22) + P(19,2)*SH_MAG(1) + P(19,4)*SH_MAG(3) + P(19,1)*SK_MX(4) - P(19,3)*SK_MX"
-      "(3) - P(19,19)*SK_MX(2) + P(19,20)*SK_MX(6) - P(19,21)*SK_MX(5));\n        K_MAG(20,1) = SK_MX(1)*(P(20,22) + P("
-      "20,2)*SH_MAG(1) + P(20,4)*SH_MAG(3) + P(20,1)*SK_MX(4) - P(20,3)*SK_MX(3) - P(20,19)*SK_MX(2) + P(20,20)*SK_MX(6"
-      ") - P(20,21)*SK_MX(5));\n        K_MAG(21,1) = SK_MX(1)*(P(21,22) + P(21,2)*SH_MAG(1) + P(21,4)*SH_MAG(3) + P(21"
-      ",1)*SK_MX(4) - P(21,3)*SK_MX(3) - P(21,19)*SK_MX(2) + P(21,20)*SK_MX(6) - P(21,21)*SK_MX(5));\n        K_MAG(22,"
-      "1) = SK_MX(1)*(P(22,22) + P(22,2)*SH_MAG(1) + P(22,4)*SH_MAG(3) + P(22,1)*SK_MX(4) - P(22,3)*SK_MX(3) - P(22,19)"
-      "*SK_MX(2) + P(22,20)*SK_MX(6) - P(22,21)*SK_MX(5));\n        K_MAG(23,1) = SK_MX(1)*(P(23,22) + P(23,2)*SH_MAG(1"
-      ") + P(23,4)*SH_MAG(3) + P(23,1)*SK_MX(4) - P(23,3)*SK_MX(3) - P(23,19)*SK_MX(2) + P(23,20)*SK_MX(6) - P(23,21)*S"
-      "K_MX(5));\n        K_MAG(24,1) = SK_MX(1)*(P(24,22) + P(24,2)*SH_MAG(1) + P(24,4)*SH_MAG(3) + P(24,1)*SK_MX(4) -"
-      " P(24,3)*SK_MX(3) - P(24,19)*SK_MX(2) + P(24,20)*SK_MX(6) - P(24,21)*SK_MX(5));\n        varInnov(1) = 1/SK_MX(1"
-      ");\n        \n        % reset the observation index to 1 (we start by fusing the X\n        % measurement)\n    "
-      "    obsIndex = 1;\n    elseif obsIndex == 2 % we are now fusing the Y measurement\n        H_MAG(1,1) = SH_MAG(3"
-      ");\n        H_MAG(1,2) = SH_MAG(2);\n        H_MAG(1,3) = SH_MAG(1);\n        H_MAG(1,4) = 2*magD*q2 - SH_MAG(9)"
-      " - SH_MAG(8);\n        H_MAG(1,19) = 2*q1*q2 - 2*q0*q3;\n        H_MAG(1,20) = SH_MAG(5) - SH_MAG(4) - SH_MAG(6)"
-      " + SH_MAG(7);\n        H_MAG(1,21) = 2*q0*q1 + 2*q2*q3;\n        H_MAG(1,23) = 1;\n        % calculate the Kalma"
-      "n gain\n        SK_MY = single(zeros(5,1));\n        SK_MY(1) = 1/(P(23,23) + R_MAG + P(1,23)*SH_MAG(3) + P(2,23"
-      ")*SH_MAG(2) + P(3,23)*SH_MAG(1) - P(20,23)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - (2*q0*q3 - 2*q1*q2)"
-      "*(P(23,19) + P(1,19)*SH_MAG(3) + P(2,19)*SH_MAG(2) + P(3,19)*SH_MAG(1) - P(20,19)*(SH_MAG(4) - SH_MAG(5) + SH_MA"
-      "G(6) - SH_MAG(7)) - P(19,19)*(2*q0*q3 - 2*q1*q2) + P(21,19)*(2*q0*q1 + 2*q2*q3) - P(4,19)*(SH_MAG(8) + SH_MAG(9)"
-      " - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P(23,21) + P(1,21)*SH_MAG(3) + P(2,21)*SH_MAG(2) + P(3,21)*SH_MAG(1) - P(2"
-      "0,21)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,21)*(2*q0*q3 - 2*q1*q2) + P(21,21)*(2*q0*q1 + 2*q2*"
-      "q3) - P(4,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(23,4) + P(1,4)*SH_MA"
-      "G(3) + P(2,4)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P(20,4)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,4)*("
-      "2*q0*q3 - 2*q1*q2) + P(21,4)*(2*q0*q1 + 2*q2*q3) - P(4,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(19,23)*(2*q0*"
-      "q3 - 2*q1*q2) + P(21,23)*(2*q0*q1 + 2*q2*q3) + SH_MAG(3)*(P(23,1) + P(1,1)*SH_MAG(3) + P(2,1)*SH_MAG(2) + P(3,1)"
-      "*SH_MAG(1) - P(20,1)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,1)*(2*q0*q3 - 2*q1*q2) + P(21,1)*(2*"
-      "q0*q1 + 2*q2*q3) - P(4,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(23,2) + P(1,2)*SH_MAG(3) + P(2,2)*"
-      "SH_MAG(2) + P(3,2)*SH_MAG(1) - P(20,2)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,2)*(2*q0*q3 - 2*q1"
-      "*q2) + P(21,2)*(2*q0*q1 + 2*q2*q3) - P(4,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(23,3) + P(1,3)*S"
-      "H_MAG(3) + P(2,3)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(20,3)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,"
-      "3)*(2*q0*q3 - 2*q1*q2) + P(21,3)*(2*q0*q1 + 2*q2*q3) - P(4,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) "
-      "- SH_MAG(5) + SH_MAG(6) - SH_MAG(7))*(P(23,20) + P(1,20)*SH_MAG(3) + P(2,20)*SH_MAG(2) + P(3,20)*SH_MAG(1) - P(2"
-      "0,20)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,20)*(2*q0*q3 - 2*q1*q2) + P(21,20)*(2*q0*q1 + 2*q2*"
-      "q3) - P(4,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(4,23)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n        SK_M"
-      "Y(2) = SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7);\n        SK_MY(3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n  "
-      "      SK_MY(4) = 2*q0*q3 - 2*q1*q2;\n        SK_MY(5) = 2*q0*q1 + 2*q2*q3;\n        K_MAG(1,1) = SK_MY(1)*(P(1,2"
-      "3) + P(1,1)*SH_MAG(3) + P(1,2)*SH_MAG(2) + P(1,3)*SH_MAG(1) - P(1,4)*SK_MY(3) - P(1,20)*SK_MY(2) - P(1,19)*SK_MY"
-      "(4) + P(1,21)*SK_MY(5));\n        K_MAG(2,1) = SK_MY(1)*(P(2,23) + P(2,1)*SH_MAG(3) + P(2,2)*SH_MAG(2) + P(2,3)*"
-      "SH_MAG(1) - P(2,4)*SK_MY(3) - P(2,20)*SK_MY(2) - P(2,19)*SK_MY(4) + P(2,21)*SK_MY(5));\n        K_MAG(3,1) = SK_"
-      "MY(1)*(P(3,23) + P(3,1)*SH_MAG(3) + P(3,2)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(3,4)*SK_MY(3) - P(3,20)*SK_MY(2) - P"
-      "(3,19)*SK_MY(4) + P(3,21)*SK_MY(5));\n        K_MAG(4,1) = SK_MY(1)*(P(4,23) + P(4,1)*SH_MAG(3) + P(4,2)*SH_MAG("
-      "2) + P(4,3)*SH_MAG(1) - P(4,4)*SK_MY(3) - P(4,20)*SK_MY(2) - P(4,19)*SK_MY(4) + P(4,21)*SK_MY(5));\n        K_MA"
-      "G(5,1) = SK_MY(1)*(P(5,23) + P(5,1)*SH_MAG(3) + P(5,2)*SH_MAG(2) + P(5,3)*SH_MAG(1) - P(5,4)*SK_MY(3) - P(5,20)*"
-      "SK_MY(2) - P(5,19)*SK_MY(4) + P(5,21)*SK_MY(5));\n        K_MAG(6,1) = SK_MY(1)*(P(6,23) + P(6,1)*SH_MAG(3) + P("
-      "6,2)*SH_MAG(2) + P(6,3)*SH_MAG(1) - P(6,4)*SK_MY(3) - P(6,20)*SK_MY(2) - P(6,19)*SK_MY(4) + P(6,21)*SK_MY(5));\n"
-      "        K_MAG(7,1) = SK_MY(1)*(P(7,23) + P(7,1)*SH_MAG(3) + P(7,2)*SH_MAG(2) + P(7,3)*SH_MAG(1) - P(7,4)*SK_MY(3"
-      ") - P(7,20)*SK_MY(2) - P(7,19)*SK_MY(4) + P(7,21)*SK_MY(5));\n        K_MAG(8,1) = SK_MY(1)*(P(8,23) + P(8,1)*SH"
-      "_MAG(3) + P(8,2)*SH_MAG(2) + P(8,3)*SH_MAG(1) - P(8,4)*SK_MY(3) - P(8,20)*SK_MY(2) - P(8,19)*SK_MY(4) + P(8,21)*"
-      "SK_MY(5));\n        K_MAG(9,1) = SK_MY(1)*(P(9,23) + P(9,1)*SH_MAG(3) + P(9,2)*SH_MAG(2) + P(9,3)*SH_MAG(1) - P("
-      "9,4)*SK_MY(3) - P(9,20)*SK_MY(2) - P(9,19)*SK_MY(4) + P(9,21)*SK_MY(5));\n        K_MAG(10,1) = SK_MY(1)*(P(10,2"
-      "3) + P(10,1)*SH_MAG(3) + P(10,2)*SH_MAG(2) + P(10,3)*SH_MAG(1) - P(10,4)*SK_MY(3) - P(10,20)*SK_MY(2) - P(10,19)"
-      "*SK_MY(4) + P(10,21)*SK_MY(5));\n        K_MAG(11,1) = SK_MY(1)*(P(11,23) + P(11,1)*SH_MAG(3) + P(11,2)*SH_MAG(2"
-      ") + P(11,3)*SH_MAG(1) - P(11,4)*SK_MY(3) - P(11,20)*SK_MY(2) - P(11,19)*SK_MY(4) + P(11,21)*SK_MY(5));\n        "
-      "K_MAG(12,1) = SK_MY(1)*(P(12,23) + P(12,1)*SH_MAG(3) + P(12,2)*SH_MAG(2) + P(12,3)*SH_MAG(1) - P(12,4)*SK_MY(3) "
-      "- P(12,20)*SK_MY(2) - P(12,19)*SK_MY(4) + P(12,21)*SK_MY(5));\n        K_MAG(13,1) = SK_MY(1)*(P(13,23) + P(13,1"
-      ")*SH_MAG(3) + P(13,2)*SH_MAG(2) + P(13,3)*SH_MAG(1) - P(13,4)*SK_MY(3) - P(13,20)*SK_MY(2) - P(13,19)*SK_MY(4) +"
-      " P(13,21)*SK_MY(5));\n        K_MAG(14,1) = SK_MY(1)*(P(14,23) + P(14,1)*SH_MAG(3) + P(14,2)*SH_MAG(2) + P(14,3)"
-      "*SH_MAG(1) - P(14,4)*SK_MY(3) - P(14,20)*SK_MY(2) - P(14,19)*SK_MY(4) + P(14,21)*SK_MY(5));\n        K_MAG(15,1)"
-      " = SK_MY(1)*(P(15,23) + P(15,1)*SH_MAG(3) + P(15,2)*SH_MAG(2) + P(15,3)*SH_MAG(1) - P(15,4)*SK_MY(3) - P(15,20)*"
-      "SK_MY(2) - P(15,19)*SK_MY(4) + P(15,21)*SK_MY(5));\n        K_MAG(16,1) = SK_MY(1)*(P(16,23) + P(16,1)*SH_MAG(3)"
-      " + P(16,2)*SH_MAG(2) + P(16,3)*SH_MAG(1) - P(16,4)*SK_MY(3) - P(16,20)*SK_MY(2) - P(16,19)*SK_MY(4) + P(16,21)*S"
-      "K_MY(5));\n        K_MAG(17,1) = SK_MY(1)*(P(17,23) + P(17,1)*SH_MAG(3) + P(17,2)*SH_MAG(2) + P(17,3)*SH_MAG(1) "
-      "- P(17,4)*SK_MY(3) - P(17,20)*SK_MY(2) - P(17,19)*SK_MY(4) + P(17,21)*SK_MY(5));\n        K_MAG(18,1) = SK_MY(1)"
-      "*(P(18,23) + P(18,1)*SH_MAG(3) + P(18,2)*SH_MAG(2) + P(18,3)*SH_MAG(1) - P(18,4)*SK_MY(3) - P(18,20)*SK_MY(2) - "
-      "P(18,19)*SK_MY(4) + P(18,21)*SK_MY(5));\n        K_MAG(19,1) = SK_MY(1)*(P(19,23) + P(19,1)*SH_MAG(3) + P(19,2)*"
-      "SH_MAG(2) + P(19,3)*SH_MAG(1) - P(19,4)*SK_MY(3) - P(19,20)*SK_MY(2) - P(19,19)*SK_MY(4) + P(19,21)*SK_MY(5));\n"
-      "        K_MAG(20,1) = SK_MY(1)*(P(20,23) + P(20,1)*SH_MAG(3) + P(20,2)*SH_MAG(2) + P(20,3)*SH_MAG(1) - P(20,4)*S"
-      "K_MY(3) - P(20,20)*SK_MY(2) - P(20,19)*SK_MY(4) + P(20,21)*SK_MY(5));\n        K_MAG(21,1) = SK_MY(1)*(P(21,23) "
-      "+ P(21,1)*SH_MAG(3) + P(21,2)*SH_MAG(2) + P(21,3)*SH_MAG(1) - P(21,4)*SK_MY(3) - P(21,20)*SK_MY(2) - P(21,19)*SK"
-      "_MY(4) + P(21,21)*SK_MY(5));\n        K_MAG(22,1) = SK_MY(1)*(P(22,23) + P(22,1)*SH_MAG(3) + P(22,2)*SH_MAG(2) +"
-      " P(22,3)*SH_MAG(1) - P(22,4)*SK_MY(3) - P(22,20)*SK_MY(2) - P(22,19)*SK_MY(4) + P(22,21)*SK_MY(5));\n        K_M"
-      "AG(23,1) = SK_MY(1)*(P(23,23) + P(23,1)*SH_MAG(3) + P(23,2)*SH_MAG(2) + P(23,3)*SH_MAG(1) - P(23,4)*SK_MY(3) - P"
-      "(23,20)*SK_MY(2) - P(23,19)*SK_MY(4) + P(23,21)*SK_MY(5));\n        K_MAG(24,1) = SK_MY(1)*(P(24,23) + P(24,1)*S"
-      "H_MAG(3) + P(24,2)*SH_MAG(2) + P(24,3)*SH_MAG(1) - P(24,4)*SK_MY(3) - P(24,20)*SK_MY(2) - P(24,19)*SK_MY(4) + P("
-      "24,21)*SK_MY(5));\n        varInnov(2) = 1/SK_MY(1);\n    elseif obsIndex == 3 % we ar now fusing the Z measurem"
-      "ent\n        % calculate the observation jacobian\n        H_MAG(1,1) = SH_MAG(2);\n        H_MAG(1,2) = 2*magN*"
-      "q3 - 2*magE*q0 - 2*magD*q1;\n        H_MAG(1,3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n        H_MAG(1,4) = SH_MA"
-      "G(1);\n        H_MAG(1,19) = 2*q0*q2 + 2*q1*q3;\n        H_MAG(1,20) = 2*q2*q3 - 2*q0*q1;\n        H_MAG(1,21) ="
-      " SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n        H_MAG(1,24) = 1;\n        % calculate the Kalman gain\n"
-      "        SK_MZ = single(zeros(6,1));\n        SK_MZ(1) = 1/(P(24,24) + R_MAG + P(1,24)*SH_MAG(2) + P(4,24)*SH_MAG"
-      "(1) + P(21,24)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P(24,2) + "
-      "P(1,2)*SH_MAG(2) + P(4,2)*SH_MAG(1) + P(21,2)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,2)*(2*q0*q2"
-      " + 2*q1*q3) - P(20,2)*(2*q0*q1 - 2*q2*q3) - P(2,2)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,2)*(SH_MAG(8) + SH_"
-      "MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(24,3) + P(1,3)*SH_MAG(2) + P(4,3)*SH_MAG(1) + P(21"
-      ",3)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,3)*(2*q0*q2 + 2*q1*q3) - P(20,3)*(2*q0*q1 - 2*q2*q3) "
-      "- P(2,3)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(24,1) "
-      "+ P(1,1)*SH_MAG(2) + P(4,1)*SH_MAG(1) + P(21,1)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,1)*(2*q0*"
-      "q2 + 2*q1*q3) - P(20,1)*(2*q0*q1 - 2*q2*q3) - P(2,1)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,1)*(SH_MAG(8) + S"
-      "H_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(24,4) + P(1,4)*SH_MAG(2) + P(4,4)*SH_MAG(1) + P(21,4)*(SH_MAG(4) - SH_MAG("
-      "5) - SH_MAG(6) + SH_MAG(7)) + P(19,4)*(2*q0*q2 + 2*q1*q3) - P(20,4)*(2*q0*q1 - 2*q2*q3) - P(2,4)*(2*magD*q1 + 2*"
-      "magE*q0 - 2*magN*q3) + P(3,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG"
-      "(7))*(P(24,21) + P(1,21)*SH_MAG(2) + P(4,21)*SH_MAG(1) + P(21,21)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)"
-      ") + P(19,21)*(2*q0*q2 + 2*q1*q3) - P(20,21)*(2*q0*q1 - 2*q2*q3) - P(2,21)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + "
-      "P(3,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(19,24)*(2*q0*q2 + 2*q1*q3) - P(20,24)*(2*q0*q1 - 2*q2*q3) - P(2"
-      ",24)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P(24,19) + P(1,19)*SH_MAG(2) + P(4,19)*SH_MAG(1)"
-      " + P(21,19)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,19)*(2*q0*q2 + 2*q1*q3) - P(20,19)*(2*q0*q1 -"
-      " 2*q2*q3) - P(2,19)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q"
-      "1 - 2*q2*q3)*(P(24,20) + P(1,20)*SH_MAG(2) + P(4,20)*SH_MAG(1) + P(21,20)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + S"
-      "H_MAG(7)) + P(19,20)*(2*q0*q2 + 2*q1*q3) - P(20,20)*(2*q0*q1 - 2*q2*q3) - P(2,20)*(2*magD*q1 + 2*magE*q0 - 2*mag"
-      "N*q3) + P(3,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(3,24)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n        SK"
-      "_MZ(2) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n        SK_MZ(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;\n"
-      "        SK_MZ(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n        SK_MZ(5) = 2*q0*q1 - 2*q2*q3;\n        SK_MZ(6) ="
-      " 2*q0*q2 + 2*q1*q3;\n        K_MAG(1,1) = SK_MZ(1)*(P(1,24) + P(1,1)*SH_MAG(2) + P(1,4)*SH_MAG(1) - P(1,2)*SK_MZ"
-      "(3) + P(1,3)*SK_MZ(4) + P(1,21)*SK_MZ(2) + P(1,19)*SK_MZ(6) - P(1,20)*SK_MZ(5));\n        K_MAG(2,1) = SK_MZ(1)*"
-      "(P(2,24) + P(2,1)*SH_MAG(2) + P(2,4)*SH_MAG(1) - P(2,2)*SK_MZ(3) + P(2,3)*SK_MZ(4) + P(2,21)*SK_MZ(2) + P(2,19)*"
-      "SK_MZ(6) - P(2,20)*SK_MZ(5));\n        K_MAG(3,1) = SK_MZ(1)*(P(3,24) + P(3,1)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P("
-      "3,2)*SK_MZ(3) + P(3,3)*SK_MZ(4) + P(3,21)*SK_MZ(2) + P(3,19)*SK_MZ(6) - P(3,20)*SK_MZ(5));\n        K_MAG(4,1) ="
-      " SK_MZ(1)*(P(4,24) + P(4,1)*SH_MAG(2) + P(4,4)*SH_MAG(1) - P(4,2)*SK_MZ(3) + P(4,3)*SK_MZ(4) + P(4,21)*SK_MZ(2) "
-      "+ P(4,19)*SK_MZ(6) - P(4,20)*SK_MZ(5));\n        K_MAG(5,1) = SK_MZ(1)*(P(5,24) + P(5,1)*SH_MAG(2) + P(5,4)*SH_M"
-      "AG(1) - P(5,2)*SK_MZ(3) + P(5,3)*SK_MZ(4) + P(5,21)*SK_MZ(2) + P(5,19)*SK_MZ(6) - P(5,20)*SK_MZ(5));\n        K_"
-      "MAG(6,1) = SK_MZ(1)*(P(6,24) + P(6,1)*SH_MAG(2) + P(6,4)*SH_MAG(1) - P(6,2)*SK_MZ(3) + P(6,3)*SK_MZ(4) + P(6,21)"
-      "*SK_MZ(2) + P(6,19)*SK_MZ(6) - P(6,20)*SK_MZ(5));\n        K_MAG(7,1) = SK_MZ(1)*(P(7,24) + P(7,1)*SH_MAG(2) + P"
-      "(7,4)*SH_MAG(1) - P(7,2)*SK_MZ(3) + P(7,3)*SK_MZ(4) + P(7,21)*SK_MZ(2) + P(7,19)*SK_MZ(6) - P(7,20)*SK_MZ(5));\n"
-      "        K_MAG(8,1) = SK_MZ(1)*(P(8,24) + P(8,1)*SH_MAG(2) + P(8,4)*SH_MAG(1) - P(8,2)*SK_MZ(3) + P(8,3)*SK_MZ(4)"
-      " + P(8,21)*SK_MZ(2) + P(8,19)*SK_MZ(6) - P(8,20)*SK_MZ(5));\n        K_MAG(9,1) = SK_MZ(1)*(P(9,24) + P(9,1)*SH_"
-      "MAG(2) + P(9,4)*SH_MAG(1) - P(9,2)*SK_MZ(3) + P(9,3)*SK_MZ(4) + P(9,21)*SK_MZ(2) + P(9,19)*SK_MZ(6) - P(9,20)*SK"
-      "_MZ(5));\n        K_MAG(10,1) = SK_MZ(1)*(P(10,24) + P(10,1)*SH_MAG(2) + P(10,4)*SH_MAG(1) - P(10,2)*SK_MZ(3) + "
-      "P(10,3)*SK_MZ(4) + P(10,21)*SK_MZ(2) + P(10,19)*SK_MZ(6) - P(10,20)*SK_MZ(5));\n        K_MAG(11,1) = SK_MZ(1)*("
-      "P(11,24) + P(11,1)*SH_MAG(2) + P(11,4)*SH_MAG(1) - P(11,2)*SK_MZ(3) + P(11,3)*SK_MZ(4) + P(11,21)*SK_MZ(2) + P(1"
-      "1,19)*SK_MZ(6) - P(11,20)*SK_MZ(5));\n        K_MAG(12,1) = SK_MZ(1)*(P(12,24) + P(12,1)*SH_MAG(2) + P(12,4)*SH_"
-      "MAG(1) - P(12,2)*SK_MZ(3) + P(12,3)*SK_MZ(4) + P(12,21)*SK_MZ(2) + P(12,19)*SK_MZ(6) - P(12,20)*SK_MZ(5));\n    "
-      "    K_MAG(13,1) = SK_MZ(1)*(P(13,24) + P(13,1)*SH_MAG(2) + P(13,4)*SH_MAG(1) - P(13,2)*SK_MZ(3) + P(13,3)*SK_MZ("
-      "4) + P(13,21)*SK_MZ(2) + P(13,19)*SK_MZ(6) - P(13,20)*SK_MZ(5));\n        K_MAG(14,1) = SK_MZ(1)*(P(14,24) + P(1"
-      "4,1)*SH_MAG(2) + P(14,4)*SH_MAG(1) - P(14,2)*SK_MZ(3) + P(14,3)*SK_MZ(4) + P(14,21)*SK_MZ(2) + P(14,19)*SK_MZ(6)"
-      " - P(14,20)*SK_MZ(5));\n        K_MAG(15,1) = SK_MZ(1)*(P(15,24) + P(15,1)*SH_MAG(2) + P(15,4)*SH_MAG(1) - P(15,"
-      "2)*SK_MZ(3) + P(15,3)*SK_MZ(4) + P(15,21)*SK_MZ(2) + P(15,19)*SK_MZ(6) - P(15,20)*SK_MZ(5));\n        K_MAG(16,1"
-      ") = SK_MZ(1)*(P(16,24) + P(16,1)*SH_MAG(2) + P(16,4)*SH_MAG(1) - P(16,2)*SK_MZ(3) + P(16,3)*SK_MZ(4) + P(16,21)*"
-      "SK_MZ(2) + P(16,19)*SK_MZ(6) - P(16,20)*SK_MZ(5));\n        K_MAG(17,1) = SK_MZ(1)*(P(17,24) + P(17,1)*SH_MAG(2)"
-      " + P(17,4)*SH_MAG(1) - P(17,2)*SK_MZ(3) + P(17,3)*SK_MZ(4) + P(17,21)*SK_MZ(2) + P(17,19)*SK_MZ(6) - P(17,20)*SK"
-      "_MZ(5));\n        K_MAG(18,1) = SK_MZ(1)*(P(18,24) + P(18,1)*SH_MAG(2) + P(18,4)*SH_MAG(1) - P(18,2)*SK_MZ(3) + "
-      "P(18,3)*SK_MZ(4) + P(18,21)*SK_MZ(2) + P(18,19)*SK_MZ(6) - P(18,20)*SK_MZ(5));\n        K_MAG(19,1) = SK_MZ(1)*("
-      "P(19,24) + P(19,1)*SH_MAG(2) + P(19,4)*SH_MAG(1) - P(19,2)*SK_MZ(3) + P(19,3)*SK_MZ(4) + P(19,21)*SK_MZ(2) + P(1"
-      "9,19)*SK_MZ(6) - P(19,20)*SK_MZ(5));\n        K_MAG(20,1) = SK_MZ(1)*(P(20,24) + P(20,1)*SH_MAG(2) + P(20,4)*SH_"
-      "MAG(1) - P(20,2)*SK_MZ(3) + P(20,3)*SK_MZ(4) + P(20,21)*SK_MZ(2) + P(20,19)*SK_MZ(6) - P(20,20)*SK_MZ(5));\n    "
-      "    K_MAG(21,1) = SK_MZ(1)*(P(21,24) + P(21,1)*SH_MAG(2) + P(21,4)*SH_MAG(1) - P(21,2)*SK_MZ(3) + P(21,3)*SK_MZ("
-      "4) + P(21,21)*SK_MZ(2) + P(21,19)*SK_MZ(6) - P(21,20)*SK_MZ(5));\n        K_MAG(22,1) = SK_MZ(1)*(P(22,24) + P(2"
-      "2,1)*SH_MAG(2) + P(22,4)*SH_MAG(1) - P(22,2)*SK_MZ(3) + P(22,3)*SK_MZ(4) + P(22,21)*SK_MZ(2) + P(22,19)*SK_MZ(6)"
-      " - P(22,20)*SK_MZ(5));\n        K_MAG(23,1) = SK_MZ(1)*(P(23,24) + P(23,1)*SH_MAG(2) + P(23,4)*SH_MAG(1) - P(23,"
-      "2)*SK_MZ(3) + P(23,3)*SK_MZ(4) + P(23,21)*SK_MZ(2) + P(23,19)*SK_MZ(6) - P(23,20)*SK_MZ(5));\n        K_MAG(24,1"
-      ") = SK_MZ(1)*(P(24,24) + P(24,1)*SH_MAG(2) + P(24,4)*SH_MAG(1) - P(24,2)*SK_MZ(3) + P(24,3)*SK_MZ(4) + P(24,21)*"
-      "SK_MZ(2) + P(24,19)*SK_MZ(6) - P(24,20)*SK_MZ(5));\n        varInnov(3) = 1/SK_MZ(1);\n    end\n    % Calculate "
-      "the measurement innovation\n    innovation(obsIndex) = MagPred(obsIndex) - MagData(obsIndex);\n    % Check the i"
-      "nnovation for consistencey and don't fuse if > 5Sigma\n    if ((innovation(obsIndex)^2) / varInnov(obsIndex)) < "
-      "+inf\n        xk = K_MAG * innovation(obsIndex);\n        states = states - xk;\n        % normalise the quatern"
-      "ion states\n        quatMag = sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)^2);\n        if (quatMag "
-      "> 1e-12)\n            states(1:4) = states(1:4) / quatMag;\n        end\n        % correct the covariance P = (I"
-      " - K*H)*P\n        % take advantage of the empty columns in KH to reduce the\n        % number of operations\n  "
-      "      KH = K_MAG * H_MAG;\n        for i = 1:24\n            for j = 1:24\n                for k = 1:4\n        "
-      "            KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n                end\n                for k = 19:24\n         "
-      "           KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n                end\n            end\n        end\n        P ="
-      " P - KHP;\n        P = 0.5*(P + transpose(P));\n    end\n    obsIndex = obsIndex + 1;\nend\n\n% Set default outp"
-      "ut for states and covariance\ncorrP = P;\ncorrStates = states;\n\nend"
+      "rsistent MagPred\nif isempty(MagPred)\n    MagPred = single(zeros(3,1));\nend\n% declare array used to calculate"
+      " intermediate result in covariance\n% update\nKHP = single(zeros(24,24));\n% define magnetometer measurement err"
+      "or variance (milligauss).\nR_MAG = single(50^2);\n% declare innovation variances\nvarInnov = single(zeros(3,1));"
+      "\n% declare innovation vector\ninnovation = single(zeros(1,3));\n% Perform sequential fusion of Magnetometer mea"
+      "surements.\n% This assumes that the errors in the dfferent componenets are\n% uncorrelated which is not true, ho"
+      "wever in the absence of covariance\n% data fit is the only assumption we can make\n% so we might as well take ad"
+      "vantage of the computational efficiencies\n% associated with sequential fusion\nif (useCompass && FuseData) || ("
+      "useCompass && (obsIndex == 2 || obsIndex == 3))\n    % Sequential fusion of XYZ components to spread processing "
+      "load across\n    % three prediction time steps. \n    % Calculate observation jacobians and Kalman gains\n    K_"
+      "MAG = single(zeros(24,1));\n    H_MAG = single(zeros(1,24));\n    if FuseData\n        % Copy required states to"
+      " local variable names\n        q0 = StatesAtMeasTime(1);\n        q1 = StatesAtMeasTime(2);\n        q2 = States"
+      "AtMeasTime(3);\n        q3 = StatesAtMeasTime(4);\n        magN = StatesAtMeasTime(19);\n        magE = StatesAt"
+      "MeasTime(20);\n        magD = StatesAtMeasTime(21);\n        % rotate predicted earth components into body axes "
+      "and calculate\n        % predicted measurments\n        Tnb = single([q0^2 + q1^2 - q2^2 - q3^2, 2*(q1*q2 + q0*q"
+      "3) , 2*(q1*q3-q0*q2) ;...\n            2*(q1*q2 - q0*q3), q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);...\n    "
+      "        2*(q1*q3 + q0*q2) , 2*(q2*q3 - q0*q1) , q0^2 - q1^2 - q2^2 + q3^2]);\n        MagPred = Tnb*states(19:21"
+      ") + states(22:24);\n        % Calculate observation jacobian common terms\n        SH_MAG(1) = 2*magD*q3 + 2*mag"
+      "E*q2 + 2*magN*q1;\n        SH_MAG(2) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n        SH_MAG(3) = 2*magD*q1 + 2*mag"
+      "E*q0 - 2*magN*q3;\n        SH_MAG(4) = q3^2;\n        SH_MAG(5) = q2^2;\n        SH_MAG(6) = q1^2;\n        SH_M"
+      "AG(7) = q0^2;\n        SH_MAG(8) = 2*magN*q0;\n        SH_MAG(9) = 2*magE*q3;\n        % calculate observation j"
+      "acobian\n        H_MAG(1,1) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n        H_MAG(1,2) = SH_MAG(1);\n        H_MAG"
+      "(1,3) = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;\n        H_MAG(1,4) = SH_MAG(3);\n        H_MAG(1,19) = SH_MAG(6) - S"
+      "H_MAG(5) - SH_MAG(4) + SH_MAG(7);\n        H_MAG(1,20) = 2*q0*q3 + 2*q1*q2;\n        H_MAG(1,21) = 2*q1*q3 - 2*q"
+      "0*q2;\n        H_MAG(1,22) = 1;\n        % calculate Kalman gain\n        SK_MX = single(zeros(1,6));\n        S"
+      "K_MX(1) = 1/(P(22,22) + R_MAG + P(2,22)*SH_MAG(1) + P(4,22)*SH_MAG(3) - P(19,22)*(SH_MAG(4) + SH_MAG(5) - SH_MAG"
+      "(6) - SH_MAG(7)) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P(22,3) + P(2,3)*SH_MAG(1) + P(4,3)*SH_MAG(3) - P(19,3)*"
+      "(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,3)*(2*q0*q3 + 2*q1*q2) - P(21,3)*(2*q0*q2 - 2*q1*q3) - P("
+      "3,3)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) "
+      "- 2*magD*q2)*(P(22,1) + P(2,1)*SH_MAG(1) + P(4,1)*SH_MAG(3) - P(19,1)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MA"
+      "G(7)) + P(20,1)*(2*q0*q3 + 2*q1*q2) - P(21,1)*(2*q0*q2 - 2*q1*q3) - P(3,1)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) +"
+      " P(1,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(22,2) + P(2,2)*SH_MAG(1) + P(4,2)*SH_MAG(3) - P(19,2"
+      ")*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,2)*(2*q0*q3 + 2*q1*q2) - P(21,2)*(2*q0*q2 - 2*q1*q3) - "
+      "P(3,2)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(3)*(P(22,4) + "
+      "P(2,4)*SH_MAG(1) + P(4,4)*SH_MAG(3) - P(19,4)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,4)*(2*q0*q3"
+      " + 2*q1*q2) - P(21,4)*(2*q0*q2 - 2*q1*q3) - P(3,4)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,4)*(SH_MAG(8) + SH_"
+      "MAG(9) - 2*magD*q2)) - (SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7))*(P(22,19) + P(2,19)*SH_MAG(1) + P(4,19)*S"
+      "H_MAG(3) - P(19,19)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,19)*(2*q0*q3 + 2*q1*q2) - P(21,19)*(2"
+      "*q0*q2 - 2*q1*q3) - P(3,19)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) +"
+      " P(20,22)*(2*q0*q3 + 2*q1*q2) - P(21,22)*(2*q0*q2 - 2*q1*q3) - P(3,22)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*"
+      "q0*q3 + 2*q1*q2)*(P(22,20) + P(2,20)*SH_MAG(1) + P(4,20)*SH_MAG(3) - P(19,20)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6)"
+      " - SH_MAG(7)) + P(20,20)*(2*q0*q3 + 2*q1*q2) - P(21,20)*(2*q0*q2 - 2*q1*q3) - P(3,20)*(2*magD*q0 - 2*magE*q1 + 2"
+      "*magN*q2) + P(1,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P(22,21) + P(2,21)*SH_MAG(1) + P"
+      "(4,21)*SH_MAG(3) - P(19,21)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,21)*(2*q0*q3 + 2*q1*q2) - P(2"
+      "1,21)*(2*q0*q2 - 2*q1*q3) - P(3,21)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,21)*(SH_MAG(8) + SH_MAG(9) - 2*mag"
+      "D*q2)) + P(1,22)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));\n        SK_MX(2) = SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - S"
+      "H_MAG(7);\n        SK_MX(3) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;\n        SK_MX(4) = SH_MAG(8) + SH_MAG(9) - 2*m"
+      "agD*q2;\n        SK_MX(5) = 2*q0*q2 - 2*q1*q3;\n        SK_MX(6) = 2*q0*q3 + 2*q1*q2;\n        K_MAG(1,1) = SK_M"
+      "X(1)*(P(1,22) + P(1,2)*SH_MAG(1) + P(1,4)*SH_MAG(3) + P(1,1)*SK_MX(4) - P(1,3)*SK_MX(3) - P(1,19)*SK_MX(2) + P(1"
+      ",20)*SK_MX(6) - P(1,21)*SK_MX(5));\n        K_MAG(2,1) = SK_MX(1)*(P(2,22) + P(2,2)*SH_MAG(1) + P(2,4)*SH_MAG(3)"
+      " + P(2,1)*SK_MX(4) - P(2,3)*SK_MX(3) - P(2,19)*SK_MX(2) + P(2,20)*SK_MX(6) - P(2,21)*SK_MX(5));\n        K_MAG(3"
+      ",1) = SK_MX(1)*(P(3,22) + P(3,2)*SH_MAG(1) + P(3,4)*SH_MAG(3) + P(3,1)*SK_MX(4) - P(3,3)*SK_MX(3) - P(3,19)*SK_M"
+      "X(2) + P(3,20)*SK_MX(6) - P(3,21)*SK_MX(5));\n        K_MAG(4,1) = SK_MX(1)*(P(4,22) + P(4,2)*SH_MAG(1) + P(4,4)"
+      "*SH_MAG(3) + P(4,1)*SK_MX(4) - P(4,3)*SK_MX(3) - P(4,19)*SK_MX(2) + P(4,20)*SK_MX(6) - P(4,21)*SK_MX(5));\n     "
+      "   K_MAG(5,1) = SK_MX(1)*(P(5,22) + P(5,2)*SH_MAG(1) + P(5,4)*SH_MAG(3) + P(5,1)*SK_MX(4) - P(5,3)*SK_MX(3) - P("
+      "5,19)*SK_MX(2) + P(5,20)*SK_MX(6) - P(5,21)*SK_MX(5));\n        K_MAG(6,1) = SK_MX(1)*(P(6,22) + P(6,2)*SH_MAG(1"
+      ") + P(6,4)*SH_MAG(3) + P(6,1)*SK_MX(4) - P(6,3)*SK_MX(3) - P(6,19)*SK_MX(2) + P(6,20)*SK_MX(6) - P(6,21)*SK_MX(5"
+      "));\n        K_MAG(7,1) = SK_MX(1)*(P(7,22) + P(7,2)*SH_MAG(1) + P(7,4)*SH_MAG(3) + P(7,1)*SK_MX(4) - P(7,3)*SK_"
+      "MX(3) - P(7,19)*SK_MX(2) + P(7,20)*SK_MX(6) - P(7,21)*SK_MX(5));\n        K_MAG(8,1) = SK_MX(1)*(P(8,22) + P(8,2"
+      ")*SH_MAG(1) + P(8,4)*SH_MAG(3) + P(8,1)*SK_MX(4) - P(8,3)*SK_MX(3) - P(8,19)*SK_MX(2) + P(8,20)*SK_MX(6) - P(8,2"
+      "1)*SK_MX(5));\n        K_MAG(9,1) = SK_MX(1)*(P(9,22) + P(9,2)*SH_MAG(1) + P(9,4)*SH_MAG(3) + P(9,1)*SK_MX(4) - "
+      "P(9,3)*SK_MX(3) - P(9,19)*SK_MX(2) + P(9,20)*SK_MX(6) - P(9,21)*SK_MX(5));\n        K_MAG(10,1) = SK_MX(1)*(P(10"
+      ",22) + P(10,2)*SH_MAG(1) + P(10,4)*SH_MAG(3) + P(10,1)*SK_MX(4) - P(10,3)*SK_MX(3) - P(10,19)*SK_MX(2) + P(10,20"
+      ")*SK_MX(6) - P(10,21)*SK_MX(5));\n        K_MAG(11,1) = SK_MX(1)*(P(11,22) + P(11,2)*SH_MAG(1) + P(11,4)*SH_MAG("
+      "3) + P(11,1)*SK_MX(4) - P(11,3)*SK_MX(3) - P(11,19)*SK_MX(2) + P(11,20)*SK_MX(6) - P(11,21)*SK_MX(5));\n        "
+      "K_MAG(12,1) = SK_MX(1)*(P(12,22) + P(12,2)*SH_MAG(1) + P(12,4)*SH_MAG(3) + P(12,1)*SK_MX(4) - P(12,3)*SK_MX(3) -"
+      " P(12,19)*SK_MX(2) + P(12,20)*SK_MX(6) - P(12,21)*SK_MX(5));\n        K_MAG(13,1) = SK_MX(1)*(P(13,22) + P(13,2)"
+      "*SH_MAG(1) + P(13,4)*SH_MAG(3) + P(13,1)*SK_MX(4) - P(13,3)*SK_MX(3) - P(13,19)*SK_MX(2) + P(13,20)*SK_MX(6) - P"
+      "(13,21)*SK_MX(5));\n        K_MAG(14,1) = SK_MX(1)*(P(14,22) + P(14,2)*SH_MAG(1) + P(14,4)*SH_MAG(3) + P(14,1)*S"
+      "K_MX(4) - P(14,3)*SK_MX(3) - P(14,19)*SK_MX(2) + P(14,20)*SK_MX(6) - P(14,21)*SK_MX(5));\n        K_MAG(15,1) = "
+      "SK_MX(1)*(P(15,22) + P(15,2)*SH_MAG(1) + P(15,4)*SH_MAG(3) + P(15,1)*SK_MX(4) - P(15,3)*SK_MX(3) - P(15,19)*SK_M"
+      "X(2) + P(15,20)*SK_MX(6) - P(15,21)*SK_MX(5));\n        K_MAG(16,1) = SK_MX(1)*(P(16,22) + P(16,2)*SH_MAG(1) + P"
+      "(16,4)*SH_MAG(3) + P(16,1)*SK_MX(4) - P(16,3)*SK_MX(3) - P(16,19)*SK_MX(2) + P(16,20)*SK_MX(6) - P(16,21)*SK_MX("
+      "5));\n        K_MAG(17,1) = SK_MX(1)*(P(17,22) + P(17,2)*SH_MAG(1) + P(17,4)*SH_MAG(3) + P(17,1)*SK_MX(4) - P(17"
+      ",3)*SK_MX(3) - P(17,19)*SK_MX(2) + P(17,20)*SK_MX(6) - P(17,21)*SK_MX(5));\n        K_MAG(18,1) = SK_MX(1)*(P(18"
+      ",22) + P(18,2)*SH_MAG(1) + P(18,4)*SH_MAG(3) + P(18,1)*SK_MX(4) - P(18,3)*SK_MX(3) - P(18,19)*SK_MX(2) + P(18,20"
+      ")*SK_MX(6) - P(18,21)*SK_MX(5));\n        K_MAG(19,1) = SK_MX(1)*(P(19,22) + P(19,2)*SH_MAG(1) + P(19,4)*SH_MAG("
+      "3) + P(19,1)*SK_MX(4) - P(19,3)*SK_MX(3) - P(19,19)*SK_MX(2) + P(19,20)*SK_MX(6) - P(19,21)*SK_MX(5));\n        "
+      "K_MAG(20,1) = SK_MX(1)*(P(20,22) + P(20,2)*SH_MAG(1) + P(20,4)*SH_MAG(3) + P(20,1)*SK_MX(4) - P(20,3)*SK_MX(3) -"
+      " P(20,19)*SK_MX(2) + P(20,20)*SK_MX(6) - P(20,21)*SK_MX(5));\n        K_MAG(21,1) = SK_MX(1)*(P(21,22) + P(21,2)"
+      "*SH_MAG(1) + P(21,4)*SH_MAG(3) + P(21,1)*SK_MX(4) - P(21,3)*SK_MX(3) - P(21,19)*SK_MX(2) + P(21,20)*SK_MX(6) - P"
+      "(21,21)*SK_MX(5));\n        K_MAG(22,1) = SK_MX(1)*(P(22,22) + P(22,2)*SH_MAG(1) + P(22,4)*SH_MAG(3) + P(22,1)*S"
+      "K_MX(4) - P(22,3)*SK_MX(3) - P(22,19)*SK_MX(2) + P(22,20)*SK_MX(6) - P(22,21)*SK_MX(5));\n        K_MAG(23,1) = "
+      "SK_MX(1)*(P(23,22) + P(23,2)*SH_MAG(1) + P(23,4)*SH_MAG(3) + P(23,1)*SK_MX(4) - P(23,3)*SK_MX(3) - P(23,19)*SK_M"
+      "X(2) + P(23,20)*SK_MX(6) - P(23,21)*SK_MX(5));\n        K_MAG(24,1) = SK_MX(1)*(P(24,22) + P(24,2)*SH_MAG(1) + P"
+      "(24,4)*SH_MAG(3) + P(24,1)*SK_MX(4) - P(24,3)*SK_MX(3) - P(24,19)*SK_MX(2) + P(24,20)*SK_MX(6) - P(24,21)*SK_MX("
+      "5));\n        varInnov(1) = 1/SK_MX(1);\n        % reset the observation index to 1 (we start by fusing the X\n "
+      "       % measurement)\n        obsIndex = 1;\n    elseif obsIndex == 2 % we are now fusing the Y measurement\n  "
+      "      H_MAG(1,1) = SH_MAG(3);\n        H_MAG(1,2) = SH_MAG(2);\n        H_MAG(1,3) = SH_MAG(1);\n        H_MAG(1"
+      ",4) = 2*magD*q2 - SH_MAG(9) - SH_MAG(8);\n        H_MAG(1,19) = 2*q1*q2 - 2*q0*q3;\n        H_MAG(1,20) = SH_MAG"
+      "(5) - SH_MAG(4) - SH_MAG(6) + SH_MAG(7);\n        H_MAG(1,21) = 2*q0*q1 + 2*q2*q3;\n        H_MAG(1,23) = 1;\n  "
+      "      % calculate the Kalman gain\n        SK_MY = single(zeros(5,1));\n        SK_MY(1) = 1/(P(23,23) + R_MAG +"
+      " P(1,23)*SH_MAG(3) + P(2,23)*SH_MAG(2) + P(3,23)*SH_MAG(1) - P(20,23)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MA"
+      "G(7)) - (2*q0*q3 - 2*q1*q2)*(P(23,19) + P(1,19)*SH_MAG(3) + P(2,19)*SH_MAG(2) + P(3,19)*SH_MAG(1) - P(20,19)*(SH"
+      "_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,19)*(2*q0*q3 - 2*q1*q2) + P(21,19)*(2*q0*q1 + 2*q2*q3) - P(4"
+      ",19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P(23,21) + P(1,21)*SH_MAG(3) + P(2,21)*SH_MAG(2"
+      ") + P(3,21)*SH_MAG(1) - P(20,21)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,21)*(2*q0*q3 - 2*q1*q2) "
+      "+ P(21,21)*(2*q0*q1 + 2*q2*q3) - P(4,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(8) + SH_MAG(9) - 2*magD*"
+      "q2)*(P(23,4) + P(1,4)*SH_MAG(3) + P(2,4)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P(20,4)*(SH_MAG(4) - SH_MAG(5) + SH_MAG("
+      "6) - SH_MAG(7)) - P(19,4)*(2*q0*q3 - 2*q1*q2) + P(21,4)*(2*q0*q1 + 2*q2*q3) - P(4,4)*(SH_MAG(8) + SH_MAG(9) - 2*"
+      "magD*q2)) - P(19,23)*(2*q0*q3 - 2*q1*q2) + P(21,23)*(2*q0*q1 + 2*q2*q3) + SH_MAG(3)*(P(23,1) + P(1,1)*SH_MAG(3) "
+      "+ P(2,1)*SH_MAG(2) + P(3,1)*SH_MAG(1) - P(20,1)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,1)*(2*q0*"
+      "q3 - 2*q1*q2) + P(21,1)*(2*q0*q1 + 2*q2*q3) - P(4,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(23,2) +"
+      " P(1,2)*SH_MAG(3) + P(2,2)*SH_MAG(2) + P(3,2)*SH_MAG(1) - P(20,2)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)"
+      ") - P(19,2)*(2*q0*q3 - 2*q1*q2) + P(21,2)*(2*q0*q1 + 2*q2*q3) - P(4,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH"
+      "_MAG(1)*(P(23,3) + P(1,3)*SH_MAG(3) + P(2,3)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(20,3)*(SH_MAG(4) - SH_MAG(5) + SH_"
+      "MAG(6) - SH_MAG(7)) - P(19,3)*(2*q0*q3 - 2*q1*q2) + P(21,3)*(2*q0*q1 + 2*q2*q3) - P(4,3)*(SH_MAG(8) + SH_MAG(9) "
+      "- 2*magD*q2)) - (SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7))*(P(23,20) + P(1,20)*SH_MAG(3) + P(2,20)*SH_MAG(2"
+      ") + P(3,20)*SH_MAG(1) - P(20,20)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,20)*(2*q0*q3 - 2*q1*q2) "
+      "+ P(21,20)*(2*q0*q1 + 2*q2*q3) - P(4,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(4,23)*(SH_MAG(8) + SH_MAG(9) -"
+      " 2*magD*q2));\n        SK_MY(2) = SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7);\n        SK_MY(3) = SH_MAG(8) +"
+      " SH_MAG(9) - 2*magD*q2;\n        SK_MY(4) = 2*q0*q3 - 2*q1*q2;\n        SK_MY(5) = 2*q0*q1 + 2*q2*q3;\n        K"
+      "_MAG(1,1) = SK_MY(1)*(P(1,23) + P(1,1)*SH_MAG(3) + P(1,2)*SH_MAG(2) + P(1,3)*SH_MAG(1) - P(1,4)*SK_MY(3) - P(1,2"
+      "0)*SK_MY(2) - P(1,19)*SK_MY(4) + P(1,21)*SK_MY(5));\n        K_MAG(2,1) = SK_MY(1)*(P(2,23) + P(2,1)*SH_MAG(3) +"
+      " P(2,2)*SH_MAG(2) + P(2,3)*SH_MAG(1) - P(2,4)*SK_MY(3) - P(2,20)*SK_MY(2) - P(2,19)*SK_MY(4) + P(2,21)*SK_MY(5))"
+      ";\n        K_MAG(3,1) = SK_MY(1)*(P(3,23) + P(3,1)*SH_MAG(3) + P(3,2)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(3,4)*SK_M"
+      "Y(3) - P(3,20)*SK_MY(2) - P(3,19)*SK_MY(4) + P(3,21)*SK_MY(5));\n        K_MAG(4,1) = SK_MY(1)*(P(4,23) + P(4,1)"
+      "*SH_MAG(3) + P(4,2)*SH_MAG(2) + P(4,3)*SH_MAG(1) - P(4,4)*SK_MY(3) - P(4,20)*SK_MY(2) - P(4,19)*SK_MY(4) + P(4,2"
+      "1)*SK_MY(5));\n        K_MAG(5,1) = SK_MY(1)*(P(5,23) + P(5,1)*SH_MAG(3) + P(5,2)*SH_MAG(2) + P(5,3)*SH_MAG(1) -"
+      " P(5,4)*SK_MY(3) - P(5,20)*SK_MY(2) - P(5,19)*SK_MY(4) + P(5,21)*SK_MY(5));\n        K_MAG(6,1) = SK_MY(1)*(P(6,"
+      "23) + P(6,1)*SH_MAG(3) + P(6,2)*SH_MAG(2) + P(6,3)*SH_MAG(1) - P(6,4)*SK_MY(3) - P(6,20)*SK_MY(2) - P(6,19)*SK_M"
+      "Y(4) + P(6,21)*SK_MY(5));\n        K_MAG(7,1) = SK_MY(1)*(P(7,23) + P(7,1)*SH_MAG(3) + P(7,2)*SH_MAG(2) + P(7,3)"
+      "*SH_MAG(1) - P(7,4)*SK_MY(3) - P(7,20)*SK_MY(2) - P(7,19)*SK_MY(4) + P(7,21)*SK_MY(5));\n        K_MAG(8,1) = SK"
+      "_MY(1)*(P(8,23) + P(8,1)*SH_MAG(3) + P(8,2)*SH_MAG(2) + P(8,3)*SH_MAG(1) - P(8,4)*SK_MY(3) - P(8,20)*SK_MY(2) - "
+      "P(8,19)*SK_MY(4) + P(8,21)*SK_MY(5));\n        K_MAG(9,1) = SK_MY(1)*(P(9,23) + P(9,1)*SH_MAG(3) + P(9,2)*SH_MAG"
+      "(2) + P(9,3)*SH_MAG(1) - P(9,4)*SK_MY(3) - P(9,20)*SK_MY(2) - P(9,19)*SK_MY(4) + P(9,21)*SK_MY(5));\n        K_M"
+      "AG(10,1) = SK_MY(1)*(P(10,23) + P(10,1)*SH_MAG(3) + P(10,2)*SH_MAG(2) + P(10,3)*SH_MAG(1) - P(10,4)*SK_MY(3) - P"
+      "(10,20)*SK_MY(2) - P(10,19)*SK_MY(4) + P(10,21)*SK_MY(5));\n        K_MAG(11,1) = SK_MY(1)*(P(11,23) + P(11,1)*S"
+      "H_MAG(3) + P(11,2)*SH_MAG(2) + P(11,3)*SH_MAG(1) - P(11,4)*SK_MY(3) - P(11,20)*SK_MY(2) - P(11,19)*SK_MY(4) + P("
+      "11,21)*SK_MY(5));\n        K_MAG(12,1) = SK_MY(1)*(P(12,23) + P(12,1)*SH_MAG(3) + P(12,2)*SH_MAG(2) + P(12,3)*SH"
+      "_MAG(1) - P(12,4)*SK_MY(3) - P(12,20)*SK_MY(2) - P(12,19)*SK_MY(4) + P(12,21)*SK_MY(5));\n        K_MAG(13,1) = "
+      "SK_MY(1)*(P(13,23) + P(13,1)*SH_MAG(3) + P(13,2)*SH_MAG(2) + P(13,3)*SH_MAG(1) - P(13,4)*SK_MY(3) - P(13,20)*SK_"
+      "MY(2) - P(13,19)*SK_MY(4) + P(13,21)*SK_MY(5));\n        K_MAG(14,1) = SK_MY(1)*(P(14,23) + P(14,1)*SH_MAG(3) + "
+      "P(14,2)*SH_MAG(2) + P(14,3)*SH_MAG(1) - P(14,4)*SK_MY(3) - P(14,20)*SK_MY(2) - P(14,19)*SK_MY(4) + P(14,21)*SK_M"
+      "Y(5));\n        K_MAG(15,1) = SK_MY(1)*(P(15,23) + P(15,1)*SH_MAG(3) + P(15,2)*SH_MAG(2) + P(15,3)*SH_MAG(1) - P"
+      "(15,4)*SK_MY(3) - P(15,20)*SK_MY(2) - P(15,19)*SK_MY(4) + P(15,21)*SK_MY(5));\n        K_MAG(16,1) = SK_MY(1)*(P"
+      "(16,23) + P(16,1)*SH_MAG(3) + P(16,2)*SH_MAG(2) + P(16,3)*SH_MAG(1) - P(16,4)*SK_MY(3) - P(16,20)*SK_MY(2) - P(1"
+      "6,19)*SK_MY(4) + P(16,21)*SK_MY(5));\n        K_MAG(17,1) = SK_MY(1)*(P(17,23) + P(17,1)*SH_MAG(3) + P(17,2)*SH_"
+      "MAG(2) + P(17,3)*SH_MAG(1) - P(17,4)*SK_MY(3) - P(17,20)*SK_MY(2) - P(17,19)*SK_MY(4) + P(17,21)*SK_MY(5));\n   "
+      "     K_MAG(18,1) = SK_MY(1)*(P(18,23) + P(18,1)*SH_MAG(3) + P(18,2)*SH_MAG(2) + P(18,3)*SH_MAG(1) - P(18,4)*SK_M"
+      "Y(3) - P(18,20)*SK_MY(2) - P(18,19)*SK_MY(4) + P(18,21)*SK_MY(5));\n        K_MAG(19,1) = SK_MY(1)*(P(19,23) + P"
+      "(19,1)*SH_MAG(3) + P(19,2)*SH_MAG(2) + P(19,3)*SH_MAG(1) - P(19,4)*SK_MY(3) - P(19,20)*SK_MY(2) - P(19,19)*SK_MY"
+      "(4) + P(19,21)*SK_MY(5));\n        K_MAG(20,1) = SK_MY(1)*(P(20,23) + P(20,1)*SH_MAG(3) + P(20,2)*SH_MAG(2) + P("
+      "20,3)*SH_MAG(1) - P(20,4)*SK_MY(3) - P(20,20)*SK_MY(2) - P(20,19)*SK_MY(4) + P(20,21)*SK_MY(5));\n        K_MAG("
+      "21,1) = SK_MY(1)*(P(21,23) + P(21,1)*SH_MAG(3) + P(21,2)*SH_MAG(2) + P(21,3)*SH_MAG(1) - P(21,4)*SK_MY(3) - P(21"
+      ",20)*SK_MY(2) - P(21,19)*SK_MY(4) + P(21,21)*SK_MY(5));\n        K_MAG(22,1) = SK_MY(1)*(P(22,23) + P(22,1)*SH_M"
+      "AG(3) + P(22,2)*SH_MAG(2) + P(22,3)*SH_MAG(1) - P(22,4)*SK_MY(3) - P(22,20)*SK_MY(2) - P(22,19)*SK_MY(4) + P(22,"
+      "21)*SK_MY(5));\n        K_MAG(23,1) = SK_MY(1)*(P(23,23) + P(23,1)*SH_MAG(3) + P(23,2)*SH_MAG(2) + P(23,3)*SH_MA"
+      "G(1) - P(23,4)*SK_MY(3) - P(23,20)*SK_MY(2) - P(23,19)*SK_MY(4) + P(23,21)*SK_MY(5));\n        K_MAG(24,1) = SK_"
+      "MY(1)*(P(24,23) + P(24,1)*SH_MAG(3) + P(24,2)*SH_MAG(2) + P(24,3)*SH_MAG(1) - P(24,4)*SK_MY(3) - P(24,20)*SK_MY("
+      "2) - P(24,19)*SK_MY(4) + P(24,21)*SK_MY(5));\n        varInnov(2) = 1/SK_MY(1);\n    elseif obsIndex == 3 % we a"
+      "r now fusing the Z measurement\n        % calculate the observation jacobian\n        H_MAG(1,1) = SH_MAG(2);\n "
+      "       H_MAG(1,2) = 2*magN*q3 - 2*magE*q0 - 2*magD*q1;\n        H_MAG(1,3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n"
+      "        H_MAG(1,4) = SH_MAG(1);\n        H_MAG(1,19) = 2*q0*q2 + 2*q1*q3;\n        H_MAG(1,20) = 2*q2*q3 - 2*q0*"
+      "q1;\n        H_MAG(1,21) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n        H_MAG(1,24) = 1;\n        % c"
+      "alculate the Kalman gain\n        SK_MZ = single(zeros(6,1));\n        SK_MZ(1) = 1/(P(24,24) + R_MAG + P(1,24)*"
+      "SH_MAG(2) + P(4,24)*SH_MAG(1) + P(21,24)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) - (2*magD*q1 + 2*magE*q"
+      "0 - 2*magN*q3)*(P(24,2) + P(1,2)*SH_MAG(2) + P(4,2)*SH_MAG(1) + P(21,2)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_"
+      "MAG(7)) + P(19,2)*(2*q0*q2 + 2*q1*q3) - P(20,2)*(2*q0*q1 - 2*q2*q3) - P(2,2)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3)"
+      " + P(3,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(24,3) + P(1,3)*SH_MAG(2)"
+      " + P(4,3)*SH_MAG(1) + P(21,3)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,3)*(2*q0*q2 + 2*q1*q3) - P("
+      "20,3)*(2*q0*q1 - 2*q2*q3) - P(2,3)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*"
+      "q2)) + SH_MAG(2)*(P(24,1) + P(1,1)*SH_MAG(2) + P(4,1)*SH_MAG(1) + P(21,1)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + S"
+      "H_MAG(7)) + P(19,1)*(2*q0*q2 + 2*q1*q3) - P(20,1)*(2*q0*q1 - 2*q2*q3) - P(2,1)*(2*magD*q1 + 2*magE*q0 - 2*magN*q"
+      "3) + P(3,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(24,4) + P(1,4)*SH_MAG(2) + P(4,4)*SH_MAG(1) + P("
+      "21,4)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,4)*(2*q0*q2 + 2*q1*q3) - P(20,4)*(2*q0*q1 - 2*q2*q3"
+      ") - P(2,4)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(4) - SH_M"
+      "AG(5) - SH_MAG(6) + SH_MAG(7))*(P(24,21) + P(1,21)*SH_MAG(2) + P(4,21)*SH_MAG(1) + P(21,21)*(SH_MAG(4) - SH_MAG("
+      "5) - SH_MAG(6) + SH_MAG(7)) + P(19,21)*(2*q0*q2 + 2*q1*q3) - P(20,21)*(2*q0*q1 - 2*q2*q3) - P(2,21)*(2*magD*q1 +"
+      " 2*magE*q0 - 2*magN*q3) + P(3,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(19,24)*(2*q0*q2 + 2*q1*q3) - P(20,24)"
+      "*(2*q0*q1 - 2*q2*q3) - P(2,24)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P(24,19) + P(1,19)*SH_"
+      "MAG(2) + P(4,19)*SH_MAG(1) + P(21,19)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,19)*(2*q0*q2 + 2*q1"
+      "*q3) - P(20,19)*(2*q0*q1 - 2*q2*q3) - P(2,19)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,19)*(SH_MAG(8) + SH_MAG("
+      "9) - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P(24,20) + P(1,20)*SH_MAG(2) + P(4,20)*SH_MAG(1) + P(21,20)*(SH_MAG(4) -"
+      " SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,20)*(2*q0*q2 + 2*q1*q3) - P(20,20)*(2*q0*q1 - 2*q2*q3) - P(2,20)*(2*m"
+      "agD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(3,24)*(SH_MAG(8) + SH_MAG(9) "
+      "- 2*magD*q2));\n        SK_MZ(2) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);\n        SK_MZ(3) = 2*magD*q1 "
+      "+ 2*magE*q0 - 2*magN*q3;\n        SK_MZ(4) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;\n        SK_MZ(5) = 2*q0*q1 - 2*"
+      "q2*q3;\n        SK_MZ(6) = 2*q0*q2 + 2*q1*q3;\n        K_MAG(1,1) = SK_MZ(1)*(P(1,24) + P(1,1)*SH_MAG(2) + P(1,4"
+      ")*SH_MAG(1) - P(1,2)*SK_MZ(3) + P(1,3)*SK_MZ(4) + P(1,21)*SK_MZ(2) + P(1,19)*SK_MZ(6) - P(1,20)*SK_MZ(5));\n    "
+      "    K_MAG(2,1) = SK_MZ(1)*(P(2,24) + P(2,1)*SH_MAG(2) + P(2,4)*SH_MAG(1) - P(2,2)*SK_MZ(3) + P(2,3)*SK_MZ(4) + P"
+      "(2,21)*SK_MZ(2) + P(2,19)*SK_MZ(6) - P(2,20)*SK_MZ(5));\n        K_MAG(3,1) = SK_MZ(1)*(P(3,24) + P(3,1)*SH_MAG("
+      "2) + P(3,4)*SH_MAG(1) - P(3,2)*SK_MZ(3) + P(3,3)*SK_MZ(4) + P(3,21)*SK_MZ(2) + P(3,19)*SK_MZ(6) - P(3,20)*SK_MZ("
+      "5));\n        K_MAG(4,1) = SK_MZ(1)*(P(4,24) + P(4,1)*SH_MAG(2) + P(4,4)*SH_MAG(1) - P(4,2)*SK_MZ(3) + P(4,3)*SK"
+      "_MZ(4) + P(4,21)*SK_MZ(2) + P(4,19)*SK_MZ(6) - P(4,20)*SK_MZ(5));\n        K_MAG(5,1) = SK_MZ(1)*(P(5,24) + P(5,"
+      "1)*SH_MAG(2) + P(5,4)*SH_MAG(1) - P(5,2)*SK_MZ(3) + P(5,3)*SK_MZ(4) + P(5,21)*SK_MZ(2) + P(5,19)*SK_MZ(6) - P(5,"
+      "20)*SK_MZ(5));\n        K_MAG(6,1) = SK_MZ(1)*(P(6,24) + P(6,1)*SH_MAG(2) + P(6,4)*SH_MAG(1) - P(6,2)*SK_MZ(3) +"
+      " P(6,3)*SK_MZ(4) + P(6,21)*SK_MZ(2) + P(6,19)*SK_MZ(6) - P(6,20)*SK_MZ(5));\n        K_MAG(7,1) = SK_MZ(1)*(P(7,"
+      "24) + P(7,1)*SH_MAG(2) + P(7,4)*SH_MAG(1) - P(7,2)*SK_MZ(3) + P(7,3)*SK_MZ(4) + P(7,21)*SK_MZ(2) + P(7,19)*SK_MZ"
+      "(6) - P(7,20)*SK_MZ(5));\n        K_MAG(8,1) = SK_MZ(1)*(P(8,24) + P(8,1)*SH_MAG(2) + P(8,4)*SH_MAG(1) - P(8,2)*"
+      "SK_MZ(3) + P(8,3)*SK_MZ(4) + P(8,21)*SK_MZ(2) + P(8,19)*SK_MZ(6) - P(8,20)*SK_MZ(5));\n        K_MAG(9,1) = SK_M"
+      "Z(1)*(P(9,24) + P(9,1)*SH_MAG(2) + P(9,4)*SH_MAG(1) - P(9,2)*SK_MZ(3) + P(9,3)*SK_MZ(4) + P(9,21)*SK_MZ(2) + P(9"
+      ",19)*SK_MZ(6) - P(9,20)*SK_MZ(5));\n        K_MAG(10,1) = SK_MZ(1)*(P(10,24) + P(10,1)*SH_MAG(2) + P(10,4)*SH_MA"
+      "G(1) - P(10,2)*SK_MZ(3) + P(10,3)*SK_MZ(4) + P(10,21)*SK_MZ(2) + P(10,19)*SK_MZ(6) - P(10,20)*SK_MZ(5));\n      "
+      "  K_MAG(11,1) = SK_MZ(1)*(P(11,24) + P(11,1)*SH_MAG(2) + P(11,4)*SH_MAG(1) - P(11,2)*SK_MZ(3) + P(11,3)*SK_MZ(4)"
+      " + P(11,21)*SK_MZ(2) + P(11,19)*SK_MZ(6) - P(11,20)*SK_MZ(5));\n        K_MAG(12,1) = SK_MZ(1)*(P(12,24) + P(12,"
+      "1)*SH_MAG(2) + P(12,4)*SH_MAG(1) - P(12,2)*SK_MZ(3) + P(12,3)*SK_MZ(4) + P(12,21)*SK_MZ(2) + P(12,19)*SK_MZ(6) -"
+      " P(12,20)*SK_MZ(5));\n        K_MAG(13,1) = SK_MZ(1)*(P(13,24) + P(13,1)*SH_MAG(2) + P(13,4)*SH_MAG(1) - P(13,2)"
+      "*SK_MZ(3) + P(13,3)*SK_MZ(4) + P(13,21)*SK_MZ(2) + P(13,19)*SK_MZ(6) - P(13,20)*SK_MZ(5));\n        K_MAG(14,1) "
+      "= SK_MZ(1)*(P(14,24) + P(14,1)*SH_MAG(2) + P(14,4)*SH_MAG(1) - P(14,2)*SK_MZ(3) + P(14,3)*SK_MZ(4) + P(14,21)*SK"
+      "_MZ(2) + P(14,19)*SK_MZ(6) - P(14,20)*SK_MZ(5));\n        K_MAG(15,1) = SK_MZ(1)*(P(15,24) + P(15,1)*SH_MAG(2) +"
+      " P(15,4)*SH_MAG(1) - P(15,2)*SK_MZ(3) + P(15,3)*SK_MZ(4) + P(15,21)*SK_MZ(2) + P(15,19)*SK_MZ(6) - P(15,20)*SK_M"
+      "Z(5));\n        K_MAG(16,1) = SK_MZ(1)*(P(16,24) + P(16,1)*SH_MAG(2) + P(16,4)*SH_MAG(1) - P(16,2)*SK_MZ(3) + P("
+      "16,3)*SK_MZ(4) + P(16,21)*SK_MZ(2) + P(16,19)*SK_MZ(6) - P(16,20)*SK_MZ(5));\n        K_MAG(17,1) = SK_MZ(1)*(P("
+      "17,24) + P(17,1)*SH_MAG(2) + P(17,4)*SH_MAG(1) - P(17,2)*SK_MZ(3) + P(17,3)*SK_MZ(4) + P(17,21)*SK_MZ(2) + P(17,"
+      "19)*SK_MZ(6) - P(17,20)*SK_MZ(5));\n        K_MAG(18,1) = SK_MZ(1)*(P(18,24) + P(18,1)*SH_MAG(2) + P(18,4)*SH_MA"
+      "G(1) - P(18,2)*SK_MZ(3) + P(18,3)*SK_MZ(4) + P(18,21)*SK_MZ(2) + P(18,19)*SK_MZ(6) - P(18,20)*SK_MZ(5));\n      "
+      "  K_MAG(19,1) = SK_MZ(1)*(P(19,24) + P(19,1)*SH_MAG(2) + P(19,4)*SH_MAG(1) - P(19,2)*SK_MZ(3) + P(19,3)*SK_MZ(4)"
+      " + P(19,21)*SK_MZ(2) + P(19,19)*SK_MZ(6) - P(19,20)*SK_MZ(5));\n        K_MAG(20,1) = SK_MZ(1)*(P(20,24) + P(20,"
+      "1)*SH_MAG(2) + P(20,4)*SH_MAG(1) - P(20,2)*SK_MZ(3) + P(20,3)*SK_MZ(4) + P(20,21)*SK_MZ(2) + P(20,19)*SK_MZ(6) -"
+      " P(20,20)*SK_MZ(5));\n        K_MAG(21,1) = SK_MZ(1)*(P(21,24) + P(21,1)*SH_MAG(2) + P(21,4)*SH_MAG(1) - P(21,2)"
+      "*SK_MZ(3) + P(21,3)*SK_MZ(4) + P(21,21)*SK_MZ(2) + P(21,19)*SK_MZ(6) - P(21,20)*SK_MZ(5));\n        K_MAG(22,1) "
+      "= SK_MZ(1)*(P(22,24) + P(22,1)*SH_MAG(2) + P(22,4)*SH_MAG(1) - P(22,2)*SK_MZ(3) + P(22,3)*SK_MZ(4) + P(22,21)*SK"
+      "_MZ(2) + P(22,19)*SK_MZ(6) - P(22,20)*SK_MZ(5));\n        K_MAG(23,1) = SK_MZ(1)*(P(23,24) + P(23,1)*SH_MAG(2) +"
+      " P(23,4)*SH_MAG(1) - P(23,2)*SK_MZ(3) + P(23,3)*SK_MZ(4) + P(23,21)*SK_MZ(2) + P(23,19)*SK_MZ(6) - P(23,20)*SK_M"
+      "Z(5));\n        K_MAG(24,1) = SK_MZ(1)*(P(24,24) + P(24,1)*SH_MAG(2) + P(24,4)*SH_MAG(1) - P(24,2)*SK_MZ(3) + P("
+      "24,3)*SK_MZ(4) + P(24,21)*SK_MZ(2) + P(24,19)*SK_MZ(6) - P(24,20)*SK_MZ(5));\n        varInnov(3) = 1/SK_MZ(1);\n"
+      "    end\n    % Calculate the measurement innovation\n    innovation(obsIndex) = MagPred(obsIndex) - MagData(obsI"
+      "ndex);\n    % Check the innovation for consistencey and don't fuse if > 5Sigma\n    if ((innovation(obsIndex)^2)"
+      " / varInnov(obsIndex)) < +inf\n        xk = K_MAG * innovation(obsIndex);\n        states = states - xk;\n      "
+      "  % normalise the quaternion states\n        quatMag = sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)^"
+      "2);\n        if (quatMag > 1e-12)\n            states(1:4) = states(1:4) / quatMag;\n        end\n        % corr"
+      "ect the covariance P = (I - K*H)*P\n        % take advantage of the empty columns in KH to reduce the\n        %"
+      " number of operations\n        KH = K_MAG * H_MAG;\n        for i = 1:24\n            for j = 1:24\n            "
+      "    for k = 1:4\n                    KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n                end\n               "
+      " for k = 19:24\n                    KHP(i,j) = KHP(i,j) + KH(i,k)*P(k,j);\n                end\n            end\n"
+      "        end\n        P = P - KHP;\n    end\n    obsIndex = obsIndex + 1;\nend\n% Force symmetry on the covarianc"
+      "e matrix to prevent ill-conditioning\n% of the matrix which would cause the filter to blow-up\nP = 0.5*(P + tran"
+      "spose(P));\n% Set default output for states and covariance\ncorrP = P;\ncorrStates = states;\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -16223,7 +16320,7 @@ Stateflow {
     firstJunction	    145
     viewObj		    143
     machine		    1
-    ssIdHighWaterMark	    17
+    ssIdHighWaterMark	    18
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
     firstData		    147
@@ -16257,35 +16354,59 @@ Stateflow {
       "y in navigation frame (m/s^2)\n    FuseGPSData, ... % Boolean to initiate fusion of GPS measurements\n    VelNED"
       ", ... % NED velocity measurements (m/s)\n    PosNE, ... % NE position measurements (m)\n    StatesAtGpsTime, ..."
       " % States captured at GPs measurement time\n    FuseHgtData, ... % Boolean to initiate fusion of height measurem"
-      "ents\n    HgtMea, ... % D position measurement (m)\n    StatesAtHgtTime) % States captured at height measurement"
-      " time\n% initialise innovation vector\ninnovation = single(zeros(6,1));\n% initialise innovation variance vector"
-      " (for data analysis only)\nvarInnov = single(zeros(6,1));\n% Define observation vector\nobservation = single([Ve"
-      "lNED;PosNE;-HgtMea]);\n% Calculate GPS velocity induced error\nvelErr = single(0.15*accNavMag);\nposErr = single"
-      "(0.15*accNavMag);\n% Estimate the GPS and height measurement variances.\nR_OBS = single([(0.1^2 + velErr^2) (0.1"
-      "^2 + velErr^2) (0.1^2 + velErr^2) (2.0^2 + posErr^2) (2.0^2 + posErr^2) 2.0^2]);\n% Perform sequential fusion of"
-      " GPS measurements. This assumes that the\n% errors in the dfferent velocity and position componenets are\n% unco"
-      "rrelated which is not true, however in the absence of covariance\n% data from the GPS receiver it is the only as"
-      "sumption we can make\n% so we might as well take advantage of the computational efficiencies\n% associated with "
-      "sequential fusion\nif (FuseGPSData || FuseHgtData)\n    % Sequential fusion of velocity and position measurement"
-      "s\n    if FuseGPSData\n        startIndex = 1;\n    else\n        startIndex = 6;\n    end\n    if FuseHgtData\n"
-      "        endIndex = 6;\n    else\n        endIndex = 5;\n    end\n    for obsIndex = startIndex:endIndex\n       "
-      " stateIndex = 4 + obsIndex;\n        % Calculate the measurement innovation, using states from a\n        % diff"
-      "erent time coordinate if fusing height data\n        if obsIndex == 6\n            innovation(obsIndex) = States"
-      "AtHgtTime(stateIndex) - observation(obsIndex);\n        else\n            innovation(obsIndex) = StatesAtGpsTime"
-      "(stateIndex) - observation(obsIndex);\n        end\n        % Calculate the Kalman Gain\n        varInnov(obsInd"
-      "ex) = P(stateIndex,stateIndex) + R_OBS(obsIndex); % data logging only\n        SK = 1/varInnov(obsIndex);\n     "
-      "   % Check the innovation for consistencey and don't fuse if > 5Sigma\n        % Currently disabled for testing\n"
-      "        if (SK * innovation(obsIndex)^2) < +inf\n            K = P(:,stateIndex)*SK;\n            % Calculate st"
-      "ate corrections\n            xk = K * innovation(obsIndex);\n            % Update the covariance - take advantag"
-      "e of direct observation of a\n            % single state at stateIndex\n            %P = (I - K*H)*P;\n         "
-      "   KHP = single(zeros(24,24));\n            for rowIndex = 1:24\n                for colIndex = 1:24\n          "
-      "          KHP(rowIndex,colIndex) = K(rowIndex)*P(stateIndex,colIndex);\n                end\n            end\n  "
-      "          P = P - KHP;\n            % Apply the state corrections and re-normaliase the quaternions\n           "
-      " states = states - xk;\n            % Normalise the quaternion states\n            quatMag = sqrt(states(1)^2 + "
-      "states(2)^2 + states(3)^2 + states(4)^2);\n            if (quatMag > 1e-12)\n                states(1:4) = state"
-      "s(1:4) / quatMag;\n            end\n        end\n    end\nend\n% Force symmetry on the covariance matrix to prev"
-      "ent ill-conditioning\n% of the matrix which would casue the filter to blow-up\nP = 0.5*(P + transpose(P));\n% Ou"
-      "tput corrected covariance matrix and state vector\ncorrP = P;\ncorrStates = states;\nend"
+      "ents\n    HgtMea, ... % D position measurement (m)\n    StatesAtHgtTime, ... % States captured at height measure"
+      "ment time\n    useAirspeed) % Boolean to indicate that an airspeed sensor is being used\n\n% define persistent v"
+      "ariables\npersistent velFailCount;\nif isempty(velFailCount)\n    velFailCount = uint32(0);\nend\npersistent pos"
+      "FailCount;\nif isempty(posFailCount)\n    posFailCount = uint32(0);\nend\npersistent hgtFailCount;\nif isempty(h"
+      "gtFailCount)\n    hgtFailCount = uint32(0);\nend\n\n% initialise measurement health flags to false\nvelHealth = "
+      "0;\nposHealth = 0;\nhgtHealth = 0;\n\n% Specify GPS velocity induced error\nvelErr = single(0.15*accNavMag);\npo"
+      "sErr = single(0.15*accNavMag);\n% Specify the GPS and height measurement variances.\nR_OBS = single([(0.1^2 + ve"
+      "lErr^2) (0.1^2 + velErr^2) (0.1^2 + velErr^2) (2.0^2 + posErr^2) (2.0^2 + posErr^2) 2.0^2]);\n\n% Specify the co"
+      "unt before forcing use of GPS or height data after invalid\n% data. We need to force GPS again sooner without\n%"
+      " airspeed data as the nav velocities will be unconstrained.\ngpsRetryTime = single(30);\ngpsRetryTimeNoTAS = sin"
+      "gle(5);\nhgtRetryTime = single(30);\ndt = single(0.02);\nif useAirspeed\n    maxVelFailCount = round(gpsRetryTim"
+      "e/dt);\n    maxPosFailCount = maxVelFailCount;\nelse\n    maxVelFailCount = round(gpsRetryTimeNoTAS/dt);\n    ma"
+      "xPosFailCount = maxVelFailCount;\nend\nmaxHgtFailCount = round(hgtRetryTime/dt);\n\n% initialise the innovation "
+      "vector\ninnovation = single(zeros(6,1));\n\n% initialise the innovation variance vector\nvarInnov = single(zeros"
+      "(6,1));\n\n% Define the observation vector\nobservation = single([VelNED;PosNE;-HgtMea]);\n\n% Perform sequentia"
+      "l fusion of GPS measurements. This assumes that the\n% errors in the dfferent velocity and position componenets "
+      "are\n% uncorrelated which is not true, however in the absence of covariance\n% data from the GPS receiver it is "
+      "the only assumption we can make\n% so we might as well take advantage of the computational efficiencies\n% assoc"
+      "iated with sequential fusion\nif (FuseGPSData || FuseHgtData)\n    % calculate innovation variances\n    for obs"
+      "Index = 1:6\n        stateIndex = 4 + obsIndex;\n        varInnov(obsIndex) = P(stateIndex,stateIndex) + R_OBS(o"
+      "bsIndex);\n    end\n    % calculate innovations and check validity against limits\n    if FuseGPSData\n        v"
+      "elInnov = StatesAtGpsTime(5:7) - VelNED;\n        if (velInnov(1)*velInnov(1) + velInnov(2)*velInnov(2) + velInn"
+      "ov(3)*velInnov(3)) < 25.0*(varInnov(1) + varInnov(2) + varInnov(3)) || ...\n            (velFailCount > maxVelFa"
+      "ilCount)\n            velHealth = 1;\n            velFailCount = uint32(0);\n        else\n            velHealth"
+      " = 0;\n            velFailCount = velFailCount + uint32(1);\n        end\n        posInnov = StatesAtGpsTime(8:9"
+      ") - PosNE;\n        if (posInnov(1)*posInnov(1) + posInnov(2)*posInnov(2)) < 100.0*(varInnov(4) + varInnov(5)) |"
+      "| ...\n           (posFailCount > maxPosFailCount)\n            posHealth = 1;\n            posFailCount = uint3"
+      "2(0);\n        else\n            posHealth = 0;\n            posFailCount = posFailCount + uint32(1);\n        e"
+      "nd\n    end\n    if FuseHgtData\n        hgtInnov = StatesAtHgtTime(10) + HgtMea;\n        if (hgtInnov*hgtInnov"
+      ") < 25.0*varInnov(6) || ...\n            (hgtFailCount > maxHgtFailCount)\n            hgtHealth = 1;\n         "
+      "   hgtFailCount = uint32(0);\n        else\n            hgtHealth = 0;\n            hgtFailCount = hgtFailCount "
+      "+ uint32(1);\n        end\n    end\n    % Set range for sequential fusion of velocity and position measurements\n"
+      "    if FuseGPSData\n        startIndex = 1;\n    else\n        startIndex = 6;\n    end\n    if FuseHgtData\n   "
+      "     endIndex = 6;\n    else\n        endIndex = 5;\n    end\n    % Fuse measurements sequentially\n    for obsI"
+      "ndex = startIndex:endIndex\n        % Apply data health checks\n        % If no airspeed data, start using GPS d"
+      "ata after x seconds\n        if (velHealth && (obsIndex >= 1 && obsIndex <= 3)) || ...\n                (posHeal"
+      "th && (obsIndex == 4 || obsIndex == 5)) || ...\n                (hgtHealth && (obsIndex == 6))\n            stat"
+      "eIndex = 4 + obsIndex;\n            % Calculate the measurement innovation, using states from the\n            %"
+      " appropriate time coordinate\n            if obsIndex == 6\n                innovation(obsIndex) = StatesAtHgtTi"
+      "me(stateIndex) - observation(obsIndex);\n            else\n                innovation(obsIndex) = StatesAtGpsTim"
+      "e(stateIndex) - observation(obsIndex);\n            end\n            % Calculate the Kalman Gain\n            va"
+      "rInnov(obsIndex) = P(stateIndex,stateIndex) + R_OBS(obsIndex); % data logging only\n            SK = 1/varInnov("
+      "obsIndex);\n            K = P(:,stateIndex)*SK;\n            % Calculate state corrections\n            xk = K *"
+      " innovation(obsIndex);\n            % Update the covariance - take advantage of direct observation of a\n       "
+      "     % single state at stateIndex\n            %P = (I - K*H)*P;\n            KHP = single(zeros(24,24));\n     "
+      "       for rowIndex = 1:24\n                for colIndex = 1:24\n                    KHP(rowIndex,colIndex) = K("
+      "rowIndex)*P(stateIndex,colIndex);\n                end\n            end\n            P = P - KHP;\n            %"
+      " Apply the state corrections and re-normaliase the quaternions\n            states = states - xk;\n            %"
+      " Normalise the quaternion states\n            quatMag = sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)"
+      "^2);\n            if (quatMag > 1e-12)\n                states(1:4) = states(1:4) / quatMag;\n            end\n "
+      "       end\n    end\nend\n% Force symmetry on the covariance matrix to prevent ill-conditioning\n% of the matrix"
+      " which would casue the filter to blow-up\nP = 0.5*(P + transpose(P));\n% Output corrected covariance matrix and "
+      "state vector\ncorrP = P;\ncorrStates = states;\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
@@ -16614,7 +16735,29 @@ Stateflow {
     id			    160
     ssIdNumber		    17
     name		    "StatesAtHgtTime"
-    linkNode		    [143 159 0]
+    linkNode		    [143 159 161]
+    scope		    INPUT_DATA
+    machine		    1
+    props {
+      array {
+	size			"-1"
+      }
+      type {
+	method			SF_INHERITED_TYPE
+	primitive		SF_DOUBLE_TYPE
+	isSigned		1
+	wordLength		"16"
+      }
+      complexity	      SF_COMPLEX_INHERITED
+      frame		      SF_FRAME_INHERITED
+    }
+    dataType		    "Inherit: Same as Simulink"
+  }
+  data {
+    id			    161
+    ssIdNumber		    18
+    name		    "useAirspeed"
+    linkNode		    [143 160 0]
     scope		    INPUT_DATA
     machine		    1
     props {
@@ -16633,22 +16776,22 @@ Stateflow {
     dataType		    "Inherit: Same as Simulink"
   }
   instance {
-    id			    161
+    id			    162
     name		    "InertialNavFilter/Fuse Vel Pos Measurements"
     machine		    1
     chart		    143
   }
   target {
-    id			    162
+    id			    163
     name		    "sfun"
     codeFlags		    ""
     machine		    1
-    linkNode		    [1 0 163]
+    linkNode		    [1 0 164]
   }
   target {
-    id			    163
+    id			    164
     name		    "rtw"
     machine		    1
-    linkNode		    [1 162 0]
+    linkNode		    [1 163 0]
   }
 }
