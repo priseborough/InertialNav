@@ -286,19 +286,20 @@ saveas(gcf,strcat(dirName,fileName,'.fig'));
 saveas(gcf,strcat(dirName,fileName,'.pdf'));
 
 %% Magnetometer Innovations
+nSamples = min([length(innovMagX),length(innovMagY),length(innovMagZ)]);
 fileName = 'MagInnovations';
 figure;
 subplot(3,1,1);
-plot(time2,innovMagX);
+plot(time2(1:nSamples),innovMagX(1:nSamples,:));
 grid on;
 xlabel('time (sec)');ylabel('X Flux (mgauss)');
 title('Magnetometer Measurement Innovations');
 subplot(3,1,2);
-plot(time2,innovMagY);
+plot(time2(1:nSamples),innovMagY(1:nSamples,:));
 grid on;
 xlabel('time (sec)');ylabel('Y Flux (mgauss)');
 subplot(3,1,3);
-plot(time2,innovMagZ);
+plot(time2(1:nSamples),innovMagZ(1:nSamples,:));
 grid on;
 xlabel('time (sec)');ylabel('Z Flux (mgauss)');
 saveas(gcf,strcat(dirName,fileName,'.fig'));
