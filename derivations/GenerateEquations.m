@@ -216,4 +216,6 @@ K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); %
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
 
 %% Save output
+save 'SymbolicOutput.mat';
 SaveScriptCode;
+clear all;

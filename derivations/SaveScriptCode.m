@@ -1,5 +1,8 @@
+%% Load Data
+load('SymbolicOutput.mat');
+
 %% Open output file
-fid = fopen('SymbolicOutput.m','wt');
+fid = fopen('SymbolicOutput.txt','wt');
 
 %% Write equation for state transition matrix
 fprintf(fid,'SF = zeros(%d,1);\n',numel(SF));
@@ -69,13 +72,13 @@ for rowIndex = 1:numel(SPP)
 end
 
 fprintf(fid,'\n');
-fprintf(fid,'PP = zeros(%d,%d);\n',nStates,nStates);
+fprintf(fid,'nextP = zeros(%d,%d);\n',nStates,nStates);
 for rowIndex = 1:nStates
     for colIndex = 1:nStates
         string = char(PP(rowIndex,colIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
-            fprintf(fid,'PP(%d,%d) = %s;\n',rowIndex,colIndex,string);
+            fprintf(fid,'nextP(%d,%d) = %s;\n',rowIndex,colIndex,string);
         end
     end
 end
