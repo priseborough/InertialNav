@@ -34,39 +34,22 @@ public:
 private:
     // note that some of these are temporary variables, but we don't 
     // want huge spikes in stack usage, so better to make these class variables
-	
-	// Generic
-    float _processNoise[24];
-	float _KHP[24][24];
-	float _Tnb[3][3];
     float _states[24];
+    float _predStates[24]; // Suggest we use nextStates for all outputs, whether from a prediction or correction step
     float _nextStates[24];
     float _P[24][24];
     float _nextP[24][24];
-	
-	// Covariance Predition
     float _SF[21];
     float _SG[8];
     float _SQ[11];
     float _SPP[13];
-	
-
-	// Velocity and Position Measurement Fusion
+    float _processNoise[24];
 	float _velPosInnov[6];
 	float _varVelPosInnov[6];
-	
-	// Magnetometer Measurement Fusion
-	float _magInnov[3];
-	float _varMagInnov[3];
-	float _SH_MAG[9];
-	float _H_MAG[1][24]
-	float _SK_MX[6]
-	float _SK_MY[6]
-	float _SK_MZ[6]
-	float _K_MAG[24][1]
+	float _KHP[24][24];
 
     float P(uint8_t i, uint8_t j) { return _P[i-1][j-1]; }
-    float &nextP(uint8_t i, uint8_t j) { return _predP[i-1][j-1]; }
+    float &predP(uint8_t i, uint8_t j) { return _predP[i-1][j-1]; }
     float &SF(uint8_t i) { return _SF[i-1]; }
     float &SG(uint8_t i) { return _SG[i-1]; }
     float &SQ(uint8_t i) { return _SQ[i-1]; }

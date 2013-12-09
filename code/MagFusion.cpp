@@ -42,52 +42,53 @@ static float magN = 0.0;
 static float magE = 0.0;
 static float magD = 0.0;
 static uint8_t obsIndex = 1;
-float Tnb[3][[3] = {
+static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+static float Tnb[3][[3] = {
 {1.0,0.0,0.0} ,
 {0.0,1.0,0.0} ,
 {0.0,0.0,1.0}
 };
 static float MagPred[3] = {0.0,0.0,0.0};
-
 // define magnetometer measurement error variance (milligauss).
 const float R_MAG = 2500.0;
+// declare innovation variances
+varInnov = single(zeros(3,1));
+% declare innovation vector
+innovation = single(zeros(1,3));
+% Calculate terms common to fusion of all three axes
+if FuseData
+end
 
-// Perform sequential fusion of Magnetometer measurements.
-// This assumes that the errors in the dfferent componenets are
-// uncorrelated which is not true, however in the absence of covariance
-// data fit is the only assumption we can make
-// so we might as well take advantage of the computational efficiencies
-// associated with sequential fusion
+% Perform sequential fusion of Magnetometer measurements.
+% This assumes that the errors in the dfferent componenets are
+% uncorrelated which is not true, however in the absence of covariance
+% data fit is the only assumption we can make
+% so we might as well take advantage of the computational efficiencies
+% associated with sequential fusion
 if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
     
-    // Sequential fusion of XYZ components to spread processing load across
-    // three prediction time steps. 
+    % Sequential fusion of XYZ components to spread processing load across
+    % three prediction time steps. 
     
-    // Calculate observation jacobians and Kalman gains
+    % Calculate observation jacobians and Kalman gains
     K_MAG = single(zeros(24,1));
     H_MAG = single(zeros(1,24));
     if FuseData
-        // Copy required states to local variable names
-        q0 = StatesAtMeasTime[0];
-        q1 = StatesAtMeasTime[1];
-        q2 = StatesAtMeasTime[2];
-        q3 = StatesAtMeasTime[3];
-        magN = StatesAtMeasTime[18);
-        magE = StatesAtMeasTime[19];
-        magD = StatesAtMeasTime[20];
-        magXbias = StatesAtMeasTime[21];
-        magYbias = StatesAtMeasTime[22];
-        magZbias = StatesAtMeasTime[23];
-        // rotate predicted earth components into body axes and calculate
-        // predicted measurements
+        % Copy required states to local variable names
+        q0 = StatesAtMeasTime(1);
+        q1 = StatesAtMeasTime(2);
+        q2 = StatesAtMeasTime(3);
+        q3 = StatesAtMeasTime(4);
+        magN = StatesAtMeasTime(19);
+        magE = StatesAtMeasTime(20);
+        magD = StatesAtMeasTime(21);
+        % rotate predicted earth components into body axes and calculate
+        % predicted measurments
         Tnb = single([q0^2 + q1^2 - q2^2 - q3^2, 2*(q1*q2 + q0*q3) , 2*(q1*q3-q0*q2) ;...
             2*(q1*q2 - q0*q3), q0^2 - q1^2 + q2^2 - q3^2, 2*(q2*q3 + q0*q1);...
             2*(q1*q3 + q0*q2) , 2*(q2*q3 - q0*q1) , q0^2 - q1^2 - q2^2 + q3^2]);
-		MagPred[0] = Tnb[0][0]*magN + Tnb[0][1]*magE + Tnb[0][2]*magD + magXbias;
-		MagPred[1] = Tnb[1][0]*magN + Tnb[1][1]*magE + Tnb[1][2]*magD + magXbias;
-		MagPred[2] = Tnb[2][0]*magN + Tnb[2][1]*magE + Tnb[2][2]*magD + magZbias;
-		
-        // Calculate observation jacobian common terms
+        MagPred = Tnb*states(19:21) + states(22:24);
+        % Calculate observation jacobian common terms
         SH_MAG(1) = 2*magD*q3 + 2*magE*q2 + 2*magN*q1;
         SH_MAG(2) = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;
         SH_MAG(3) = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;
@@ -97,7 +98,7 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         SH_MAG(7) = q0^2;
         SH_MAG(8) = 2*magN*q0;
         SH_MAG(9) = 2*magE*q3;
-        // calculate observation jacobian
+        % calculate observation jacobian
         H_MAG(1,1) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;
         H_MAG(1,2) = SH_MAG(1);
         H_MAG(1,3) = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;
@@ -106,7 +107,7 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         H_MAG(1,20) = 2*q0*q3 + 2*q1*q2;
         H_MAG(1,21) = 2*q1*q3 - 2*q0*q2;
         H_MAG(1,22) = 1;
-        // calculate Kalman gain
+        % calculate Kalman gain
         SK_MX = single(zeros(1,6));
         SK_MX(1) = 1/(P(22,22) + R_MAG + P(2,22)*SH_MAG(1) + P(4,22)*SH_MAG(3) - P(19,22)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P(22,3) + P(2,3)*SH_MAG(1) + P(4,3)*SH_MAG(3) - P(19,3)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,3)*(2*q0*q3 + 2*q1*q2) - P(21,3)*(2*q0*q2 - 2*q1*q3) - P(3,3)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(22,1) + P(2,1)*SH_MAG(1) + P(4,1)*SH_MAG(3) - P(19,1)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,1)*(2*q0*q3 + 2*q1*q2) - P(21,1)*(2*q0*q2 - 2*q1*q3) - P(3,1)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(22,2) + P(2,2)*SH_MAG(1) + P(4,2)*SH_MAG(3) - P(19,2)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,2)*(2*q0*q3 + 2*q1*q2) - P(21,2)*(2*q0*q2 - 2*q1*q3) - P(3,2)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(3)*(P(22,4) + P(2,4)*SH_MAG(1) + P(4,4)*SH_MAG(3) - P(19,4)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,4)*(2*q0*q3 + 2*q1*q2) - P(21,4)*(2*q0*q2 - 2*q1*q3) - P(3,4)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7))*(P(22,19) + P(2,19)*SH_MAG(1) + P(4,19)*SH_MAG(3) - P(19,19)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,19)*(2*q0*q3 + 2*q1*q2) - P(21,19)*(2*q0*q2 - 2*q1*q3) - P(3,19)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(20,22)*(2*q0*q3 + 2*q1*q2) - P(21,22)*(2*q0*q2 - 2*q1*q3) - P(3,22)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*q0*q3 + 2*q1*q2)*(P(22,20) + P(2,20)*SH_MAG(1) + P(4,20)*SH_MAG(3) - P(19,20)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,20)*(2*q0*q3 + 2*q1*q2) - P(21,20)*(2*q0*q2 - 2*q1*q3) - P(3,20)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P(22,21) + P(2,21)*SH_MAG(1) + P(4,21)*SH_MAG(3) - P(19,21)*(SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7)) + P(20,21)*(2*q0*q3 + 2*q1*q2) - P(21,21)*(2*q0*q2 - 2*q1*q3) - P(3,21)*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P(1,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(1,22)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));
         SK_MX(2) = SH_MAG(4) + SH_MAG(5) - SH_MAG(6) - SH_MAG(7);
@@ -138,12 +139,12 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         K_MAG(22,1) = SK_MX(1)*(P(22,22) + P(22,2)*SH_MAG(1) + P(22,4)*SH_MAG(3) + P(22,1)*SK_MX(4) - P(22,3)*SK_MX(3) - P(22,19)*SK_MX(2) + P(22,20)*SK_MX(6) - P(22,21)*SK_MX(5));
         K_MAG(23,1) = SK_MX(1)*(P(23,22) + P(23,2)*SH_MAG(1) + P(23,4)*SH_MAG(3) + P(23,1)*SK_MX(4) - P(23,3)*SK_MX(3) - P(23,19)*SK_MX(2) + P(23,20)*SK_MX(6) - P(23,21)*SK_MX(5));
         K_MAG(24,1) = SK_MX(1)*(P(24,22) + P(24,2)*SH_MAG(1) + P(24,4)*SH_MAG(3) + P(24,1)*SK_MX(4) - P(24,3)*SK_MX(3) - P(24,19)*SK_MX(2) + P(24,20)*SK_MX(6) - P(24,21)*SK_MX(5));
-        _varMagInnov(1) = 1/SK_MX(1);
+        varInnov(1) = 1/SK_MX(1);
         
-        // reset the observation index to 1 (we start by fusing the X
-        // measurement)
+        % reset the observation index to 1 (we start by fusing the X
+        % measurement)
         obsIndex = 1;
-    elseif obsIndex == 2 // we are now fusing the Y measurement
+    elseif obsIndex == 2 % we are now fusing the Y measurement
         H_MAG(1,1) = SH_MAG(3);
         H_MAG(1,2) = SH_MAG(2);
         H_MAG(1,3) = SH_MAG(1);
@@ -152,7 +153,7 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         H_MAG(1,20) = SH_MAG(5) - SH_MAG(4) - SH_MAG(6) + SH_MAG(7);
         H_MAG(1,21) = 2*q0*q1 + 2*q2*q3;
         H_MAG(1,23) = 1;
-        // calculate the Kalman gain
+        % calculate the Kalman gain
         SK_MY = single(zeros(5,1));
         SK_MY(1) = 1/(P(23,23) + R_MAG + P(1,23)*SH_MAG(3) + P(2,23)*SH_MAG(2) + P(3,23)*SH_MAG(1) - P(20,23)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - (2*q0*q3 - 2*q1*q2)*(P(23,19) + P(1,19)*SH_MAG(3) + P(2,19)*SH_MAG(2) + P(3,19)*SH_MAG(1) - P(20,19)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,19)*(2*q0*q3 - 2*q1*q2) + P(21,19)*(2*q0*q1 + 2*q2*q3) - P(4,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P(23,21) + P(1,21)*SH_MAG(3) + P(2,21)*SH_MAG(2) + P(3,21)*SH_MAG(1) - P(20,21)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,21)*(2*q0*q3 - 2*q1*q2) + P(21,21)*(2*q0*q1 + 2*q2*q3) - P(4,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(23,4) + P(1,4)*SH_MAG(3) + P(2,4)*SH_MAG(2) + P(3,4)*SH_MAG(1) - P(20,4)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,4)*(2*q0*q3 - 2*q1*q2) + P(21,4)*(2*q0*q1 + 2*q2*q3) - P(4,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(19,23)*(2*q0*q3 - 2*q1*q2) + P(21,23)*(2*q0*q1 + 2*q2*q3) + SH_MAG(3)*(P(23,1) + P(1,1)*SH_MAG(3) + P(2,1)*SH_MAG(2) + P(3,1)*SH_MAG(1) - P(20,1)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,1)*(2*q0*q3 - 2*q1*q2) + P(21,1)*(2*q0*q1 + 2*q2*q3) - P(4,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(23,2) + P(1,2)*SH_MAG(3) + P(2,2)*SH_MAG(2) + P(3,2)*SH_MAG(1) - P(20,2)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,2)*(2*q0*q3 - 2*q1*q2) + P(21,2)*(2*q0*q1 + 2*q2*q3) - P(4,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(23,3) + P(1,3)*SH_MAG(3) + P(2,3)*SH_MAG(2) + P(3,3)*SH_MAG(1) - P(20,3)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,3)*(2*q0*q3 - 2*q1*q2) + P(21,3)*(2*q0*q1 + 2*q2*q3) - P(4,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7))*(P(23,20) + P(1,20)*SH_MAG(3) + P(2,20)*SH_MAG(2) + P(3,20)*SH_MAG(1) - P(20,20)*(SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7)) - P(19,20)*(2*q0*q3 - 2*q1*q2) + P(21,20)*(2*q0*q1 + 2*q2*q3) - P(4,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - P(4,23)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));
         SK_MY(2) = SH_MAG(4) - SH_MAG(5) + SH_MAG(6) - SH_MAG(7);
@@ -183,9 +184,9 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         K_MAG(22,1) = SK_MY(1)*(P(22,23) + P(22,1)*SH_MAG(3) + P(22,2)*SH_MAG(2) + P(22,3)*SH_MAG(1) - P(22,4)*SK_MY(3) - P(22,20)*SK_MY(2) - P(22,19)*SK_MY(4) + P(22,21)*SK_MY(5));
         K_MAG(23,1) = SK_MY(1)*(P(23,23) + P(23,1)*SH_MAG(3) + P(23,2)*SH_MAG(2) + P(23,3)*SH_MAG(1) - P(23,4)*SK_MY(3) - P(23,20)*SK_MY(2) - P(23,19)*SK_MY(4) + P(23,21)*SK_MY(5));
         K_MAG(24,1) = SK_MY(1)*(P(24,23) + P(24,1)*SH_MAG(3) + P(24,2)*SH_MAG(2) + P(24,3)*SH_MAG(1) - P(24,4)*SK_MY(3) - P(24,20)*SK_MY(2) - P(24,19)*SK_MY(4) + P(24,21)*SK_MY(5));
-        _varMagInnov(2) = 1/SK_MY(1);
-    elseif obsIndex == 3 // we are now fusing the Z measurement
-        // calculate the observation jacobian
+        varInnov(2) = 1/SK_MY(1);
+    elseif obsIndex == 3 % we ar now fusing the Z measurement
+        % calculate the observation jacobian
         H_MAG(1,1) = SH_MAG(2);
         H_MAG(1,2) = 2*magN*q3 - 2*magE*q0 - 2*magD*q1;
         H_MAG(1,3) = SH_MAG(8) + SH_MAG(9) - 2*magD*q2;
@@ -194,7 +195,7 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         H_MAG(1,20) = 2*q2*q3 - 2*q0*q1;
         H_MAG(1,21) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);
         H_MAG(1,24) = 1;
-        // calculate the Kalman gain
+        % calculate the Kalman gain
         SK_MZ = single(zeros(6,1));
         SK_MZ(1) = 1/(P(24,24) + R_MAG + P(1,24)*SH_MAG(2) + P(4,24)*SH_MAG(1) + P(21,24)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P(24,2) + P(1,2)*SH_MAG(2) + P(4,2)*SH_MAG(1) + P(21,2)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,2)*(2*q0*q2 + 2*q1*q3) - P(20,2)*(2*q0*q1 - 2*q2*q3) - P(2,2)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,2)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(8) + SH_MAG(9) - 2*magD*q2)*(P(24,3) + P(1,3)*SH_MAG(2) + P(4,3)*SH_MAG(1) + P(21,3)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,3)*(2*q0*q2 + 2*q1*q3) - P(20,3)*(2*q0*q1 - 2*q2*q3) - P(2,3)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,3)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(2)*(P(24,1) + P(1,1)*SH_MAG(2) + P(4,1)*SH_MAG(1) + P(21,1)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,1)*(2*q0*q2 + 2*q1*q3) - P(20,1)*(2*q0*q1 - 2*q2*q3) - P(2,1)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,1)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + SH_MAG(1)*(P(24,4) + P(1,4)*SH_MAG(2) + P(4,4)*SH_MAG(1) + P(21,4)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,4)*(2*q0*q2 + 2*q1*q3) - P(20,4)*(2*q0*q1 - 2*q2*q3) - P(2,4)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,4)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + (SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7))*(P(24,21) + P(1,21)*SH_MAG(2) + P(4,21)*SH_MAG(1) + P(21,21)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,21)*(2*q0*q2 + 2*q1*q3) - P(20,21)*(2*q0*q1 - 2*q2*q3) - P(2,21)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,21)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(19,24)*(2*q0*q2 + 2*q1*q3) - P(20,24)*(2*q0*q1 - 2*q2*q3) - P(2,24)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P(24,19) + P(1,19)*SH_MAG(2) + P(4,19)*SH_MAG(1) + P(21,19)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,19)*(2*q0*q2 + 2*q1*q3) - P(20,19)*(2*q0*q1 - 2*q2*q3) - P(2,19)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,19)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P(24,20) + P(1,20)*SH_MAG(2) + P(4,20)*SH_MAG(1) + P(21,20)*(SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7)) + P(19,20)*(2*q0*q2 + 2*q1*q3) - P(20,20)*(2*q0*q1 - 2*q2*q3) - P(2,20)*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P(3,20)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2)) + P(3,24)*(SH_MAG(8) + SH_MAG(9) - 2*magD*q2));
         SK_MZ(2) = SH_MAG(4) - SH_MAG(5) - SH_MAG(6) + SH_MAG(7);
@@ -226,22 +227,22 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
         K_MAG(22,1) = SK_MZ(1)*(P(22,24) + P(22,1)*SH_MAG(2) + P(22,4)*SH_MAG(1) - P(22,2)*SK_MZ(3) + P(22,3)*SK_MZ(4) + P(22,21)*SK_MZ(2) + P(22,19)*SK_MZ(6) - P(22,20)*SK_MZ(5));
         K_MAG(23,1) = SK_MZ(1)*(P(23,24) + P(23,1)*SH_MAG(2) + P(23,4)*SH_MAG(1) - P(23,2)*SK_MZ(3) + P(23,3)*SK_MZ(4) + P(23,21)*SK_MZ(2) + P(23,19)*SK_MZ(6) - P(23,20)*SK_MZ(5));
         K_MAG(24,1) = SK_MZ(1)*(P(24,24) + P(24,1)*SH_MAG(2) + P(24,4)*SH_MAG(1) - P(24,2)*SK_MZ(3) + P(24,3)*SK_MZ(4) + P(24,21)*SK_MZ(2) + P(24,19)*SK_MZ(6) - P(24,20)*SK_MZ(5));
-        _varMagInnov(3) = 1/SK_MZ(1);
+        varInnov(3) = 1/SK_MZ(1);
     end
-    // Calculate the measurement innovation
-    _magInnov(obsIndex) = MagPred(obsIndex) - MagData(obsIndex);
-    // Check the innovation for consistencey and don't fuse if > 5Sigma
-    if ((_magInnov(obsIndex)^2) / _varMagInnov(obsIndex)) < +inf
-        xk = K_MAG * _magInnov(obsIndex);
+    % Calculate the measurement innovation
+    innovation(obsIndex) = MagPred(obsIndex) - MagData(obsIndex);
+    % Check the innovation for consistencey and don't fuse if > 5Sigma
+    if ((innovation(obsIndex)^2) / varInnov(obsIndex)) < +inf
+        xk = K_MAG * innovation(obsIndex);
         states = states - xk;
-        // normalise the quaternion states
+        % normalise the quaternion states
         quatMag = sqrt(states(1)^2 + states(2)^2 + states(3)^2 + states(4)^2);
         if (quatMag > 1e-12)
             states(1:4) = states(1:4) / quatMag;
         end
-        // correct the covariance P = (I - K*H)*P
-        // take advantage of the empty columns in KH to reduce the
-        // number of operations
+        % correct the covariance P = (I - K*H)*P
+        % take advantage of the empty columns in KH to reduce the
+        % number of operations
         KH = K_MAG * H_MAG;
         for i = 1:24
             for j = 1:24
@@ -257,10 +258,10 @@ if (useCompass && FuseData) || (useCompass && (obsIndex == 2 || obsIndex == 3))
     end
     obsIndex = obsIndex + 1;
 end
-// Force symmetry on the covariance matrix to prevent ill-conditioning
-// of the matrix which would cause the filter to blow-up
+% Force symmetry on the covariance matrix to prevent ill-conditioning
+% of the matrix which would cause the filter to blow-up
 P = 0.5*(P + transpose(P));
-// Set default output for states and covariance
+% Set default output for states and covariance
 corrP = P;
 corrStates = states;
 }
