@@ -913,7 +913,7 @@ K_VP[23][3] = P[23][7]*SK_VP[2];
 K_VP[23][4] = P[23][8]*SK_VP[1];
 K_VP[23][5] = P[23][9]*SK_VP[0];
 float SH_TAS[3][1];
-SH_TAS[0] = 1/sqrt(sq(ve - vwe) + sq(vn - vwn) + sq(vd));
+SH_TAS[0] = 1/(sqrt(sq(ve - vwe) + sq(vn - vwn) + sq(vd)));
 SH_TAS[1] = (SH_TAS[0]*(2*ve - 2*vwe))*0.5;
 SH_TAS[2] = (SH_TAS[0]*(2*vn - 2*vwn))*0.5;
 float H_TAS[1][24];

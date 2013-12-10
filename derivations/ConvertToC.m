@@ -90,7 +90,7 @@ for lineIndex = 1:length(SymbolicOutput)
             %            cellStrPat(pwrIndex) = cellstr(strPat);
             cellStrRep(pwrIndex) = cellstr(strRep);
         end
-        for pwrIndex = 1:length(cellStrRep)
+        for pwrIndex = 1:length(idxsq{1})
             strRep = char(cellStrRep(pwrIndex));
             strIn{1}(startIndex(pwrIndex):endIndex(pwrIndex)+2) = strRep;
         end
@@ -128,6 +128,38 @@ for lineIndex = 1:length(SymbolicOutput)
             strIn = regexprep(strIn,strPat,strRep);
         end
         SymbolicOutput(lineIndex) = cellstr(strIn);
+    end
+end
+
+%% Replace ^(1/2)
+
+% replace where adjacent to ) parenthesis
+for lineIndex = 1:length(SymbolicOutput)
+    idxsq = regexp(SymbolicOutput(lineIndex),'\)\^\(1\/2\)');
+    if ~isempty(idxsq{1})
+        strIn = SymbolicOutput(lineIndex);
+        idxlp = regexp(strIn,'\(');
+        idxrp = regexp(strIn,'\)');
+        for pwrIndex = 1:length(idxsq{1})
+            counter = 1;
+            index = idxsq{1}(pwrIndex);
+            endIndex(pwrIndex) = index;
+            while (counter > 0 && index > 0)
+                index = index - 1;
+                counter = counter + ~isempty(find(idxrp{1} == index, 1));
+                counter = counter - ~isempty(find(idxlp{1} == index, 1));
+            end
+            startIndex(pwrIndex) = index;
+            %            strPat = strcat(strIn{1}(startIndex(pwrIndex):endIndex(pwrIndex)),'^2');
+            strRep = strcat('(sqrt',strIn{1}(startIndex(pwrIndex):endIndex(pwrIndex)),')');
+            %            cellStrPat(pwrIndex) = cellstr(strPat);
+            cellStrRep(pwrIndex) = cellstr(strRep);
+        end
+        for pwrIndex = 1:length(idxsq{1})
+            strRep = char(cellStrRep(pwrIndex));
+            strIn{1}(startIndex(pwrIndex):endIndex(pwrIndex)+6) = strRep;
+        end
+        SymbolicOutput(lineIndex) = strIn;
     end
 end
 
