@@ -106,7 +106,7 @@ void Kalman24::FuseVelPosNED(float accNavMag,
 		for (uint8_t obsIndex = 0; i<=5; i++)
 		{
 			stateIndex = 4 + obsIndex;
-			_varVelPosInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
+			_varVelPosInnov[obsIndex] = _P[stateIndex,stateIndex] + R_OBS[obsIndex];
 		}
 		// calculate innovations and check GPS data validity against limits using a 5-sigma test
 		if FuseGPSData
@@ -196,13 +196,13 @@ void Kalman24::FuseVelPosNED(float accNavMag,
 				}
 				// Calculate the Kalman Gain
 				// Calculate innovation variances - also used for data logging
-				_varVelPosInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
+				_varVelPosInnov[obsIndex] = _P[stateIndex,stateIndex] + R_OBS[obsIndex];
 				float SK = 1.0/_varVelPosInnov[obsIndex];
 				// Check the innovation for consistency and don't fuse if > TBD Sigma
 				// Currently disabled for testing
 				for (uint8_t i= 0; i<=23; i++)
 				{
-					K[i] = P[i,stateIndex]*SK;
+					K[i] = _P[i,stateIndex]*SK;
 				}
 				// Calculate state corrections
 				for (uint8_t i = 0; i<=23; i++)
@@ -216,14 +216,14 @@ void Kalman24::FuseVelPosNED(float accNavMag,
 				{
 					for (uint8_t colIndex= 0; i<=23; i++)
 					{
-						_KHP[rowIndex,colIndex] = K[rowIndex]*P[stateIndex,colIndex];
+						_KH_P[rowIndex,colIndex] = K[rowIndex]*_P[stateIndex,colIndex];
 					}
 				}
 				for (uint8_t rowIndex= 0; i<=23; i++)
 				{
 					for (uint8_t colIndex= 0; i<=23; i++)
 					{
-						P[rowIndex,colIndex] = P[rowIndex,colIndex] - _KHP[rowIndex,colIndex];
+						_P[rowIndex,colIndex] = _P[rowIndex,colIndex] - _KH_P[rowIndex,colIndex];
 					}
 				}
 				// Apply the state corrections and re-normalise the quaternions
@@ -242,19 +242,16 @@ void Kalman24::FuseVelPosNED(float accNavMag,
 				}
 			}
 		}
-	// Force symmetry on the covariance matrix to prevent ill-conditioning
-	// of the matrix which would cause the filter to blow-up
-	for (uint8_t rowIndex = 1; i<=23; i++)
-	{
-		for (uint8_t colIndex = rowIndex-1; i<=22; i++)
+		// Force symmetry on the covariance matrix to prevent ill-conditioning
+		// of the matrix which would cause the filter to blow-up
+		for (uint8_t rowIndex = 1; i<=23; i++)
 		{
-			float temp = 0.5*(P[rowIndex,colIndex] + P[colIndex,rowIndex]);
-			P[rowIndex,colIndex] = temp;
-			P[colindex,rowIndex] = temp;
+			for (uint8_t colIndex = rowIndex-1; i<=22; i++)
+			{
+				float temp = 0.5*(_P[rowIndex][colIndex] + _P[colIndex][rowIndex]);
+				_P[rowIndex][colIndex] = temp;
+				_P[colindex][rowIndex] = temp;
+			}
 		}
-	}
-	// Output corrected covariance matrix and state vector
-	_nextP = P;
-	_nextStates = states;
 	}
 }
