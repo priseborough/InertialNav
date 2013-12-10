@@ -132,7 +132,6 @@ for lineIndex = 1:length(SymbolicOutput)
 end
 
 %% Replace Divisions
-
 for lineIndex = 1:length(SymbolicOutput)
     strIn = char(SymbolicOutput(lineIndex));
     strIn = regexprep(strIn,'\/2','\*0\.5');
@@ -156,17 +155,13 @@ for lineIndex = 1:length(SymbolicOutput)
         str4 = num2str(str2num(str4)+1);
         str5 = '][';
         str6 = str(index4:index5);
+        str6 = num2str(str2num(str6)+1);
         str7 = '];';
-        if isempty(regexp(str,'\[0\]\;', 'once'))
-            SymbolicOutput(lineIndex) = strcat(str1,str2,str3,str4,str5,str6,str7);
-        else
-            SymbolicOutput(lineIndex) = strcat(str1,str2,str3,str4,str7);
-        end
+        SymbolicOutput(lineIndex) = strcat(str1,str2,str3,str4,str5,str6,str7);
     end
-    
 end
-%% Write to file
 
+%% Write to file
 fid = fopen('C_code.txt','wt');
 for lineIndex = 1:length(SymbolicOutput)
     fprintf(fid,char(SymbolicOutput(lineIndex)));
