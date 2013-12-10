@@ -108,7 +108,7 @@ for lineIndex = 1:length(SymbolicOutput)
             strVar   = strIn(idxsq1(pwrIndex):idxsq3(pwrIndex)-1);
             strIndex = strIn(idxsq3(pwrIndex)+1:idxsq2(pwrIndex)-3);
             strPat = strcat(strVar,'\[',strIndex,'\]\^2');
-            strRep = strcat('sq(',temp(1:length(temp)-2),')');
+            strRep = strcat('sq(',strVar,'[',strIndex,']',')');
             strIn = regexprep(strIn,strPat,strRep);
         end
         SymbolicOutput(lineIndex) = cellstr(strIn);
