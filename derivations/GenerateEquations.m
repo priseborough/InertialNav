@@ -158,8 +158,8 @@ Q = G*imuNoise*transpose(G);
 % these can be substituted later to create executable code
 for rowIndex = 1:nStates
     for colIndex = 1:nStates
-        eval(['syms P_lp_',num2str(rowIndex),'_c_',num2str(colIndex), '_rp_ real']);
-        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = P_lp_',num2str(rowIndex),'_c_',num2str(colIndex),'_rp_;']);
+        eval(['syms OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex), '_rp_ real']);
+        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex),'_rp_;']);
     end
 end
 
