@@ -193,6 +193,13 @@ for lineIndex = 1:length(SymbolicOutput)
     end
 end
 
+%% Change covariance matrix variable name to _P
+for lineIndex = 1:length(SymbolicOutput)
+    strIn = char(SymbolicOutput(lineIndex));
+    strIn = regexprep(strIn,'OP\[','_P[');
+    SymbolicOutput(lineIndex) = cellstr(strIn);
+end
+
 %% Write to file
 fid = fopen('C_code.txt','wt');
 for lineIndex = 1:length(SymbolicOutput)
