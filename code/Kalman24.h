@@ -37,8 +37,7 @@ private:
     float _states[24];
     float _predStates[24]; // Suggest we use nextStates for all outputs, whether from a prediction or correction step
     float _nextStates[24];
-    float _P[24][24];
-    float _nextP[24][24];
+    float P[24][24];
     float _SF[21];
     float _SG[8];
     float _SQ[11];
