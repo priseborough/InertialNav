@@ -63,9 +63,14 @@ void FuseVelPosNED(
     // declare index used to access filter states
     uint8_t stateIndex;
     
-    // declare fusion variables
+    // declare variables used by state and covariance update calculations
     float R_OBS[6];
-    
+	float KHP[24][24];
+	float SK;
+	float K[24];
+    float quatMag;
+	uint8_t startIndex;
+
     // Form the observation vector
     float observation[6];
     for (uint8_t i = 0; i<=2; i++) observation[i] = VelNED[i];
@@ -111,7 +116,7 @@ void FuseVelPosNED(
         for (uint8_t obsIndex = 0; i<=5; i++)
         {
             stateIndex = 4 + obsIndex;
-            varVelPosInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
+            varInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
         }
         // calculate innovations and check GPS data validity against limits using a 5-sigma test
         if FuseGPSData
@@ -160,7 +165,6 @@ void FuseVelPosNED(
         }
         // Set range for sequential fusion of velocity and position measurements depending
         // on which data is available
-        uint8_t startIndex;
         if FuseGPSData
         {
             startIndex = 0;
@@ -191,28 +195,28 @@ void FuseVelPosNED(
                 // different time coordinate if fusing height data
                 if (obsIndex == 5)
                 {
-                    _velPosInnov[obsIndex] = StatesAtHgtTime[stateIndex] - observation[obsIndex];
+                    velPosInnov[obsIndex] = StatesAtHgtTime[stateIndex] - observation[obsIndex];
                 }
                 else
                 {
-                    _velPosInnov[obsIndex] = StatesAtGpsTime[stateIndex] - observation[obsIndex];
+                    velPosInnov[obsIndex] = StatesAtGpsTime[stateIndex] - observation[obsIndex];
                 }
                 // Calculate the Kalman Gain
                 // Calculate innovation variances - also used for data logging
-                varVelPosInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
-                float SK = 1.0/varVelPosInnov[obsIndex];
+                varInnov[obsIndex] = P[stateIndex,stateIndex] + R_OBS[obsIndex];
+                SK = 1.0/varInnov[obsIndex];
                 // Check the innovation for consistency and don't fuse if > TBD Sigma
                 // Currently disabled for testing
                 for (uint8_t i= 0; i<=23; i++)
                 {
-                    K[i] = _P[i,stateIndex]*SK;
+                    K[i] = P[i,stateIndex]*SK;
                 }
                 // Calculate state corrections and re-normalise the quaternions
                 for (uint8_t i = 0; i<=23; i++)
                 {
                     states[i] = states[i] - K[i] * velPosInnov[obsIndex];
                 }
-                float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
+                quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
                 if quatMag < 0.9 quatHealth = false; // normalisation will have introduced significant errors
                 if (quatMag > 1e-12) // divide by  0 protection
                 {
