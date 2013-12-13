@@ -1,4 +1,4 @@
-Files for a prototype 24 state Extended Kalman filter designed for APMPlane implementation
+Files for prototype 24 and 21 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
 This is an implementation of a strapdown inertial navigation system with an Extended Kalman Filter algorithm used 
@@ -18,7 +18,7 @@ The filter estimates the following states:
 3 North,East,Down velocity components
 3 North,East,Down  position components
 3 IMU delta angle bias components
-3 IMU delta velocity bias components
+3 IMU delta velocity bias components (not included in the 21-state filter)
 2 North,East wind velocity components
 3 North,East,Down  earth magnetic flux components
 3 X,Y,Z body fixed magnetic flux components (these are opposite sign to the compass offsets used by APM)
@@ -39,7 +39,8 @@ Instructions to run:
 
 1) Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
 2) Make 'models' your working directory
-3) Run the RunNavFilterTestHarness.m script file
+3) Run the RunNavFilterTestHarness.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
+   the 21-state filter
 4) Test data will be loaded and the model will be built, run and plots generated.
 
 You can load other test data by modifying the file load command at the top of the LoadNavFilterTestData.m script file.
