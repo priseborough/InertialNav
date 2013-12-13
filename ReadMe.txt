@@ -39,7 +39,7 @@ Instructions to run:
 
 1) Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
 2) Make 'models' your working directory
-3) Run the RunNavFilterTestHarness.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
+3) Run the RunNavFilterTestHarness24.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
    the 21-state filter
 4) Test data will be loaded and the model will be built, run and plots generated.
 
