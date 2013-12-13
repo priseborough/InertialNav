@@ -213,8 +213,10 @@ K_MY = (P*transpose(H_MAG(2,:)))/(H_MAG(2,:)*P*transpose(H_MAG(2,:)) + R_MAG); %
 K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); % Kalman gain vector
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
 
-%% Save output
-%% Save output
-save 'SymbolicOutput.mat';
-SaveScriptCode;
-clear all;
+%% Save output and convert to m and c code fragments
+nStates = length(PP);
+fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
+save(fileName);
+SaveScriptCode(nStates);
+ConvertToM(nStates);
+ConvertToC(nStates);

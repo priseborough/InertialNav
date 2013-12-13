@@ -1,5 +1,6 @@
-%% Initialize variables.
-filename = 'M_code.txt';
+function ConvertToC(nStates)
+%% Define file to read in
+fileName = strcat('M_code',int2str(nStates),'.txt');
 delimiter = '';
 
 %% Format string for each line of text:
@@ -8,7 +9,7 @@ delimiter = '';
 formatSpec = '%s%[^\n\r]';
 
 %% Open the text file.
-fileID = fopen(filename,'r');
+fileID = fopen(fileName,'r');
 
 %% Read columns of data according to format string.
 % This call is based on the structure of the file used to generate this
@@ -201,9 +202,11 @@ for lineIndex = 1:length(SymbolicOutput)
 end
 
 %% Write to file
-fid = fopen('C_code.txt','wt');
+fileName = strcat('C_code',int2str(nStates),'.txt');
+fid = fopen(fileName,'wt');
 for lineIndex = 1:length(SymbolicOutput)
     fprintf(fid,char(SymbolicOutput(lineIndex)));
     fprintf(fid,'\n');
 end
 fclose(fid);
+clear all;

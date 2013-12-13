@@ -1,8 +1,11 @@
+function SaveScriptCode(nStates)
 %% Load Data
-load('SymbolicOutput.mat');
+fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
+load(fileName);
 
 %% Open output file
-fid = fopen('SymbolicOutput.txt','wt');
+fileName = strcat('SymbolicOutput',int2str(nStates),'.txt');
+fid = fopen(fileName,'wt');
 
 %% Write equation for state transition matrix
 fprintf(fid,'SF = zeros(%d,1);\n',numel(SF));
@@ -246,3 +249,5 @@ for rowIndex = 1:nRow
 end
 %% Close output file
 fclose(fid);
+
+end
