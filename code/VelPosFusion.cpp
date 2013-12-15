@@ -20,20 +20,21 @@
 
 // run one state and covariance update step using a combination of NED Vel and Pos measurements
 void FuseVelPosNED(
-        float nextStates[24],
-        float nextP[24][24],
-        float innovation[6],
-        float varInnov[24],
-        float states[24],
-        float P[24][24],
-        float accNavMag,
-        bool FuseGPSData,
-        float VelNED[3],
-        float PosNE[3],
-        float StatesAtGpsTime[24],
-        bool FuseHgtData,
-        float HgtMea,
-        float StatesAtHgtTime[24],
+        float nextStates[24], // state output
+        float nextP[24][24],  // covariance output
+        float innovation[6], // innovation output
+        float varInnov[6], // innovation variance output
+        float states[24], // state input
+        float P[24][24], // covariance input
+        float accNavMag, // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
+        bool FuseGPSData, // this boolean causes the PosNE and VelNED obs to be fused 
+        float VelNED[3], // North, East, Down velocity obs (m/s)
+        bool useVelD, // this boolean casues the D component of the VelNED vector to be used
+        float PosNE[3], // North, East position obs (m)
+        float StatesAtGpsTime[24], // States at the effective measurement time for PosNE and VelNED measurements
+        bool FuseHgtData, // this boolean causes the HgtMea obs to be fused
+        float HgtMea, //  measured height (m)
+        float StatesAtHgtTime[24], // States at the effective measurement time for the HgtMea measurement
         bool useAirspeed)
 {
     
