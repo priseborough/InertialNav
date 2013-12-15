@@ -27,12 +27,17 @@
 /*
  * run one state and covariance update step using a combination of NED Vel and Pos measurements
  */
-void Kalman24::FuseMagnetometer(float accNavMag,
-        bool FuseGPSData,
-        Vector3f MagData,
-        Vector3f PosNE,
-        float StatesAtMeasTime[24],
-        bool useCompass)
+void FuseMagnetometer(
+        float nextStates[24], // state output
+        float nextP[24][24], // covariance output
+        float innovation[6], // innovation output
+        float varInnov[6], // innovation variance output
+        float states[24], // state input
+        float P[24][24], // covariance input
+        bool FuseMagData, // boolean true when magnetometer data is to be fused
+        float MagData[3], // magnetometer flux radings in X,Y,Z body axes
+        float StatesAtMeasTime[24], // filter satates at the effective measurement time
+        bool useCompass) // boolean true if magnetometer data is being used
 {
     
     static float q0 = 1.0;
@@ -45,7 +50,7 @@ void Kalman24::FuseMagnetometer(float accNavMag,
     static float magXbias = 0.0;
     static float magYbias = 0.0;
     static float magZbias = 0.0;
-    static uint8_t obsIndex = 1;
+    static unsigned short int obsIndex = 0;
     static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     static float Tnb[3][[3] = {
         {1.0,0.0,0.0} ,
@@ -54,8 +59,11 @@ void Kalman24::FuseMagnetometer(float accNavMag,
     };
     static float MagPred[3] = {0.0,0.0,0.0};
     float K_MAG[24][1];
-    
-// define magnetometer measurement error variance (milligauss).
+    static bool quatHealth = true;
+    unsigned short int i;
+    unsigned short int j;
+    unsigned short int k;
+// define magnetometer measurement error variance.
     const float R_MAG = 2500.0;
 // innovation variances
     float varInnov[3];
@@ -175,6 +183,8 @@ void Kalman24::FuseMagnetometer(float accNavMag,
                     // reset the observation index to 0 (we start by fusing the X
                     // measurement)
                     obsIndex = 0;
+                    // reset the quaternion health status
+                    quatHealth = true;
         }
         else if (obsIndex == 1) // we are now fusing the Y measurement
         {
@@ -257,68 +267,70 @@ void Kalman24::FuseMagnetometer(float accNavMag,
         if ((innovation[obsIndex]*innovation[obsIndex]/varInnov[obsIndex]) < 25.0)
         {
             // correct the state vector
-            for (uint8_t index= 0; index<=23; index++)
+            for (j= 0; j<=23; j++)
             {
-                xk[index] = K_MAG[index] * innovation(obsIndex);
-                states[index] = states[index] - xk[index];
+                states[j] = states[j] - K_MAG[j] * innovation(obsIndex);
             }
             // normalise the quaternion states
-            float quatMag = sqrt(states(0)*states(0) + states(1)*states(1) + states(2)*states(2) + states(3)*states(3));
+            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3];
+            if (quatMag < 0.9) quatHealth = false;
             if (quatMag > 1e-12)
             {
-                for (uint8_t index= 0; index<=3; index++)
+                for (j= 0; j<=3; j++)
                 {
                     float quatMagInv = 1.0/quatMag;
-                    states[index] = states[index] * quatMagInv;
+                    states[j] = states[j] * quatMagInv;
                 }
             }
             // correct the covariance P = (I - K*H)*P
             // take advantage of the empty columns in KH to reduce the
             // number of operations
-            for (uint8_t rowIndex = 0; rowIndex<=23; rowIndex++)
+            for (i = 0; i<=23; i++)
             {
-                for (uint8_t colIndex = 0; colIndex<=3; colIndex++)
+                for (j = 0; j<=3; j++)
                 {
-                    KH[rowIndex][colIndex] = K_MAG[rowIndex] * H_MAG[colIndex];
+                    KH[i][j] = K_MAG[i] * H_MAG[j];
                 }
-                for (uint8_t colIndex = 18; colIndex<=23; colIndex++)
+                for (j = 18; j<=23; j++)
                 {
-                    KH[rowIndex][colIndex] = K_MAG[rowIndex] * H_MAG[colIndex];
+                    KH[i][j] = K_MAG[i] * H_MAG[j];
                 }
             }
-            for (uint8_t rowIndex = 0; rowIndex<=23; rowIndex++)
+            for (i = 0; i<=23; i++)
             {
-                for (uint8_t colIndex = 0; colIndex<=23; colIndex++)
+                for (j = 0; j<=23; j++)
                 {
-                    for (uint8_t index = 0; index<=3; index++)
+                    for (k = 0; k<=3; k++)
                     {
-                        KHP[rowIndex][colIndex] = KHP[rowIndex][colIndex] + KH[rowIndex][colIndex] * _P[index][colIndex];
+                        KHP[i][j] = KHP[i][j] + KH[i][j] * _P[k][j];
                     }
-                    for (uint8_t index = 18; index<=23; index++)
+                    for (k = 18; k<=23; k++)
                     {
-                        KHP[rowIndex][colIndex] = KHP[rowIndex][colIndex] + KH[rowIndex][colIndex] * _P[index][colIndex];
+                        KHP[i][j] = KHP[i][j] + KH[i][j] * _P[k][j];
                     }
                 }
             }
-            for (uint8_t rowIndex = 0; rowIndex<=23; rowIndex++)
+            for (i = 0; i<=23; i++)
             {
-                for (uint8_t colIndex = 0; colIndex<=23; colIndex++)
+                for (j = 0; j<=23; j++)
                 {
-                    _P[rowIndex][colIndex] = _P[rowIndex][colIndex] - KHP[rowIndex][colIndex];
-                }
-            }
-            // Force symmetry on the covariance matrix to prevent ill-conditioning
-            // of the matrix which would cause the filter to blow-up
-            for (uint8_t rowIndex = 1; rowIndex<=23; rowIndex++)
-            {
-                for (uint8_t colIndex = rowIndex-1; colIndex<=22; colIndex++)
-                {
-                    float temp = 0.5*(_P[rowIndex][colIndex] + _P[colIndex][rowIndex]);
-                    _P[rowIndex][colIndex] = temp;
-                    _P[colindex][rowIndex] = temp;
+                    P[i][j] = P[i][j] - KHP[i][j];
                 }
             }
             obsIndex = obsIndex + 1;
+        }
+        // only update states and convariance if quaternion health OK
+        if (quatHealth)
+        {
+            for (i = 0; i<=23; i++)
+            nextStates[i] = states[i];
+            {
+                for (j = 0; j<=23; j++)
+                {
+                    nextP[i][j] = P[i][j];
+                }
+            }
+        }
         }
     }
 }
