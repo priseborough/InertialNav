@@ -35,7 +35,7 @@ void FuseVelPosNED(
         bool FuseHgtData, // this boolean causes the HgtMea obs to be fused
         float HgtMea, //  measured height (m)
         float StatesAtHgtTime[24], // States at the effective measurement time for the HgtMea measurement
-        bool useAirspeed)
+        bool useAirspeed) // this boolean indicates that airspeed measurements are also being used
 {
     
 // declare variables used by fault isolation logic
