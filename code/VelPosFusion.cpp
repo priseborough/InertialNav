@@ -55,17 +55,18 @@ void FuseVelPosNED(
     bool quatHealth = true;
     
 // declare variables used to check measurement errors
-    float varTotal;
-    float varLimit;
-    float velInnov[3];
-    float posInnov[2];
-    float hgtInnov;
+    float varTotal = 0.0;
+    float varLimit = 0.0;
+    float velInnov[3] = {0.0,0.0,0.0};
+    float posInnov[2] = {0.0,0.0};
+    float hgtInnov = 0.0;
     
 // declare indices used to access arrays
     int stateIndex;
     int obsIndex;
     int i;
     int j;
+    int iMax;
     
 // declare variables used by state and covariance update calculations
     float velErr;
@@ -122,21 +123,22 @@ void FuseVelPosNED(
 // data from the GPS receiver it is the only assumption we can make
 // so we might as well take advantage of the computational efficiencies
 // associated with sequential fusion
-    
     if (FuseGPSData || FuseHgtData)
     {
-        // calculate innovation variances
-        for (obsIndex = 0; i<=5; i++)
+        // Set innovation variances to zero default
+        for (i = 0; i<=5; i++)
         {
-            stateIndex = 4 + obsIndex;
-            varInnov[obsIndex] = P[stateIndex][stateIndex] + R_OBS[obsIndex];
+             varInnov[i] = 0.0;
         }
         // calculate innovations and check GPS data validity against limits using a 5-sigma test
         if (FuseGPSData)
         {
-            for (i = 0; i<=2; i++)
+            if (useVelD) iMax = 2; else iMax = 1;
+            for (i = 0; i<=iMax; i++)
             {
                 velInnov[i] = StatesAtGpsTime[i+4] - VelNED[i];
+                stateIndex = 4 + i;
+                varInnov[i] = P[stateIndex][stateIndex] + R_OBS[i];
             }
             if ((velInnov[0]*velInnov[0] + velInnov[1]*velInnov[1] + velInnov[2]*velInnov[2]) < 25.0*(varInnov[0] + varInnov[1] + varInnov[2]) || (velFailCount > maxVelFailCount))
             {
@@ -150,6 +152,8 @@ void FuseVelPosNED(
             }
             posInnov[0] = StatesAtGpsTime[7] - PosNE[0];
             posInnov[1] = StatesAtGpsTime[8] - PosNE[1];
+            varInnov[3] = P[7][7] + R_OBS[3];
+            varInnov[4] = P[8][8] + R_OBS[4];
             if ((posInnov[0]*posInnov[0] + posInnov[1]*posInnov[1]) < 100.0*(varInnov[3] + varInnov[4]) || (posFailCount > maxPosFailCount))
             {
                 posHealth = true;
@@ -165,6 +169,7 @@ void FuseVelPosNED(
         if (FuseHgtData)
         {
             hgtInnov = StatesAtHgtTime[9] + HgtMea;
+            varInnov[5] = P[9][9] + R_OBS[5];
             if ((hgtInnov*hgtInnov) < 25.0*varInnov[5] || (hgtFailCount > maxHgtFailCount))
             {
                 hgtHealth = true;
