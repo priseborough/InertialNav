@@ -171,3 +171,8 @@ void FuseAirspeed(
         }
     }
 }
+
+float valOut = sq(float valIn)
+{
+    return valIn*valIn;
+}
