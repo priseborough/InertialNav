@@ -194,10 +194,10 @@ for lineIndex = 1:length(SymbolicOutput)
     end
 end
 
-%% Change covariance matrix variable name to _P
+%% Change covariance matrix variable name to P
 for lineIndex = 1:length(SymbolicOutput)
     strIn = char(SymbolicOutput(lineIndex));
-    strIn = regexprep(strIn,'OP\[','_P[');
+    strIn = regexprep(strIn,'OP\[','P[');
     SymbolicOutput(lineIndex) = cellstr(strIn);
 end
 

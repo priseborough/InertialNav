@@ -136,13 +136,13 @@ end
 
 [nRow,nCol] = size(H_TAS);
 fprintf(fid,'\n');
-fprintf(fid,'H_TAS = zeros(%d,%d);\n',nRow,nCol);
+fprintf(fid,'H_TAS = zeros(1,%d);\n',nCol);
 for rowIndex = 1:nRow
     for colIndex = 1:nCol
         string = char(H_TAS(rowIndex,colIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
-            fprintf(fid,'H_TAS(%d,%d) = %s;\n',rowIndex,colIndex,string);
+            fprintf(fid,'H_TAS(1,%d) = %s;\n',colIndex,string);
         end
     end
 end
@@ -156,14 +156,12 @@ end
 
 [nRow,nCol] = size(K_TAS);
 fprintf(fid,'\n');
-fprintf(fid,'K_TAS = zeros(%d,%d);\n',nRow,nCol);
+fprintf(fid,'K_TAS = zeros(%d,1);\n',nRow,nCol);
 for rowIndex = 1:nRow
-    for colIndex = 1:nCol
-        string = char(K_TAS(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'K_TAS(%d,%d) = %s;\n',rowIndex,colIndex,string);
-        end
+    string = char(K_TAS(rowIndex,1));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'K_TAS(%d) = %s;\n',rowIndex,string);
     end
 end
 
@@ -177,14 +175,12 @@ end
 
 [nRow,nCol] = size(H_MAG);
 fprintf(fid,'\n');
-fprintf(fid,'H_MAG = zeros(%d,%d);\n',nRow,nCol);
-for rowIndex = 1:nRow
-    for colIndex = 1:nCol
-        string = char(H_MAG(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'H_MAG(%d,%d) = %s;\n',rowIndex,colIndex,string);
-        end
+fprintf(fid,'H_MAG = zeros(1,%d);\n',nCol);
+for colIndex = 1:nCol
+    string = char(H_MAG(1,colIndex));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'H_MAG(%d) = %s;\n',colIndex,string);
     end
 end
 
@@ -197,14 +193,23 @@ end
 
 [nRow,nCol] = size(K_MX);
 fprintf(fid,'\n');
-fprintf(fid,'K_MAG = zeros(%d,%d);\n',nRow,nCol);
+fprintf(fid,'K_MAG = zeros(%d,1);\n',nRow,nCol);
 for rowIndex = 1:nRow
-    for colIndex = 1:nCol
-        string = char(K_MX(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'K_MAG(%d,%d) = %s;\n',rowIndex,colIndex,string);
-        end
+    string = char(K_MX(rowIndex,1));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'K_MAG(%d) = %s;\n',rowIndex,string);
+    end
+end
+
+[nRow,nCol] = size(H_MAG);
+fprintf(fid,'\n');
+fprintf(fid,'H_MAG = zeros(1,%d);\n',nCol);
+for colIndex = 1:nCol
+    string = char(H_MAG(2,colIndex));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'H_MAG(%d) = %s;\n',colIndex,string);
     end
 end
 
@@ -217,14 +222,23 @@ end
 
 [nRow,nCol] = size(K_MY);
 fprintf(fid,'\n');
-fprintf(fid,'K_MAG = zeros(%d,%d);\n',nRow,nCol);
+fprintf(fid,'K_MAG = zeros(%d,1);\n',nRow,nCol);
 for rowIndex = 1:nRow
-    for colIndex = 1:nCol
-        string = char(K_MY(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'K_MAG(%d,%d) = %s;\n',rowIndex,colIndex,string);
-        end
+    string = char(K_MY(rowIndex,1));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'K_MAG(%d) = %s;\n',rowIndex,string);
+    end
+end
+
+[nRow,nCol] = size(H_MAG);
+fprintf(fid,'\n');
+fprintf(fid,'H_MAG = zeros(1,%d);\n',nCol);
+for colIndex = 1:nCol
+    string = char(H_MAG(3,colIndex));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'H_MAG(%d) = %s;\n',colIndex,string);
     end
 end
 
@@ -237,14 +251,12 @@ end
 
 [nRow,nCol] = size(K_MZ);
 fprintf(fid,'\n');
-fprintf(fid,'K_MAG = zeros(%d,%d);\n',nRow,nCol);
+fprintf(fid,'K_MAG = zeros(%d,1);\n',nRow,nCol);
 for rowIndex = 1:nRow
-    for colIndex = 1:nCol
-        string = char(K_MZ(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'K_MAG(%d,%d) = %s;\n',rowIndex,colIndex,string);
-        end
+    string = char(K_MZ(rowIndex,1));
+    % don't write out a zero-assignment
+    if ~strcmpi(string,'0')
+        fprintf(fid,'K_MAG(%d) = %s;\n',rowIndex,string);
     end
 end
 %% Close output file
