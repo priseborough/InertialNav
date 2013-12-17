@@ -20,16 +20,16 @@
 
 // run state and covariance update using true airspeed measurement fusion
 void FuseAirspeed(
-        float nextStates[24], // state output
-        float nextP[24][24], // covariance output
-        float innovation, // innovation output
-        float varInnov, // innovation variance output
-        float states[24], // state input
-        float P[24][24], // covariance input
-        bool FuseData, // boolean true when airspeed data is to be fused
-        float VtasMeas, // true airspeed measurement (m/s)
-        float StatesAtMeasTime[24], // filter states at the effective measurement time
-        bool useAirspeed) // boolean true if airspeed data is being used
+    float nextStates[24], // state output
+    float nextP[24][24], // covariance output
+    float innovation, // innovation output
+    float varInnov, // innovation variance output
+    float states[24], // state input
+    float P[24][24], // covariance input
+    bool FuseData, // boolean true when airspeed data is to be fused
+    float VtasMeas, // true airspeed measurement (m/s)
+    float StatesAtMeasTime[24], // filter states at the effective measurement time
+    bool useAirspeed) // boolean true if airspeed data is being used
 {
     float vn;
     float ve;
