@@ -23,16 +23,16 @@
 void FuseMagnetometer(
         float nextStates[24], // state output
         float nextP[24][24], // covariance output
-        float innovation[6], // innovation output
-        float varInnov[6], // innovation variance output
+        float innovation[3], // innovation output
+        float varInnov[3], // innovation variance output
         float states[24], // state input
         float P[24][24], // covariance input
-        bool FuseMagData, // boolean true when magnetometer data is to be fused
+        bool FuseData, // boolean true when magnetometer data is to be fused
         float MagData[3], // magnetometer flux radings in X,Y,Z body axes
         float StatesAtMeasTime[24], // filter satates at the effective measurement time
         bool useCompass) // boolean true if magnetometer data is being used
 {
-    
+
     static float q0 = 1.0;
     static float q1 = 0.0;
     static float q2 = 0.0;
@@ -45,7 +45,7 @@ void FuseMagnetometer(
     static float magZbias = 0.0;
     static unsigned short int obsIndex = 0;
     static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-    static float Tnb[3][[3] = {
+    static float Tnb[3][3] = {
         {1.0,0.0,0.0} ,
         {0.0,1.0,0.0} ,
         {0.0,0.0,1.0}
@@ -55,10 +55,7 @@ void FuseMagnetometer(
     unsigned short int i;
     unsigned short int j;
     unsigned short int k;
-    unsigned short int obsIndex;
     const float R_MAG = 2500.0;
-    float varInnov[3];
-    float innovation[3];
     float H_MAG[24];
     float SK_MX[6];
     float SK_MY[5];
@@ -66,7 +63,7 @@ void FuseMagnetometer(
     float K_MAG[24];
     float KH[24][24];
     float KHP[24][24];
-    
+
 // Perform sequential fusion of Magnetometer measurements.
 // This assumes that the errors in the different components are
 // uncorrelated which is not true, however in the absence of covariance
@@ -75,10 +72,10 @@ void FuseMagnetometer(
 // associated with sequential fusion
     if (useCompass && (FuseData || obsIndex == 1 || obsIndex == 2))
     {
-        
+
         // Sequential fusion of XYZ components to spread processing load across
         // three prediction time steps.
-        
+
         // Calculate observation jacobians and Kalman gains
         if (FuseData)
         {
@@ -96,17 +93,17 @@ void FuseMagnetometer(
             // rotate predicted earth components into body axes and calculate
             // predicted measurments
             Tnb[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-            Tnb[0[]1] = 2.0*(q1*q2 + q0*q3);
+            Tnb[0][1] = 2.0*(q1*q2 + q0*q3);
             Tnb[0][2] = 2.0*(q1*q3-q0*q2);
             Tnb[1][0] = 2.0*(q1*q2 - q0*q3);
             Tnb[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
             Tnb[1][2] = 2.0*(q2*q3 + q0*q1);
             Tnb[2][0] = 2.0*(q1*q3 + q0*q2);
             Tnb[2][1] = 2.0*(q2*q3 - q0*q1);
-            Tnb[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3]);
-            MagPred[0] = Tnb[0][0]*MagN + Tnb[0][1]*MagE  + Tnb[0][2]*MagD + MagXbias;
-            MagPred[1] = Tnb[1][0]*MagN + Tnb[1][1]*MagE  + Tnb[1][2]*MagD + MagYbias;
-            MagPred[2] = Tnb[2][0]*MagN + Tnb[2][1]*MagE  + Tnb[0][2]*MagD + MagZbias;
+            Tnb[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+            MagPred[0] = Tnb[0][0]*magN + Tnb[0][1]*magE  + Tnb[0][2]*magD + magXbias;
+            MagPred[1] = Tnb[1][0]*magN + Tnb[1][1]*magE  + Tnb[1][2]*magD + magYbias;
+            MagPred[2] = Tnb[2][0]*magN + Tnb[2][1]*magE  + Tnb[0][2]*magD + magZbias;
             // Calculate observation jacobians
             SH_MAG[0] = 2*magD*q3 + 2*magE*q2 + 2*magN*q1;
             SH_MAG[1] = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;
@@ -258,10 +255,10 @@ void FuseMagnetometer(
             // correct the state vector
             for (j= 0; j<=23; j++)
             {
-                states[j] = states[j] - K_MAG[j] * innovation(obsIndex);
+                states[j] = states[j] - K_MAG[j] * innovation[obsIndex];
             }
             // normalise the quaternion states
-            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3];
+            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
             if (quatMag < 0.9) quatHealth = false;
             if (quatMag > 1e-12)
             {
@@ -321,9 +318,4 @@ void FuseMagnetometer(
             }
         }
     }
-}
-
-float valOut = sq(float valIn)
-{
-    return valIn*valIn;
 }
