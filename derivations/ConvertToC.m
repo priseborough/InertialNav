@@ -123,7 +123,7 @@ for lineIndex = 1:length(SymbolicOutput)
     [idxsq3] = regexp(strIn,'\^2','start');
     if ~isempty(match)
         for pwrIndex = 1:length(match)
-            strVar   = strIn(idxsq1(pwrIndex):idxsq2(pwrIndex)-2);
+            strVar   = strIn(idxsq1(pwrIndex)+2*(pwrIndex-1):idxsq2(pwrIndex)-2+2*(pwrIndex-1));
             strPat = strcat(strVar,'\^2');
             strRep = strcat('sq(',strVar,')');
             strIn = regexprep(strIn,strPat,strRep);
