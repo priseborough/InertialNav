@@ -40,8 +40,6 @@ void FuseAirspeed(
     unsigned short int j;
     unsigned short int k;
     const float R_TAS = 2.0;
-    float varInnov;
-    float innovation;
     float SH_TAS[3];
     float SK_TAS[2];
     float H_TAS[24];
@@ -49,19 +47,21 @@ void FuseAirspeed(
     float KH[24][24];
     float KHP[24][24];
     bool quatHealth = true;
-    
+    float VtasPred;
+    float quatMag;
+
     // Copy required states to local variable names
     vn = StatesAtMeasTime[4];
     ve = StatesAtMeasTime[5];
     vd = StatesAtMeasTime[6];
     vwn = StatesAtMeasTime[16];
     vwe = StatesAtMeasTime[17];
-    
+
     // Need to check that it is flying before fusing airspeed data
     // Calculate the predicted airspeed
     VtasPred = sqrt((ve - vwe)*(ve - vwe) + (vn - vwn)*(vn - vwn) + vd*vd);
     // Perform fusion of True Airspeed measurement
-    if (useAirspeed && FuseData && (VtasPred > 1.0) && (VtasMea > 8.0))
+    if (useAirspeed && FuseData && (VtasPred > 1.0) && (VtasMeas > 8.0))
     {
         // Calculate observation jacobians
         SH_TAS[0] = 1/(sqrt(sq(ve - vwe) + sq(vn - vwn) + sq(vd)));
@@ -101,7 +101,7 @@ void FuseAirspeed(
         K_TAS[23] = SK_TAS[0]*(P[23][4]*SH_TAS[2] - P[23][16]*SH_TAS[2] + P[23][5]*SK_TAS[1] - P[23][17]*SK_TAS[1] + P[23][6]*vd*SH_TAS[0]);
         varInnov = 1.0/SK_TAS[0];
         // Calculate the measurement innovation
-        innovation = VtasPred - VtasMea;
+        innovation = VtasPred - VtasMeas;
         // Check the innovation for consistency and don't fuse if > 5Sigma
         if ((innovation*innovation*SK_TAS[0]) < 25.0)
         {
@@ -111,7 +111,7 @@ void FuseAirspeed(
                 states[j] = states[j] - K_TAS[j] * innovation;
             }
             // normalise the quaternion states
-            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3];
+            quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
             if (quatMag < 0.9) quatHealth = false;
             if (quatMag > 1e-12)
             {
@@ -128,11 +128,11 @@ void FuseAirspeed(
             {
                 for (j = 4; j<=6; j++)
                 {
-                    KH[i][j] = K_MAG[i] * H_MAG[j];
+                    KH[i][j] = K_TAS[i] * H_TAS[j];
                 }
                 for (j = 16; j<=17; j++)
                 {
-                    KH[i][j] = K_MAG[i] * H_MAG[j];
+                    KH[i][j] = K_TAS[i] * H_TAS[j];
                 }
             }
             for (i = 0; i<=23; i++)
@@ -170,9 +170,4 @@ void FuseAirspeed(
             }
         }
     }
-}
-
-float valOut = sq(float valIn)
-{
-    return valIn*valIn;
 }

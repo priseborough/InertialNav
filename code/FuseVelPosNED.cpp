@@ -27,7 +27,7 @@ void FuseVelPosNED(
         float states[24], // state input
         float P[24][24], // covariance input
         float accNavMag, // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
-        bool FuseGPSData, // this boolean causes the PosNE and VelNED obs to be fused 
+        bool FuseGPSData, // this boolean causes the PosNE and VelNED obs to be fused
         float VelNED[3], // North, East, Down velocity obs (m/s)
         bool useVelD, // this boolean casues the D component of the VelNED vector to be used
         float PosNE[3], // North, East position obs (m)
@@ -37,7 +37,7 @@ void FuseVelPosNED(
         float StatesAtHgtTime[24], // States at the effective measurement time for the HgtMea measurement
         bool useAirspeed) // this boolean indicates that airspeed measurements are also being used
 {
-    
+
 // declare variables used by fault isolation logic
     float gpsRetryTime = 30.0;
     float gpsRetryTimeNoTAS = 5.0;
@@ -53,21 +53,19 @@ void FuseVelPosNED(
     bool posHealth = false;
     bool hgtHealth = false;
     bool quatHealth = true;
-    
+
 // declare variables used to check measurement errors
-    float varTotal = 0.0;
-    float varLimit = 0.0;
     float velInnov[3] = {0.0,0.0,0.0};
     float posInnov[2] = {0.0,0.0};
     float hgtInnov = 0.0;
-    
+
 // declare indices used to access arrays
     int stateIndex;
     int obsIndex;
     int i;
     int j;
     int iMax;
-    
+
 // declare variables used by state and covariance update calculations
     float velErr;
     float posErr;
@@ -79,7 +77,7 @@ void FuseVelPosNED(
     float quatMag;
     int startIndex;
     int endIndex;
-    
+
 //Default action - pass through states and covariances
     for (i=0; i<=23; i++)
     {
@@ -89,19 +87,19 @@ void FuseVelPosNED(
             nextP[i][j] = P[i][j];
         }
     }
-    
+
 // Form the observation vector
     for (i=0; i<=2; i++) observation[i] = VelNED[i];
     for (i=3; i<=4; i++) observation[i] = PosNE[i];
     observation[5] = -(HgtMea);
-    
+
 // Estimate the GPS Velocity, GPS horiz position and height measurement variances.
     velErr = 0.15*accNavMag; // additional error in GPS velocities caused by manoeuvring
     posErr = 0.15*accNavMag; // additional error in GPS position caused by manoeuvring
     for (i=1; i<=3; i++) R_OBS[i-1] = 0.01 + velErr*velErr;
     for (i=4; i<=5; i++) R_OBS[i-1] = 4.0 + posErr*posErr;
     R_OBS[5] = 4.0;
-    
+
 // Specify the count before forcing use of GPS or height data after invalid
 // data. We need to force GPS again sooner without
 // airspeed data as the nav velocities will be unconstrained.
@@ -116,7 +114,7 @@ void FuseVelPosNED(
         maxPosFailCount = maxVelFailCount;
     }
     maxHgtFailCount = ceil(hgtRetryTime/dt);
-    
+
 // Perform sequential fusion of GPS measurements. This assumes that the
 // errors in the different velocity and position components are
 // uncorrelated which is not true, however in the absence of covariance
