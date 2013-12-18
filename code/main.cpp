@@ -152,35 +152,40 @@ unsigned long int statetimeStamp[50]; // time stamp for each state vector stored
 
 int main()
 {
-    int i;
-    int j;
+    uint8_t i;
+    uint8_t j;
 
     // read IMU text data
     FILE * pImuFile;
     pImuFile = fopen ("IMU.txt","r");
-    float tempIn1;
-    float tempIn2[8];
+    float tempIn;
+    float tempVec[8];
     uint32_t IMUframe;
     float dt;
     static uint32_t IMUtime = 0;
     Vector3f angRate;
     Vector3f accel;
-    for (i=0; i<=99; i++)
+    rewind (pImuFile);
+    int readStatus;
+    while (readStatus != EOF)
     {
         for (j=0; j<=7; j++)
         {
-            fscanf (pFile, "%f", &tempIn1);
-            tempIn2[j] = tempIn1;
+            readStatus = fscanf (pImuFile, "%f", &tempIn);
+            if (readStatus != EOF) tempVec[j] = tempIn;
         }
-        IMUframe  = tempIn2[0];
-        dt        = 0.001*(tempIn2[1] - IMUtime);
-        IMUtime   = tempIn2[1];
-        angRate.x = tempIn2[2];
-        angRate.y = tempIn2[3];
-        angRate.z = tempIn2[4];
-        accel.x   = tempIn2[5];
-        accel.y   = tempIn2[6];
-        accel.z   = tempIn2[7];
+        if (readStatus != EOF)
+        {
+            IMUframe  = tempVec[0];
+            dt        = 0.001*(tempVec[1] - IMUtime);
+            IMUtime   = tempVec[1];
+            angRate.x = tempVec[2];
+            angRate.y = tempVec[3];
+            angRate.z = tempVec[4];
+            accel.x   = tempVec[5];
+            accel.y   = tempVec[6];
+            accel.z   = tempVec[7];
+        }
     }
     fclose (pImuFile);
 }
