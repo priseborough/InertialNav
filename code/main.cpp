@@ -1,4 +1,6 @@
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
 
 class Vector3f
 {
@@ -150,34 +152,22 @@ unsigned long int statetimeStamp[50]; // time stamp for each state vector stored
 
 int main()
 {
-    // test overloaded * function
-    Vector3f vec1;
-    vec1.x = 1.0;
-    vec1.y = 0.0;
-    vec1.z = 0.0;
-
-    Vector3f vec2;
-    vec2.x = 0.0;
-    vec2.y = 1.0;
-    vec2.z = 0.0;
-
-    Vector3f vec3 = vec1*vec2;
-
-    Mat3f matIn;
-    matIn.x.x = 1.0;
-    matIn.x.y = 2.0;
-    matIn.x.z = 3.0;
-    matIn.y.x = 4.0;
-    matIn.y.y = 5.0;
-    matIn.y.z = 6.0;
-    matIn.z.x = 7.0;
-    matIn.z.y = 8.0;
-    matIn.z.z = 9.0;
-
-    Vector3f vecIn = {0.1,0.5,1.0};
-
-    Vector3f vecOut = matIn*vecIn;
-
+    // open text file
+    FILE * pFile;
+    pFile = fopen ("myfile.txt","r");
+    float tempIn;
+    float dataIn[100][8];
+    int i;
+    int j;
+    for (i=0; i<=99; i++)
+    {
+        for (j=0; j<=7; j++)
+        {
+            fscanf (pFile, "%f", &tempIn);
+            dataIn[i][j] = tempIn;
+        }
+    }
+    fclose (pFile);
 }
 
 void CovariancePrediction(
@@ -1017,6 +1007,7 @@ void  UpdateStrapdownEquationsNED(
 
 // Apply rotational and skulling corrections
 // * and + operators have been overloaded
+
     correctedDelVel = dVel + 0.5*(prevDelAng + dAng)*(prevDelVel + dVel) + 0.1666667*((prevDelAng + dAng)*((prevDelAng + dAng)*(prevDelVel + dVel))) + 0.08333333*((prevDelAng*dVel) + (prevDelVel*dAng));
 
 // Apply corrections for earths rotation rate and coning errors
@@ -1101,7 +1092,7 @@ void  UpdateStrapdownEquationsNED(
 
 // calculate the magnitude of the nav acceleration (required for GPS
 // variance estimation)
-    accNavMag = sqrt(sq(delVelNav.x) + sq(delVelNav.y) + sq(delVelNav.z)) / dt;
+    accNavMag = sqrt(delVelNav.x*delVelNav.x + delVelNav.y*delVelNav.y + delVelNav.z*delVelNav.z)/dt;
 
 // If calculating position save previous velocity
     lastVelocity[0] = states[4];
@@ -1823,7 +1814,7 @@ void RecallStates(float statesForFusion[24], unsigned long int msec)
     }
     if (bestTimeDelta <= 200) // only output stored state if < 200 msec retrieval error
     {
-    for (i=0; i<=23; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
+        for (i=0; i<=23; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
     }
     else // otherwise output current state
     {
