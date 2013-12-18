@@ -56,13 +56,17 @@ if ~isempty(ATT)
     Yaw      = ATT(:,5)*deg2rad;
 end
 
-%% Save to file
+%% Save to files
 save('NavFilterTestData.mat', ...
     'IMUframe','IMUtime','angRate','accel', ...
     'GPSframe','GPStime','LatDeg','LngDeg','Hgt','CourseDeg','GndSpd','VelD', ...
     'MAGframe','MAGtime','MagX','MagY','MagZ','MagBiasX','MagBiasY','MagBiasZ', ...
     'ATTframe','ATTtime','Roll','Pitch','Yaw', ...
     'ADSframe','ADStime','Veas','HgtBaro');
+save('../code/IMU.txt','IMU','-ascii');
+save('../code/GPS.txt','GPS','-ascii');
+save('../code/MAG.txt','MAG','-ascii')
+save('../code/ATT.txt','ATT','-ascii');
 
 clear all;
 load('NavFilterTestData.mat');
