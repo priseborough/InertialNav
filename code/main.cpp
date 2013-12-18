@@ -1,7 +1,4 @@
-#include <iostream>
 #include <math.h>
-
-using namespace std;
 
 class Vector3f
 {
@@ -82,21 +79,21 @@ Vector3f operator*(float sclIn1, Vector3f vecIn1)
 }
 
 void  UpdateStrapdownEquationsNED(
-    Vector3f correctedDelAng,
-    Vector3f correctedDelVel,
-    float accNavMag,
-    Vector3f earthRateNED,
-    Vector3f angRate,
-    Vector3f accel,
-    float dt);
+    Vector3f correctedDelAng, // delta angles about the xyz body axes corrected for errors (rad)
+    Vector3f correctedDelVel, // delta velocities along the XYZ body axes corrected for errors (m/s)
+    float accNavMag, // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
+    Vector3f earthRateNED, // earths angular rate vector in NED (rad/s)
+    Vector3f angRate, // angular rate vector in XYZ body axes measured by the IMU (rad/s)
+    Vector3f accel, // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
+    float dt); // time lapsed since the last IMU measurement (sec)
 
 void CovariancePrediction(
-    float deltaAngle[3],
-    float deltaVelocity[3],
-    float dt,
-    bool onGround,
-    bool useAirspeed,
-    bool useCompass);
+    Vector3f correctedDelAng, // delta angles about the xyz body axes corrected for errors (rad)
+    Vector3f correctedDelVel, // delta velocities along the XYZ body axes corrected for errors (m/s)
+    float dt, // time lapsed since the last covariance prediction step (sec)
+    bool onGround, // boolean true when the flight vehicle is on the ground (not flying)
+    bool useAirspeed, // boolean true if airspeed data is being used
+    bool useCompass); // boolean true if magnetometer data is being used
 
 void FuseVelPosNED(
     float innovation[6], // innovation output
@@ -138,11 +135,10 @@ void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3]);
 
 void quatNorm(float quatOut[4], float quatIn[4]);
 
-static float P[24][24];
-
-static float states[24];
-
+// Global variables
 #define GRAVITY_MSS 9.80665
+static float P[24][24];
+static float states[24];
 
 int main()
 {
@@ -159,8 +155,6 @@ int main()
 
 Vector3f vec3 = vec1*vec2;
 
-const Vector3f gravityNED = {0.0,0.0,GRAVITY_MSS};
-
 Mat3f matIn;
 matIn.x.x = 1.0;
 matIn.x.y = 2.0;
@@ -172,18 +166,15 @@ matIn.z.x = 7.0;
 matIn.z.y = 8.0;
 matIn.z.z = 9.0;
 
-Vector3f vecIn = {0.0,1.0,0.0};
+Vector3f vecIn = {0.1,0.5,1.0};
 
 Vector3f vecOut = matIn*vecIn;
-
-    cout << "Hello world!" << endl;
-    return 0;
 
 }
 
 void CovariancePrediction(
-    float deltaAngle[3],
-    float deltaVelocity[3],
+    Vector3f correctedDelAng,
+    Vector3f correctedDelVel,
     float dt,
     bool onGround,
     bool useAirspeed,
@@ -218,12 +209,12 @@ void CovariancePrediction(
     for (i= 0; i<=23; i++) processNoise[i] = sq(processNoise[i]);
 
     // time varying inputs
-    float dvx = deltaVelocity[0];
-    float dvy = deltaVelocity[1];
-    float dvz = deltaVelocity[2];
-    float dax = deltaAngle[0];
-    float day = deltaAngle[1];
-    float daz = deltaAngle[2];
+    float dvx = correctedDelVel.x;
+    float dvy = correctedDelVel.y;
+    float dvz = correctedDelVel.z;
+    float dax = correctedDelAng.x;
+    float day = correctedDelAng.y;
+    float daz = correctedDelAng.z;
 
     float q0 = states[0];
     float q1 = states[1];
@@ -1791,26 +1782,4 @@ void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int
 float sq(float valIn)
 {
     return valIn*valIn;
-}
-
-void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3])
-{
-    vecOut[0] = vecIn1[1]*vecIn2[2] - vecIn1[2]*vecIn2[1];
-    vecOut[1] = vecIn1[2]*vecIn2[0] - vecIn1[0]*vecIn2[2];
-    vecOut[2] = vecIn1[0]*vecIn2[1] - vecIn1[1]*vecIn2[0];
-}
-
-void quatNorm(float quatOut[4], float quatIn[4])
-{
-    float quatMag = sqrt(sq(quatIn[0]) + sq(quatIn[1]) + sq(quatIn[2]) + sq(quatIn[3]));
-    unsigned short int i;
-    if (quatMag > 1e-12)
-    {
-        for (i = 0; i<=3; i++) quatOut[i] = quatIn[i]/quatMag;
-    }
-    else
-    {
-        quatOut[0] = 1.0;
-        for (i = 1; i<=3; i++) quatOut[i] = 0.0;
-    }
 }
