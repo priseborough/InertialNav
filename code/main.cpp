@@ -135,10 +135,18 @@ void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3]);
 
 void quatNorm(float quatOut[4], float quatIn[4]);
 
+// store staes along with system time stamp in msces
+void StoreStates(unsigned long int msec);
+
+// recall stste vector stored at closest time to the one specified by msec
+void RecallStates(float statesForFusion[24], unsigned long int msec);
+
 // Global variables
 #define GRAVITY_MSS 9.80665
-static float P[24][24];
-static float states[24];
+static float P[24][24]; // covariance matrix
+static float states[24]; // state matrix
+static float storedStates[24][50]; // state vectors stored for the last 50 time steps
+unsigned long int statetimeStamp[50]; // time stamp for each state vector stored
 
 int main()
 {
@@ -153,22 +161,22 @@ int main()
     vec2.y = 1.0;
     vec2.z = 0.0;
 
-Vector3f vec3 = vec1*vec2;
+    Vector3f vec3 = vec1*vec2;
 
-Mat3f matIn;
-matIn.x.x = 1.0;
-matIn.x.y = 2.0;
-matIn.x.z = 3.0;
-matIn.y.x = 4.0;
-matIn.y.y = 5.0;
-matIn.y.z = 6.0;
-matIn.z.x = 7.0;
-matIn.z.y = 8.0;
-matIn.z.z = 9.0;
+    Mat3f matIn;
+    matIn.x.x = 1.0;
+    matIn.x.y = 2.0;
+    matIn.x.z = 3.0;
+    matIn.y.x = 4.0;
+    matIn.y.y = 5.0;
+    matIn.y.z = 6.0;
+    matIn.z.x = 7.0;
+    matIn.z.y = 8.0;
+    matIn.z.z = 9.0;
 
-Vector3f vecIn = {0.1,0.5,1.0};
+    Vector3f vecIn = {0.1,0.5,1.0};
 
-Vector3f vecOut = matIn*vecIn;
+    Vector3f vecOut = matIn*vecIn;
 
 }
 
@@ -1782,4 +1790,43 @@ void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int
 float sq(float valIn)
 {
     return valIn*valIn;
+}
+
+// Store states in a history array along with time stamp
+void StoreStates(unsigned long int msec)
+{
+    static unsigned short int storeIndex = 0;
+    unsigned short int i;
+    if (storeIndex > 49) storeIndex = 0;
+    for (i=0; i<=23; i++) storedStates[i][storeIndex] = states[i];
+    statetimeStamp[storeIndex] = msec;
+    storeIndex = storeIndex + 1;
+}
+
+// Output the state vector stored at the time that best matches that specified by msec
+void RecallStates(float statesForFusion[24], unsigned long int msec)
+{
+    long int timeDelta;
+    long int bestTimeDelta = 200;
+    unsigned short int storeIndex;
+    unsigned short int bestStoreIndex = 0;
+    unsigned short int i;
+    for (storeIndex=0; storeIndex<=49; storeIndex++)
+    {
+        timeDelta = msec - statetimeStamp[storeIndex];
+        if (timeDelta < 0) timeDelta = -timeDelta;
+        if (timeDelta < bestTimeDelta)
+        {
+            bestStoreIndex = storeIndex;
+            bestTimeDelta = timeDelta;
+        }
+    }
+    if (bestTimeDelta <= 200) // only output stored state if < 200 msec retrieval error
+    {
+    for (i=0; i<=23; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
+    }
+    else // otherwise output current state
+    {
+        for (i=0; i<=23; i++) statesForFusion[i] = states[i];
+    }
 }
