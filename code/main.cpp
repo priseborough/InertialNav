@@ -152,22 +152,37 @@ unsigned long int statetimeStamp[50]; // time stamp for each state vector stored
 
 int main()
 {
-    // open text file
-    FILE * pFile;
-    pFile = fopen ("myfile.txt","r");
-    float tempIn;
-    float dataIn[100][8];
     int i;
     int j;
+
+    // read IMU text data
+    FILE * pImuFile;
+    pImuFile = fopen ("IMU.txt","r");
+    float tempIn1;
+    float tempIn2[8];
+    uint32_t IMUframe;
+    float dt;
+    static uint32_t IMUtime = 0;
+    Vector3f angRate;
+    Vector3f accel;
     for (i=0; i<=99; i++)
     {
         for (j=0; j<=7; j++)
         {
-            fscanf (pFile, "%f", &tempIn);
-            dataIn[i][j] = tempIn;
+            fscanf (pFile, "%f", &tempIn1);
+            tempIn2[j] = tempIn1;
         }
+        IMUframe  = tempIn2[0];
+        dt        = 0.001*(tempIn2[1] - IMUtime);
+        IMUtime   = tempIn2[1];
+        angRate.x = tempIn2[2];
+        angRate.y = tempIn2[3];
+        angRate.z = tempIn2[4];
+        accel.x   = tempIn2[5];
+        accel.y   = tempIn2[6];
+        accel.z   = tempIn2[7];
     }
-    fclose (pFile);
+    fclose (pImuFile);
 }
 
 void CovariancePrediction(
