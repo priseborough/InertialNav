@@ -2,23 +2,16 @@
 #include <math.h>
 
 void CovariancePrediction(
-    float nextP[24][24],
     float deltaAngle[3],
     float deltaVelocity[3],
-    float states[24],
-    float P[24][24],
     float dt,
     bool onGround,
     bool useAirspeed,
     bool useCompass);
 
 void FuseVelPosNED(
-    float nextStates[24], // state output
-    float nextP[24][24],  // covariance output
     float innovation[6], // innovation output
     float varInnov[6], // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     float accNavMag, // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
     bool FuseGPSData, // this boolean causes the PosNE and VelNED obs to be fused
     float VelNED[3], // North, East, Down velocity obs (m/s)
@@ -31,24 +24,16 @@ void FuseVelPosNED(
     bool useAirspeed); // this boolean indicates that airspeed measurements are also being used
 
 void FuseMagnetometer(
-    float nextStates[24], // state output
-    float nextP[24][24], // covariance output
     float innovation[6], // innovation output
     float varInnov[6], // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     bool FuseData, // boolean true when magnetometer data is to be fused
     float MagData[3], // magnetometer flux radings in X,Y,Z body axes
     float StatesAtMeasTime[24], // filter satates at the effective measurement time
     bool useCompass); // boolean true if magnetometer data is being used
 
 void FuseAirspeed(
-    float nextStates[24], // state output
-    float nextP[24][24], // covariance output
     float innovation, // innovation output
     float varInnov, // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     bool FuseData, // boolean true when airspeed data is to be fused
     float VtasMeas, // true airspeed measurement (m/s)
     float StatesAtMeasTime[24], // filter states at the effective measurement time
@@ -60,6 +45,14 @@ void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int
 
 float sq(float valIn);
 
+void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3]);
+
+void quatNorm(float quatOut[4], float quatIn[4]);
+
+static float P[24][24];
+
+static float states[24];
+
 using namespace std;
 
 int main()
@@ -69,11 +62,8 @@ int main()
 }
 
 void CovariancePrediction(
-    float nextP[24][24],
     float deltaAngle[3],
     float deltaVelocity[3],
-    float states[24],
-    float P[24][24],
     float dt,
     bool onGround,
     bool useAirspeed,
@@ -133,6 +123,7 @@ void CovariancePrediction(
     float SG[8];
     float SQ[11];
     float SPP[13];
+    float nextP[24][24];
 
     // misc
     float temp;
@@ -840,25 +831,22 @@ void CovariancePrediction(
 
     // Force symmetry on the covariance matrix to prevent ill-conditioning
     // of the matrix which would cause the filter to blow-up
+    for (i=0; i<=23; i++) P[i][i] = nextP[i][i];
     for (i=1; i<=23; i++)
     {
         for (j=i-1; j<=22; j++)
         {
             temp = 0.5*(nextP[i][j] + nextP[j][i]);
-            nextP[i][j] = temp;
-            nextP[j][i] = temp;
+            P[i][j] = temp;
+            P[j][i] = temp;
         }
     }
 
 }
 
 void FuseVelPosNED(
-    float nextStates[24], // state output
-    float nextP[24][24],  // covariance output
     float innovation[6], // innovation output
     float varInnov[6], // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     float accNavMag, // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
     bool FuseGPSData, // this boolean causes the PosNE and VelNED obs to be fused
     float VelNED[3], // North, East, Down velocity obs (m/s)
@@ -885,7 +873,6 @@ void FuseVelPosNED(
     bool velHealth = false;
     bool posHealth = false;
     bool hgtHealth = false;
-    bool quatHealth = true;
 
 // declare variables used to check measurement errors
     float velInnov[3] = {0.0,0.0,0.0};
@@ -910,16 +897,6 @@ void FuseVelPosNED(
     float quatMag;
     unsigned short int startIndex;
     unsigned short int endIndex;
-
-//Default action - pass through states and covariances
-    for (i=0; i<=23; i++)
-    {
-        nextStates[i] = states[i];
-        for (j=0; j<=23; j++)
-        {
-            nextP[i][j] = P[i][j];
-        }
-    }
 
 // Form the observation vector
     for (i=0; i<=2; i++) observation[i] = VelNED[i];
@@ -1032,8 +1009,6 @@ void FuseVelPosNED(
             endIndex = 4;
         }
         // Fuse measurements sequentially
-        // Set quaternion health to good as starting default
-        quatHealth = true;
         for (obsIndex= startIndex; i<=endIndex; i++)
         {
             // Apply data health checks
@@ -1066,7 +1041,6 @@ void FuseVelPosNED(
                     states[i] = states[i] - K[i] * innovation[obsIndex];
                 }
                 quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
-                if (quatMag < 0.9) quatHealth = false; // normalisation will have introduced significant errors
                 if (quatMag > 1e-12) // divide by  0 protection
                 {
                     for (i = 0; i<=3; i++)
@@ -1094,27 +1068,11 @@ void FuseVelPosNED(
             }
         }
     }
-// don't update states and covariances if the quaternion health is bad
-    if (quatHealth)
-    {
-        for (i= 0; i<=23; i++)
-        {
-            nextStates[i] = states[i];
-            for (j= 0; j<=23; j++)
-            {
-                nextP[i][j] = P[i][j];
-            }
-        }
-    }
 }
 
 void FuseMagnetometer(
-    float nextStates[24], // state output
-    float nextP[24][24], // covariance output
     float innovation[3], // innovation output
     float varInnov[3], // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     bool FuseData, // boolean true when magnetometer data is to be fused
     float MagData[3], // magnetometer flux radings in X,Y,Z body axes
     float StatesAtMeasTime[24], // filter satates at the effective measurement time
@@ -1140,7 +1098,6 @@ void FuseMagnetometer(
         {0.0,0.0,1.0}
     };
     static float MagPred[3] = {0.0,0.0,0.0};
-    static bool quatHealth = true;
     unsigned short int i;
     unsigned short int j;
     unsigned short int k;
@@ -1246,8 +1203,6 @@ void FuseMagnetometer(
             // reset the observation index to 0 (we start by fusing the X
             // measurement)
             obsIndex = 0;
-            // reset the quaternion health status
-            quatHealth = true;
         }
         else if (obsIndex == 1) // we are now fusing the Y measurement
         {
@@ -1348,7 +1303,6 @@ void FuseMagnetometer(
             }
             // normalise the quaternion states
             float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
-            if (quatMag < 0.9) quatHealth = false;
             if (quatMag > 1e-12)
             {
                 for (j= 0; j<=3; j++)
@@ -1394,28 +1348,12 @@ void FuseMagnetometer(
             }
             obsIndex = obsIndex + 1;
         }
-        // only update states and convariance if quaternion health OK
-        if (quatHealth)
-        {
-            for (i = 0; i<=23; i++)
-                nextStates[i] = states[i];
-            {
-                for (j = 0; j<=23; j++)
-                {
-                    nextP[i][j] = P[i][j];
-                }
-            }
-        }
     }
 }
 
 void FuseAirspeed(
-    float nextStates[24], // state output
-    float nextP[24][24], // covariance output
     float innovation, // innovation output
     float varInnov, // innovation variance output
-    float states[24], // state input
-    float P[24][24], // covariance input
     bool FuseData, // boolean true when airspeed data is to be fused
     float VtasMeas, // true airspeed measurement (m/s)
     float StatesAtMeasTime[24], // filter states at the effective measurement time
@@ -1436,7 +1374,6 @@ void FuseAirspeed(
     float K_TAS[24];
     float KH[24][24];
     float KHP[24][24];
-    bool quatHealth = true;
     float VtasPred;
     float quatMag;
 
@@ -1502,7 +1439,6 @@ void FuseAirspeed(
             }
             // normalise the quaternion states
             quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
-            if (quatMag < 0.9) quatHealth = false;
             if (quatMag > 1e-12)
             {
                 for (j= 0; j<=3; j++)
@@ -1547,18 +1483,6 @@ void FuseAirspeed(
                 }
             }
         }
-        // only update states and convariance if quaternion health OK
-        if (quatHealth)
-        {
-            for (i = 0; i<=23; i++)
-                nextStates[i] = states[i];
-            {
-                for (j = 0; j<=23; j++)
-                {
-                    nextP[i][j] = P[i][j];
-                }
-            }
-        }
     }
 }
 
@@ -1591,4 +1515,26 @@ void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int
 float sq(float valIn)
 {
     return valIn*valIn;
+}
+
+void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3])
+{
+    vecOut[0] = vecIn1[1]*vecIn2[2] - vecIn1[2]*vecIn2[1];
+    vecOut[1] = vecIn1[2]*vecIn2[0] - vecIn1[0]*vecIn2[2];
+    vecOut[2] = vecIn1[0]*vecIn2[1] - vecIn1[1]*vecIn2[0];
+}
+
+void quatNorm(float quatOut[4], float quatIn[4])
+{
+    float quatMag = sqrt(sq(quatIn[0]) + sq(quatIn[1]) + sq(quatIn[2]) + sq(quatIn[3]));
+    unsigned short int i;
+    if (quatMag > 1e-12)
+    {
+        for (i = 0; i<=3; i++) quatOut[i] = quatIn[i]/quatMag;
+    }
+    else
+    {
+        quatOut[0] = 1.0;
+        for (i = 1; i<=3; i++) quatOut[i] = 0.0;
+    }
 }
