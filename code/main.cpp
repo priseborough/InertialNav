@@ -210,6 +210,7 @@ int main()
     float gpsLon; // col 7 * deg2rad - pi
     float hgt; // col 8
     int gpsReadStatus;
+    bool newDataGps = false;
 
     // Magnetometer input data variables
     float magIn;
@@ -221,7 +222,7 @@ int main()
     float MagData[3]; // col 2 - 4
     float MagBias[3]; // col 5 - 7
     int magReadStatus;
-    bool magDataArrived = false;
+    bool newDataMag = false;
 
     // AHRS input data variables
     float ahrsIn;
@@ -242,6 +243,7 @@ int main()
     uint32_t lastADStime = 0;
     float Veas; // col 7
     int adsReadStatus;
+    bool newDataAds = false;
 
     while ((imuReadStatus != EOF) && (gpsReadStatus != EOF) && (magReadStatus != EOF) && (adsReadStatus != EOF) && (ahrsReadStatus != EOF))
     {
@@ -287,6 +289,15 @@ int main()
                 hgt = tempGpsPrev[8];
             }
         }
+        if (GPStime > lastGPStime)
+        {
+            lastGPStime = GPStime;
+            newDataGps = true;
+        }
+        else
+        {
+            newDataGps = false;
+        }
 
         // read Magnetometer data
         // wind data forward to one update past current IMU data time
@@ -310,6 +321,15 @@ int main()
                 }
             }
         }
+        if (MAGtime > lastMAGtime)
+        {
+            lastMAGtime = MAGtime;
+            newDataMag = true;
+        }
+        else
+        {
+            newDataMag = false;
+        }
 
         // read Airspeed data
         // wind data forward to one update past current IMU data time
@@ -328,6 +348,15 @@ int main()
                 ADStime = tempAdsPrev[1];
                 Veas = tempAdsPrev[7];
             }
+        }
+        if (ADStime > lastADStime)
+        {
+            lastADStime = ADStime;
+            newDataAds = true;
+        }
+        else
+        {
+            newDataAds = false;
         }
 
         // read AHRS attitude data
@@ -389,8 +418,32 @@ int main()
             for (j=0; j<=3; j++) states[j+21] = MagBias[j];    // Magnetic Field Bias XYZ
 
             statesInitialised = true;
-        }
 
+            // Calculate the initial covariance matrix P
+            P[1][1] = 0.25*sq(1.0*deg2rad);
+            P[2][2] = 0.25*sq(1.0*deg2rad);
+            P[3][3] = 0.25*sq(10.0*deg2rad);
+            P[4][4] = sq(0.7);
+            P[5][5] = P[4][4];
+            P[6][6] = sq(0.7);
+            P[7][7] = sq(15.0);
+            P[8][8] = P[7][7];
+            P[9][9] = sq(5.0);
+            P[10][10] = sq(0.1*deg2rad*0.02);
+            P[11][11] = P[10][10];
+            P[12][12] = P[10][10];
+            P[13][13] = sq(0.1*0.02);
+            P[14][14] = P[13][13];
+            P[15][15] = P[13][13];
+            P[16][16] = sq(8.0);
+            P[17][17] = P[16][16];
+            P[18][18] = sq(20.0);
+            P[19][19] = P[18][18];
+            P[20][20] = P[18][18];
+            P[20][20] = sq(20.0);
+            P[21][21] = P[20][20];
+            P[21][21] = P[20][20];
+        }
     }
     fclose (pImuFile);
     fclose (pMagFile);
