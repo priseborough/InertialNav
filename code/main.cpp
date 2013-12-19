@@ -143,10 +143,21 @@ void StoreStates(uint32_t msec);
 // recall stste vector stored at closest time to the one specified by msec
 void RecallStates(float statesForFusion[24], uint32_t msec);
 
+void quat2Tnb(Mat3f Tnb, float quat[4]);
+
+void quat2Tbn(Mat3f Tbn, float quat[4]);
+
+void eul2quat(float quat[4], float eul[3]);
+
+void calcVelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
+
+void calcPosNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef);
+
 // Global variables
 #define GRAVITY_MSS 9.80665
 #define deg2rad 0.017453292
 #define rad2deg 57.295780
+#define pi 3.141592657
 static float P[24][24]; // covariance matrix
 static float states[24]; // state matrix
 static float storedStates[24][50]; // state vectors stored for the last 50 time steps
@@ -156,8 +167,9 @@ int main()
 {
     uint8_t i;
     uint8_t j;
+    bool statesInitialised = false;
 
-     // open IMU data file
+    // open IMU data file
     FILE * pImuFile;
     pImuFile = fopen ("IMU.txt","r");
     // open magnetometer data file
@@ -167,8 +179,11 @@ int main()
     FILE * pGpsFile;
     pGpsFile = fopen ("GPS.txt","r");
     // open AHRS data file
-    FILE * pAttFile;
-    pAttFile = fopen ("ATT.txt","r");
+    FILE * pAhrsFile;
+    pAhrsFile = fopen ("ATT.txt","r");
+    // open ADS data file
+    FILE * pAdsFile;
+    pAdsFile = fopen ("NTUN.txt","r");
 
     // IMU input data variables
     float imuIn;
@@ -183,33 +198,54 @@ int main()
     // GPS input data variables
     float gpsIn;
     float tempGps[14];
-    uint32_t GPSframe; // col 0
+    float tempGpsPrev[14];
+    uint32_t GPSframe = 0; // col 0
     uint8_t GPSstatus; // col 1, 3 = good
-    uint32_t GPStime; // col 2
+    uint32_t GPStime = 0; // col 2
+    uint32_t lastGPStime = 0;
     float gpsCourse; // col 11 * deg2rad
     float gpsGndSpd; // col 10
     float gpsVelD; // col 12
     float gpsLat; // col 6 * deg2rad
-    float gpsLon; // col 7 * deg2rad
+    float gpsLon; // col 7 * deg2rad - pi
     float hgt; // col 8
+    int gpsReadStatus;
 
     // Magnetometer input data variables
     float magIn;
     float tempMag[8];
-    uint32_t MAGframe;
-    uint32_t MAGtime;
-    float MagData[3];
-    float MagBias[3];
+    float tempMagPrev[8];
+    uint32_t MAGframe = 0; // col 0
+    uint32_t MAGtime = 0; // col 1
+    uint32_t lastMAGtime = 0;
+    float MagData[3]; // col 2 - 4
+    float MagBias[3]; // col 5 - 7
+    int magReadStatus;
+    bool magDataArrived = false;
 
     // AHRS input data variables
     float ahrsIn;
-    float ahrsMag[7];
-    uint32_t AHRSframe;
-    uint32_t AHRStime;
-    float ahrsEul[3];
+    float tempAhrs[7];
+    float tempAhrsPrev[7];
+    uint32_t AHRSframe = 0; // col 0
+    uint32_t AHRStime = 0; // col 1
+    uint32_t lastAHRStime = 0;
+    float ahrsEul[3]; // cols 2 - 4 * deg2rad
+    int ahrsReadStatus;
 
-    while (imuReadStatus != EOF)
+    // ADS input data variables
+    float adsIn;
+    float tempAds[10];
+    float tempAdsPrev[10];
+    uint32_t ADSframe = 0; // col 0
+    uint32_t ADStime = 0; // col 1
+    uint32_t lastADStime = 0;
+    float Veas; // col 7
+    int adsReadStatus;
+
+    while ((imuReadStatus != EOF) && (gpsReadStatus != EOF) && (magReadStatus != EOF) && (adsReadStatus != EOF) && (ahrsReadStatus != EOF))
     {
+        // read IMU data
         for (j=0; j<=7; j++)
         {
             imuReadStatus = fscanf (pImuFile, "%f", &imuIn);
@@ -227,11 +263,140 @@ int main()
             accel.y   = tempImu[6];
             accel.z   = tempImu[7];
         }
+
+        // read GPS data
+        // wind data forward to one update past current IMU data time
+        // and then take data from previous update
+        while (GPSframe <= IMUframe)
+        {
+            for (j=0; j<=13; j++)
+            {
+                tempGpsPrev[j] = tempGps[j];
+                gpsReadStatus = fscanf (pGpsFile, "%f", &gpsIn);
+                if (gpsReadStatus != EOF) tempGps[j] = gpsIn;
+            }
+            if (gpsReadStatus != EOF)
+            {
+                GPSframe  = tempGps[0];
+                GPStime = tempGpsPrev[2];
+                gpsCourse = deg2rad*tempGpsPrev[11];
+                gpsGndSpd = tempGpsPrev[10];
+                gpsVelD = tempGpsPrev[12];
+                gpsLat = deg2rad*tempGpsPrev[6];
+                gpsLon = deg2rad*tempGpsPrev[7] - pi;
+                hgt = tempGpsPrev[8];
+            }
+        }
+
+        // read Magnetometer data
+        // wind data forward to one update past current IMU data time
+        // and then take data from previous update
+        while (MAGframe <= IMUframe)
+        {
+            for (j=0; j<=7; j++)
+            {
+                tempMagPrev[j] = tempMag[j];
+                magReadStatus = fscanf (pMagFile, "%f", &magIn);
+                if (magReadStatus != EOF) tempMag[j] = magIn;
+            }
+            if (magReadStatus != EOF)
+            {
+                MAGframe  = tempMag[0];
+                MAGtime = tempMagPrev[1];
+                for (j=0; j<=2; j++)
+                {
+                    MagData[j] = tempMagPrev[j+2] - tempMagPrev[j+5];
+                    MagBias[j] = -tempMagPrev[j+5];
+                }
+            }
+        }
+
+        // read Airspeed data
+        // wind data forward to one update past current IMU data time
+        // and then take data from previous update
+        while (ADSframe <= IMUframe)
+        {
+            for (j=0; j<=9; j++)
+            {
+                tempAdsPrev[j] = tempAds[j];
+                adsReadStatus = fscanf (pAdsFile, "%f", &adsIn);
+                if (adsReadStatus != EOF) tempAds[j] = adsIn;
+            }
+            if (magReadStatus != EOF)
+            {
+                ADSframe  = tempAds[0];
+                ADStime = tempAdsPrev[1];
+                Veas = tempAdsPrev[7];
+            }
+        }
+
+        // read AHRS attitude data
+        // wind data forward to one update past current IMU data time
+        // and then take data from previous update
+        while (AHRSframe <= IMUframe)
+        {
+            for (j=0; j<=6; j++)
+            {
+                tempAhrsPrev[j] = tempAhrs[j];
+                ahrsReadStatus = fscanf (pAhrsFile, "%f", &ahrsIn);
+                if (ahrsReadStatus != EOF) tempAhrs[j] = ahrsIn;
+            }
+            if (ahrsReadStatus != EOF)
+            {
+                AHRSframe  = tempAhrs[0];
+                AHRStime = tempAhrsPrev[1];
+                for (j=0; j<=2; j++)
+                {
+                    ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
+                }
+            }
+        }
+
+
+        if ((IMUtime > 3000) && (statesInitialised == false))
+        {
+            // Calculate initial filter quaternion states from ahrs solution
+            float initQuat[4];
+            eul2quat(initQuat, ahrsEul);
+
+            // Calculate initial Tbn matrix and rotate Mag measurements into NED
+            // to set initial NED magnetic field states
+            Mat3f Tbn;
+            quat2Tbn(Tbn, initQuat);
+            Vector3f initMagNED;
+            Vector3f initMagXYZ;
+            initMagXYZ.x = MagData[0] - MagBias[0];
+            initMagXYZ.y = MagData[1] - MagBias[1];
+            initMagXYZ.z = MagData[2] - MagBias[2];
+            initMagNED = Tbn*initMagXYZ;
+
+            // calculate initial velocities
+            float initVelNED[3];
+            calcVelNED(initVelNED, gpsCourse, gpsGndSpd, gpsVelD);
+
+            //store initial lat,long and height
+            float gpsLatRef = gpsLat;
+            float gpsLonRef = gpsLon;
+            float hgtRef    = hgt;
+
+            // write to state vector
+            for (j=0; j<=3; j++) states[j]    = initQuat[j];   // quaternions
+            for (j=0; j<=2; j++) states[j+4]  = initVelNED[j]; // velocities
+            for (j=0; j<=10; j++) states[j+7] = 0.0;           // positiions, dAngBias, dVelBias, windVel
+            states[18]                        = initMagNED.x;  // Magnetic Field North
+            states[19]                        = initMagNED.y;  // Magnetic Field East
+            states[20]                        = initMagNED.z;  // Magnetic Field Down
+            for (j=0; j<=3; j++) states[j+21] = MagBias[j];    // Magnetic Field Bias XYZ
+
+            statesInitialised = true;
+        }
+
     }
     fclose (pImuFile);
     fclose (pMagFile);
     fclose (pGpsFile);
-    fclose (pAttFile);
+    fclose (pAhrsFile);
+    fclose (pAdsFile);
 }
 
 void CovariancePrediction(
@@ -243,7 +408,6 @@ void CovariancePrediction(
     bool useCompass)
 {
     // constants
-    const float pi = 3.1415927;
     const float windVelSigma = dt*0.1; // 0.1 m/s/s
     const float dAngBiasSigma = dt*(0.05/3600.0*pi/180.0);
     const float dVelBiasSigma = dt*(0.01/60.0);
@@ -1884,4 +2048,82 @@ void RecallStates(float statesForFusion[24], uint32_t msec)
     {
         for (i=0; i<=23; i++) statesForFusion[i] = states[i];
     }
+}
+
+void quat2Tnb(Mat3f Tnb, float quat[4])
+{
+    // Calculate the nav to body cosine matrix
+    float q00 = sq(quat[0]);
+    float q11 = sq(quat[1]);
+    float q22 = sq(quat[2]);
+    float q33 = sq(quat[3]);
+    float q01 =  quat[0]*quat[1];
+    float q02 =  quat[0]*quat[2];
+    float q03 =  quat[0]*quat[3];
+    float q12 =  quat[1]*quat[2];
+    float q13 =  quat[1]*quat[3];
+    float q23 =  quat[2]*quat[3];
+
+    Tnb.x.x = q00 + q11 - q22 - q33;
+    Tnb.y.y = q00 - q11 + q22 - q33;
+    Tnb.z.z = q00 - q11 - q22 + q33;
+    Tnb.x.y = 2.0*(q12 + q03);
+    Tnb.x.z = 2.0*(q13 - q02);
+    Tnb.y.x = 2.0*(q12 - q03);
+    Tnb.y.z = 2.0*(q23 + q01);
+    Tnb.z.x = 2.0*(q13 + q02);
+    Tnb.z.y = 2.0*(q23 - q01);
+}
+
+void quat2Tbn(Mat3f Tbn, float quat[4])
+{
+    // Calculate the body to nav cosine matrix
+    float q00 = sq(quat[0]);
+    float q11 = sq(quat[1]);
+    float q22 = sq(quat[2]);
+    float q33 = sq(quat[3]);
+    float q01 =  quat[0]*quat[1];
+    float q02 =  quat[0]*quat[2];
+    float q03 =  quat[0]*quat[3];
+    float q12 =  quat[1]*quat[2];
+    float q13 =  quat[1]*quat[3];
+    float q23 =  quat[2]*quat[3];
+
+    Tbn.x.x = q00 + q11 - q22 - q33;
+    Tbn.y.y = q00 - q11 + q22 - q33;
+    Tbn.z.z = q00 - q11 - q22 + q33;
+    Tbn.y.x = 2.0*(q12 + q03);
+    Tbn.z.x = 2.0*(q13 - q02);
+    Tbn.x.y = 2.0*(q12 - q03);
+    Tbn.z.y = 2.0*(q23 + q01);
+    Tbn.x.z = 2.0*(q13 + q02);
+    Tbn.y.z = 2.0*(q23 - q01);
+}
+
+void eul2quat(float quat[4], float eul[3])
+{
+    float u1 = cos(0.5*eul[0]);
+    float u2 = cos(0.5*eul[1]);
+    float u3 = cos(0.5*eul[2]);
+    float u4 = sin(0.5*eul[0]);
+    float u5 = sin(0.5*eul[1]);
+    float u6 = sin(0.5*eul[2]);
+    quat[0] = u1*u2*u3+u4*u5*u6;
+    quat[1] = u4*u2*u3-u1*u5*u6;
+    quat[2] = u1*u5*u3+u4*u2*u6;
+    quat[3] = u1*u2*u6-u4*u5*u3;
+}
+
+void calcVelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+{
+    velNED[0] = gpsGndSpd*cos(gpsCourse);
+    velNED[1] = gpsGndSpd*sin(gpsCourse);
+    velNED[2] = gpsVelD;
+}
+
+void calcPosNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef)
+{
+    posNED[0] = 6378145.0 * (gpsLat - gpsLatRef);
+    posNED[1] = 6378145.0 * cos(gpsLatRef) * (gpsLon - gpsLonRef);
+    posNED[2] = -(hgt - hgtRef);
 }
