@@ -67,6 +67,6 @@ save('../code/IMU.txt','IMU','-ascii');
 save('../code/GPS.txt','GPS','-ascii');
 save('../code/MAG.txt','MAG','-ascii')
 save('../code/ATT.txt','ATT','-ascii');
-
+save('../code/NTUN.txt','NTUN','-ascii');
 clear all;
 load('NavFilterTestData.mat');
