@@ -106,9 +106,9 @@ void StoreStates(uint32_t msec);
 // recall stste vector stored at closest time to the one specified by msec
 void RecallStates(float statesForFusion[24], uint32_t msec);
 
-void quat2Tnb(Mat3f Tnb, float quat[4]);
+void quat2Tnb(Mat3f &Tnb, float quat[4]);
 
-void quat2Tbn(Mat3f Tbn, float quat[4]);
+void quat2Tbn(Mat3f &Tbn, float quat[4]);
 
 void eul2quat(float quat[4], float eul[3]);
 
@@ -161,7 +161,8 @@ float gpsLatRef;
 float gpsLonRef;
 float gpsHgtRef;
 float magBias[3];
-
+Mat3f Tnb;
+Mat3f Tbn;
 
 int main()
 {
@@ -240,9 +241,6 @@ int main()
     float Veas; // col 7
     int adsReadStatus;
     bool newDataAds = false;
-
-    // other variables
-    Mat3f Tbn;
 
     while ((imuReadStatus != EOF) && (gpsReadStatus != EOF) && (magReadStatus != EOF) && (adsReadStatus != EOF) && (ahrsReadStatus != EOF))
     {
@@ -390,6 +388,7 @@ int main()
 
             // Calculate initial Tbn matrix and rotate Mag measurements into NED
             // to set initial NED magnetic field states
+
             quat2Tbn(Tbn, initQuat);
             Vector3f initMagNED;
             Vector3f initMagXYZ;
@@ -2091,7 +2090,7 @@ void RecallStates(float statesForFusion[24], uint32_t msec)
     }
 }
 
-void quat2Tnb(Mat3f Tnb, float quat[4])
+void quat2Tnb(Mat3f &Tnb, float quat[4])
 {
     // Calculate the nav to body cosine matrix
     float q00 = sq(quat[0]);
@@ -2116,7 +2115,7 @@ void quat2Tnb(Mat3f Tnb, float quat[4])
     Tnb.z.y = 2.0*(q23 - q01);
 }
 
-void quat2Tbn(Mat3f Tbn, float quat[4])
+void quat2Tbn(Mat3f &Tbn, float quat[4])
 {
     // Calculate the body to nav cosine matrix
     float q00 = sq(quat[0]);
