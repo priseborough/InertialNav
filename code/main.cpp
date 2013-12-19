@@ -162,6 +162,7 @@ static float P[24][24]; // covariance matrix
 static float states[24]; // state matrix
 static float storedStates[24][50]; // state vectors stored for the last 50 time steps
 uint32_t statetimeStamp[50]; // time stamp for each state vector stored
+Vector3f earthRateNED;
 
 int main()
 {
@@ -443,6 +444,10 @@ int main()
             P[20][20] = sq(20.0);
             P[21][21] = P[20][20];
             P[21][21] = P[20][20];
+
+            //Define Earth rotation vector in the NED navigation frame
+            earthRateNED  = {cos(gpsLatRef)*7.2921e-005,0.0,-sin(gpsLat)*7.2921e-005};
+
         }
     }
     fclose (pImuFile);
