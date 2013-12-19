@@ -127,9 +127,9 @@ void FuseAirspeed(
     float StatesAtMeasTime[24], // filter states at the effective measurement time
     bool useAirspeed); // boolean true if airspeed data is being used
 
-void zeroRows(float covMat[24][24], unsigned short int first, unsigned short int last);
+void zeroRows(float covMat[24][24], uint8_t first, uint8_t last);
 
-void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int last);
+void zeroCols(float covMat[24][24], uint8_t first, uint8_t last);
 
 float sq(float valIn);
 
@@ -138,56 +138,100 @@ void cross3D(float vecOut[3], float vecIn1[3], float vecIn2[3]);
 void quatNorm(float quatOut[4], float quatIn[4]);
 
 // store staes along with system time stamp in msces
-void StoreStates(unsigned long int msec);
+void StoreStates(uint32_t msec);
 
 // recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float statesForFusion[24], unsigned long int msec);
+void RecallStates(float statesForFusion[24], uint32_t msec);
 
 // Global variables
 #define GRAVITY_MSS 9.80665
+#define deg2rad 0.017453292
+#define rad2deg 57.295780
 static float P[24][24]; // covariance matrix
 static float states[24]; // state matrix
 static float storedStates[24][50]; // state vectors stored for the last 50 time steps
-unsigned long int statetimeStamp[50]; // time stamp for each state vector stored
+uint32_t statetimeStamp[50]; // time stamp for each state vector stored
 
 int main()
 {
     uint8_t i;
     uint8_t j;
 
-    // read IMU text data
+     // open IMU data file
     FILE * pImuFile;
     pImuFile = fopen ("IMU.txt","r");
-    float tempIn;
-    float tempVec[8];
+    // open magnetometer data file
+    FILE * pMagFile;
+    pMagFile = fopen ("MAG.txt","r");
+    // open GPS data file
+    FILE * pGpsFile;
+    pGpsFile = fopen ("GPS.txt","r");
+    // open AHRS data file
+    FILE * pAttFile;
+    pAttFile = fopen ("ATT.txt","r");
+
+    // IMU input data variables
+    float imuIn;
+    float tempImu[8];
     uint32_t IMUframe;
     float dt;
     static uint32_t IMUtime = 0;
     Vector3f angRate;
     Vector3f accel;
-    rewind (pImuFile);
-    int readStatus;
-    while (readStatus != EOF)
+    int imuReadStatus;
+
+    // GPS input data variables
+    float gpsIn;
+    float tempGps[14];
+    uint32_t GPSframe; // col 0
+    uint8_t GPSstatus; // col 1, 3 = good
+    uint32_t GPStime; // col 2
+    float gpsCourse; // col 11 * deg2rad
+    float gpsGndSpd; // col 10
+    float gpsVelD; // col 12
+    float gpsLat; // col 6 * deg2rad
+    float gpsLon; // col 7 * deg2rad
+    float hgt; // col 8
+
+    // Magnetometer input data variables
+    float magIn;
+    float tempMag[8];
+    uint32_t MAGframe;
+    uint32_t MAGtime;
+    float MagData[3];
+    float MagBias[3];
+
+    // AHRS input data variables
+    float ahrsIn;
+    float ahrsMag[7];
+    uint32_t AHRSframe;
+    uint32_t AHRStime;
+    float ahrsEul[3];
+
+    while (imuReadStatus != EOF)
     {
         for (j=0; j<=7; j++)
         {
-            readStatus = fscanf (pImuFile, "%f", &tempIn);
-            if (readStatus != EOF) tempVec[j] = tempIn;
+            imuReadStatus = fscanf (pImuFile, "%f", &imuIn);
+            if (imuReadStatus != EOF) tempImu[j] = imuIn;
         }
-        if (readStatus != EOF)
+        if (imuReadStatus != EOF)
         {
-            IMUframe  = tempVec[0];
-            dt        = 0.001*(tempVec[1] - IMUtime);
-            IMUtime   = tempVec[1];
-            angRate.x = tempVec[2];
-            angRate.y = tempVec[3];
-            angRate.z = tempVec[4];
-            accel.x   = tempVec[5];
-            accel.y   = tempVec[6];
-            accel.z   = tempVec[7];
+            IMUframe  = tempImu[0];
+            dt        = 0.001*(tempImu[1] - IMUtime);
+            IMUtime   = tempImu[1];
+            angRate.x = tempImu[2];
+            angRate.y = tempImu[3];
+            angRate.z = tempImu[4];
+            accel.x   = tempImu[5];
+            accel.y   = tempImu[6];
+            accel.z   = tempImu[7];
         }
     }
     fclose (pImuFile);
+    fclose (pMagFile);
+    fclose (pGpsFile);
+    fclose (pAttFile);
 }
 
 void CovariancePrediction(
@@ -213,8 +257,8 @@ void CovariancePrediction(
     const float dvzCov = sq(dt*0.5);
 
     // integers
-    unsigned short int i;
-    unsigned short int j;
+    uint8_t i;
+    uint8_t j;
 
     // process noise
     float processNoise[24];
@@ -1166,11 +1210,11 @@ void FuseVelPosNED(
     float hgtInnov = 0.0;
 
 // declare indices used to access arrays
-    unsigned short int stateIndex;
-    unsigned short int obsIndex;
-    unsigned short int i;
-    unsigned short int j;
-    unsigned short int iMax;
+    uint8_t stateIndex;
+    uint8_t obsIndex;
+    uint8_t i;
+    uint8_t j;
+    uint8_t iMax;
 
 // declare variables used by state and covariance update calculations
     float velErr;
@@ -1181,8 +1225,8 @@ void FuseVelPosNED(
     float SK;
     float K[24];
     float quatMag;
-    unsigned short int startIndex;
-    unsigned short int endIndex;
+    uint8_t startIndex;
+    uint8_t endIndex;
 
 // Form the observation vector
     for (i=0; i<=2; i++) observation[i] = VelNED[i];
@@ -1375,7 +1419,7 @@ void FuseMagnetometer(
     static float magXbias = 0.0;
     static float magYbias = 0.0;
     static float magZbias = 0.0;
-    static unsigned short int obsIndex = 0;
+    static uint8_t obsIndex = 0;
     static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     static float Tnb[3][3] =
     {
@@ -1384,9 +1428,9 @@ void FuseMagnetometer(
         {0.0,0.0,1.0}
     };
     static float MagPred[3] = {0.0,0.0,0.0};
-    unsigned short int i;
-    unsigned short int j;
-    unsigned short int k;
+    uint8_t i;
+    uint8_t j;
+    uint8_t k;
     const float R_MAG = 2500.0;
     float H_MAG[24];
     float SK_MX[6];
@@ -1650,9 +1694,9 @@ void FuseAirspeed(
     float vd;
     float vwn;
     float vwe;
-    unsigned short int i;
-    unsigned short int j;
-    unsigned short int k;
+    uint8_t i;
+    uint8_t j;
+    uint8_t k;
     const float R_TAS = 2.0;
     float SH_TAS[3];
     float SK_TAS[2];
@@ -1772,10 +1816,10 @@ void FuseAirspeed(
     }
 }
 
-void zeroRows(float covMat[24][24], unsigned short int first, unsigned short int last)
+void zeroRows(float covMat[24][24], uint8_t first, uint8_t last)
 {
-    unsigned short int row;
-    unsigned short int col;
+    uint8_t row;
+    uint8_t col;
     for (row=first; row<=last; row++)
     {
         for (col=0; col<=23; col++)
@@ -1785,10 +1829,10 @@ void zeroRows(float covMat[24][24], unsigned short int first, unsigned short int
     }
 }
 
-void zeroCols(float covMat[24][24], unsigned short int first, unsigned short int last)
+void zeroCols(float covMat[24][24], uint8_t first, uint8_t last)
 {
-    unsigned short int row;
-    unsigned short int col;
+    uint8_t row;
+    uint8_t col;
     for (col=first; col<=last; col++)
     {
         for (row=1; row<=24; row++)
@@ -1804,10 +1848,10 @@ float sq(float valIn)
 }
 
 // Store states in a history array along with time stamp
-void StoreStates(unsigned long int msec)
+void StoreStates(uint32_t msec)
 {
-    static unsigned short int storeIndex = 0;
-    unsigned short int i;
+    static uint8_t storeIndex = 0;
+    uint8_t i;
     if (storeIndex > 49) storeIndex = 0;
     for (i=0; i<=23; i++) storedStates[i][storeIndex] = states[i];
     statetimeStamp[storeIndex] = msec;
@@ -1815,13 +1859,13 @@ void StoreStates(unsigned long int msec)
 }
 
 // Output the state vector stored at the time that best matches that specified by msec
-void RecallStates(float statesForFusion[24], unsigned long int msec)
+void RecallStates(float statesForFusion[24], uint32_t msec)
 {
     long int timeDelta;
     long int bestTimeDelta = 200;
-    unsigned short int storeIndex;
-    unsigned short int bestStoreIndex = 0;
-    unsigned short int i;
+    uint8_t storeIndex;
+    uint8_t bestStoreIndex = 0;
+    uint8_t i;
     for (storeIndex=0; storeIndex<=49; storeIndex++)
     {
         timeDelta = msec - statetimeStamp[storeIndex];
