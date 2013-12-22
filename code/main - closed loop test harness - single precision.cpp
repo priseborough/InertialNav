@@ -14,11 +14,21 @@ public:
     float z;
 
     float length(void) const;
+    Vector3f zero(void) const;
 };
 
 float Vector3f::length(void) const
 {
     return sqrt(x*x + y*y + z*z);
+}
+
+Vector3f Vector3f::zero(void) const
+{
+    Vector3f ret = *this;
+    ret.x = 0.0;
+    ret.y = 0.0;
+    ret.z = 0.0;
+    return ret;
 }
 
 class Mat3f
@@ -162,6 +172,8 @@ void readAhrsData();
 
 void InitialiseFilter();
 
+void WriteFilterOutput();
+
 // Global variables
 #define GRAVITY_MSS 9.80665
 #define deg2rad 0.017453292
@@ -215,6 +227,8 @@ float magBias[3]; // states representing magnetometer bias vector in XYZ body ax
 float eulerEst[3]; // Euler angles calculated from filter states
 float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
 uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+const float covTimeStepMax = 0.07; // maximum time allowed between covariance predictions
+const float covDelAngMax = 0.05; // maximum delta angle between covariance predictions
 float EAS2TAS = 1.0; // ratio f true to equivalent airspeed
 bool endOfData = false; //boolean set to true when all files have returned data
 
@@ -274,12 +288,15 @@ FILE * pMagFile;
 FILE * pGpsFile;
 FILE * pAhrsFile;
 FILE * pAdsFile;
+FILE * pStateOutFile;
+FILE * pEulOutFile;
+FILE * pCovOutFile;
 
 bool statesInitialised = false;
 
 int main()
 {
-    uint32_t startTime = 143760; // IMU time in msec when filter is initialised
+    uint32_t startTime = 30000; // IMU time in msec when filter is initialised
 
     // open data files
     pImuFile = fopen ("IMU.txt","r");
@@ -287,6 +304,9 @@ int main()
     pGpsFile = fopen ("GPS.txt","r");
     pAhrsFile = fopen ("ATT.txt","r");
     pAdsFile = fopen ("NTUN.txt","r");
+    pStateOutFile = fopen ("StateDataOut.txt","w");
+    pEulOutFile = fopen ("EulDataOut.txt","w");
+    pCovOutFile = fopen ("CovDataOut.txt","w");
 
     // read test data from files for first frame
     readIMUData();
@@ -306,36 +326,32 @@ int main()
         // If valid IMU data and states initialised, predict states and covariances
         if (statesInitialised)
         {
+            // Run the strapdown INS equations every IMU update
             UpdateStrapdownEquationsNED();
+            // debug code - could be tunred into a filter mnitoring/watchdog function
             float tempQuat[4];
             for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
             quat2eul(eulerEst, tempQuat);
             for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
             if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
             if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
-
+            // store the predicted states for subsequent use by measurement fusion
             StoreStates(IMUtime);
+            // Check if on ground - status is used by covariance prediction
             OnGroundCheck();
-            summedDelAng.x += correctedDelAng.x;
-            summedDelAng.y += correctedDelAng.y;
-            summedDelAng.z += correctedDelAng.z;
-            summedDelVel.x += correctedDelVel.x;
-            summedDelVel.y += correctedDelVel.y;
-            summedDelVel.z += correctedDelVel.z;
+            // sum delta angles and time used by covariance prediction
+            summedDelAng = summedDelAng + correctedDelAng;
+            summedDelVel = summedDelVel + correctedDelVel;
             dt += dtIMU;
-            if (covSkipCount >= 2)
+            // perform a covariance prediction if the total delta angle has exceeded the limit
+            // or the time limit will be exceeded at the next IMU update
+            if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
             {
                 CovariancePrediction();
-                covSkipCount = 0;
-                summedDelAng.x = 0.0;
-                summedDelAng.y = 0.0;
-                summedDelAng.z = 0.0;
-                summedDelVel.x = 0.0;
-                summedDelVel.y = 0.0;
-                summedDelVel.z = 0.0;
+                summedDelAng = summedDelAng.zero();
+                summedDelVel = summedDelVel.zero();
                 dt = 0.0;
             }
-            covSkipCount += 1;
         }
 
         // Fuse GPS Measurements
@@ -375,20 +391,22 @@ int main()
         if (statesInitialised) FuseMagnetometer();
 
         // Fuse Airspeed Measurements
-        if (newAdsData && statesInitialised)
+        if (newAdsData && statesInitialised && VtasMeas > 8.0)
         {
             fuseVtasData = true;
             RecallStates(statesAtVtasMeasTime, (IMUtime - 100)); // assume 100 msec avg delay for airspeed data
+            FuseAirspeed();
         }
         else
         {
             fuseVtasData = false;
         }
-        if (statesInitialised) FuseAirspeed();
 
+         // debug output
         printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
+        WriteFilterOutput();
 
-        // read test data from files for next frame
+       // read test data from files for next frame
         readIMUData();
         readGpsData();
         readMagData();
@@ -396,13 +414,17 @@ int main()
         readAhrsData();
     }
 
-    int temp=0;
+    printf("End of data files reached");
+
     // Close data files
     fclose (pImuFile);
     fclose (pMagFile);
     fclose (pGpsFile);
     fclose (pAhrsFile);
     fclose (pAdsFile);
+    fclose (pStateOutFile);
+    fclose (pEulOutFile);
+    fclose (pCovOutFile);
 
 }
 
@@ -536,28 +558,49 @@ void  UpdateStrapdownEquationsNED()
 
 void CovariancePrediction()
 {
-    // constants
-    const float windVelSigma = dt*0.1; // 0.1 m/s/s
-    const float dAngBiasSigma = dt*2.4240683e-7;
-    const float dVelBiasSigma = dt*1.6666666e-4;
-    const float magEarthSigma = dt*1.6666667e-4; // 10 mgauss per minute
-    const float magBodySigma  = dt*1.6666667e-3; // 100 mgauss per minute - allow to adapt more rapidly due to changes in airframe
-    const float daxCov = sq(dt*1.4544411e-2);
-    const float dayCov = sq(dt*1.4544411e-2);
-    const float dazCov = sq(dt*1.4544411e-2);
-    const float dvxCov = sq(dt/2);
-    const float dvyCov = sq(dt/2);
-    const float dvzCov = sq(dt/2);
-
+    // scalars
+    float windVelSigma;
+    float dAngBiasSigma;
+    float dVelBiasSigma;
+    float magEarthSigma;
+    float magBodySigma;
+    float daxCov;
+    float dayCov;
+    float dazCov;
+    float dvxCov;
+    float dvyCov;
+    float dvzCov;
     float dvx;
     float dvy;
     float dvz;
     float dax;
     float day;
     float daz;
+    float q0;
+    float q1;
+    float q2;
+    float q3;
+    float dax_b;
+    float day_b;
+    float daz_b;
+    float dvx_b;
+    float dvy_b;
+    float dvz_b;
 
-    // process noise
+    // arrays
     float processNoise[24];
+    float SF[21];
+    float SG[8];
+    float SQ[11];
+    float SPP[13];
+    float nextP[24][24];
+
+    // calculate covariance prediction process noise
+    windVelSigma = dt*0.1;
+    dAngBiasSigma = dt*2.4240683e-7;
+    dVelBiasSigma = dt*1.6666666e-4;
+    magEarthSigma = dt*1.6666667e-4;
+    magBodySigma  = dt*1.6666667e-4;
     for (uint8_t i= 0; i<=9; i++) processNoise[i]  = 1.0e-9;
     for (uint8_t i=10; i<=12; i++) processNoise[i] = dAngBiasSigma;
     for (uint8_t i=13; i<=15; i++) processNoise[i] = dVelBiasSigma;
@@ -566,33 +609,29 @@ void CovariancePrediction()
     for (uint8_t i=21; i<=23; i++) processNoise[i] = magBodySigma;
     for (uint8_t i= 0; i<=23; i++) processNoise[i] = sq(processNoise[i]);
 
-    // time varying inputs
+    // set variables used to calculate covariance growth
     dvx = summedDelVel.x;
     dvy = summedDelVel.y;
     dvz = summedDelVel.z;
     dax = summedDelAng.x;
     day = summedDelAng.y;
     daz = summedDelAng.z;
-
-    float q0 = states[0];
-    float q1 = states[1];
-    float q2 = states[2];
-    float q3 = states[3];
-
-    float dax_b = states[10];
-    float day_b = states[11];
-    float daz_b = states[12];
-
-    float dvx_b = states[13];
-    float dvy_b = states[14];
-    float dvz_b = states[15];
-
-    // arrays
-    float SF[21];
-    float SG[8];
-    float SQ[11];
-    float SPP[13];
-    float nextP[24][24];
+    q0 = states[0];
+    q1 = states[1];
+    q2 = states[2];
+    q3 = states[3];
+    dax_b = states[10];
+    day_b = states[11];
+    daz_b = states[12];
+    dvx_b = states[13];
+    dvy_b = states[14];
+    dvz_b = states[15];
+    daxCov = sq(dt*1.4544411e-2);
+    dayCov = sq(dt*1.4544411e-2);
+    dazCov = sq(dt*1.4544411e-2);
+    dvxCov = sq(dt*0.5);
+    dvyCov = sq(dt*0.5);
+    dvzCov = sq(dt*0.5);
 
     // Predicted covariance calculation
     SF[0] = dvz - dvz_b;
@@ -1269,14 +1308,8 @@ void CovariancePrediction()
     // not be calculated above
     if (onGround || !useAirspeed)
     {
-        for (uint8_t i=16; i<=17; i++)
-        {
-            for (uint8_t j=0; j<=23; j++)
-            {
-                nextP[i][j] = P[i][j];
-                nextP[j][i] = P[j][i];
-            }
-        }
+        zeroRows(nextP,16,17);
+        zeroCols(nextP,16,17);
     }
 
     // If the total position variance exceds 1E6 (1000m), then stop covariance
@@ -1540,7 +1573,7 @@ void FuseMagnetometer()
         {0.0,0.0,1.0}
     };
     static float MagPred[3] = {0.0,0.0,0.0};
-    const float R_MAG = 2500.0;
+    const float R_MAG = 0.05;
     float H_MAG[24];
     float SK_MX[6];
     float SK_MY[5];
@@ -1945,408 +1978,434 @@ void FuseAirspeed()
     }
 }
 
-    void zeroRows(float covMat[24][24], uint8_t first, uint8_t last)
+void zeroRows(float covMat[24][24], uint8_t first, uint8_t last)
+{
+    uint8_t row;
+    uint8_t col;
+    for (row=first; row<=last; row++)
     {
-        uint8_t row;
-        uint8_t col;
-        for (row=first; row<=last; row++)
+        for (col=0; col<=23; col++)
         {
-            for (col=0; col<=23; col++)
-            {
-                covMat[row][col] = 0.0;
-            }
+            covMat[row][col] = 0.0;
         }
     }
+}
 
-    void zeroCols(float covMat[24][24], uint8_t first, uint8_t last)
+void zeroCols(float covMat[24][24], uint8_t first, uint8_t last)
+{
+    uint8_t row;
+    uint8_t col;
+    for (col=first; col<=last; col++)
     {
-        uint8_t row;
-        uint8_t col;
-        for (col=first; col<=last; col++)
+        for (row=0; row<=23; row++)
         {
-            for (row=0; row<=23; row++)
-            {
-                covMat[row][col] = 0.0;
-            }
+            covMat[row][col] = 0.0;
         }
     }
+}
 
-    float sq(float valIn)
-    {
-        return valIn*valIn;
-    }
+float sq(float valIn)
+{
+    return valIn*valIn;
+}
 
 // Store states in a history array along with time stamp
-    void StoreStates(uint32_t msec)
-    {
-        static uint8_t storeIndex = 0;
-        uint8_t i;
-        if (storeIndex > 49) storeIndex = 0;
-        for (i=0; i<=23; i++) storedStates[i][storeIndex] = states[i];
-        statetimeStamp[storeIndex] = msec;
-        storeIndex = storeIndex + 1;
-    }
+void StoreStates(uint32_t msec)
+{
+    static uint8_t storeIndex = 0;
+    uint8_t i;
+    if (storeIndex > 49) storeIndex = 0;
+    for (i=0; i<=23; i++) storedStates[i][storeIndex] = states[i];
+    statetimeStamp[storeIndex] = msec;
+    storeIndex = storeIndex + 1;
+}
 
 // Output the state vector stored at the time that best matches that specified by msec
-    void RecallStates(float statesForFusion[24], uint32_t msec)
+void RecallStates(float statesForFusion[24], uint32_t msec)
+{
+    long int timeDelta;
+    long int bestTimeDelta = 200;
+    uint8_t storeIndex;
+    uint8_t bestStoreIndex = 0;
+    uint8_t i;
+    for (storeIndex=0; storeIndex<=49; storeIndex++)
     {
-        long int timeDelta;
-        long int bestTimeDelta = 200;
-        uint8_t storeIndex;
-        uint8_t bestStoreIndex = 0;
-        uint8_t i;
-        for (storeIndex=0; storeIndex<=49; storeIndex++)
+        timeDelta = msec - statetimeStamp[storeIndex];
+        if (timeDelta < 0) timeDelta = -timeDelta;
+        if (timeDelta < bestTimeDelta)
         {
-            timeDelta = msec - statetimeStamp[storeIndex];
-            if (timeDelta < 0) timeDelta = -timeDelta;
-            if (timeDelta < bestTimeDelta)
-            {
-                bestStoreIndex = storeIndex;
-                bestTimeDelta = timeDelta;
-            }
-        }
-        if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
-        {
-            for (i=0; i<=23; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
-        }
-        else // otherwise output current state
-        {
-            for (i=0; i<=23; i++) statesForFusion[i] = states[i];
+            bestStoreIndex = storeIndex;
+            bestTimeDelta = timeDelta;
         }
     }
-
-    void quat2Tnb(Mat3f &Tnb, float quat[4])
+    if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
     {
-        // Calculate the nav to body cosine matrix
-        float q00 = sq(quat[0]);
-        float q11 = sq(quat[1]);
-        float q22 = sq(quat[2]);
-        float q33 = sq(quat[3]);
-        float q01 =  quat[0]*quat[1];
-        float q02 =  quat[0]*quat[2];
-        float q03 =  quat[0]*quat[3];
-        float q12 =  quat[1]*quat[2];
-        float q13 =  quat[1]*quat[3];
-        float q23 =  quat[2]*quat[3];
-
-        Tnb.x.x = q00 + q11 - q22 - q33;
-        Tnb.y.y = q00 - q11 + q22 - q33;
-        Tnb.z.z = q00 - q11 - q22 + q33;
-        Tnb.y.x = 2*(q12 - q03);
-        Tnb.z.x = 2*(q13 + q02);
-        Tnb.x.y = 2*(q12 + q03);
-        Tnb.z.y = 2*(q23 - q01);
-        Tnb.x.z = 2*(q13 - q02);
-        Tnb.y.z = 2*(q23 + q01);
+        for (i=0; i<=23; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
     }
-
-    void quat2Tbn(Mat3f &Tbn, float quat[4])
+    else // otherwise output current state
     {
-        // Calculate the body to nav cosine matrix
-        float q00 = sq(quat[0]);
-        float q11 = sq(quat[1]);
-        float q22 = sq(quat[2]);
-        float q33 = sq(quat[3]);
-        float q01 =  quat[0]*quat[1];
-        float q02 =  quat[0]*quat[2];
-        float q03 =  quat[0]*quat[3];
-        float q12 =  quat[1]*quat[2];
-        float q13 =  quat[1]*quat[3];
-        float q23 =  quat[2]*quat[3];
-
-        Tbn.x.x = q00 + q11 - q22 - q33;
-        Tbn.y.y = q00 - q11 + q22 - q33;
-        Tbn.z.z = q00 - q11 - q22 + q33;
-        Tbn.x.y = 2*(q12 - q03);
-        Tbn.x.z = 2*(q13 + q02);
-        Tbn.y.x = 2*(q12 + q03);
-        Tbn.y.z = 2*(q23 - q01);
-        Tbn.z.x = 2*(q13 - q02);
-        Tbn.z.y = 2*(q23 + q01);
+        for (i=0; i<=23; i++) statesForFusion[i] = states[i];
     }
+}
 
-    void eul2quat(float quat[4], float eul[3])
+void quat2Tnb(Mat3f &Tnb, float quat[4])
+{
+    // Calculate the nav to body cosine matrix
+    float q00 = sq(quat[0]);
+    float q11 = sq(quat[1]);
+    float q22 = sq(quat[2]);
+    float q33 = sq(quat[3]);
+    float q01 =  quat[0]*quat[1];
+    float q02 =  quat[0]*quat[2];
+    float q03 =  quat[0]*quat[3];
+    float q12 =  quat[1]*quat[2];
+    float q13 =  quat[1]*quat[3];
+    float q23 =  quat[2]*quat[3];
+
+    Tnb.x.x = q00 + q11 - q22 - q33;
+    Tnb.y.y = q00 - q11 + q22 - q33;
+    Tnb.z.z = q00 - q11 - q22 + q33;
+    Tnb.y.x = 2*(q12 - q03);
+    Tnb.z.x = 2*(q13 + q02);
+    Tnb.x.y = 2*(q12 + q03);
+    Tnb.z.y = 2*(q23 - q01);
+    Tnb.x.z = 2*(q13 - q02);
+    Tnb.y.z = 2*(q23 + q01);
+}
+
+void quat2Tbn(Mat3f &Tbn, float quat[4])
+{
+    // Calculate the body to nav cosine matrix
+    float q00 = sq(quat[0]);
+    float q11 = sq(quat[1]);
+    float q22 = sq(quat[2]);
+    float q33 = sq(quat[3]);
+    float q01 =  quat[0]*quat[1];
+    float q02 =  quat[0]*quat[2];
+    float q03 =  quat[0]*quat[3];
+    float q12 =  quat[1]*quat[2];
+    float q13 =  quat[1]*quat[3];
+    float q23 =  quat[2]*quat[3];
+
+    Tbn.x.x = q00 + q11 - q22 - q33;
+    Tbn.y.y = q00 - q11 + q22 - q33;
+    Tbn.z.z = q00 - q11 - q22 + q33;
+    Tbn.x.y = 2*(q12 - q03);
+    Tbn.x.z = 2*(q13 + q02);
+    Tbn.y.x = 2*(q12 + q03);
+    Tbn.y.z = 2*(q23 - q01);
+    Tbn.z.x = 2*(q13 - q02);
+    Tbn.z.y = 2*(q23 + q01);
+}
+
+void eul2quat(float quat[4], float eul[3])
+{
+    float u1 = cos(0.5*eul[0]);
+    float u2 = cos(0.5*eul[1]);
+    float u3 = cos(0.5*eul[2]);
+    float u4 = sin(0.5*eul[0]);
+    float u5 = sin(0.5*eul[1]);
+    float u6 = sin(0.5*eul[2]);
+    quat[0] = u1*u2*u3+u4*u5*u6;
+    quat[1] = u4*u2*u3-u1*u5*u6;
+    quat[2] = u1*u5*u3+u4*u2*u6;
+    quat[3] = u1*u2*u6-u4*u5*u3;
+}
+
+void quat2eul(float y[3], float u[4])
+{
+    y[0] = atan2((2.0*(u[2]*u[3]+u[0]*u[1])) , (u[0]*u[0]-u[1]*u[1]-u[2]*u[2]+u[3]*u[3]));
+    y[1] = -asin(2.0*(u[1]*u[3]-u[0]*u[2]));
+    y[2] = atan2((2.0*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
+}
+
+void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+{
+    velNED[0] = gpsGndSpd*cos(gpsCourse);
+    velNED[1] = gpsGndSpd*sin(gpsCourse);
+    velNED[2] = gpsVelD;
+}
+
+void calcposNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef)
+{
+    posNED[0] = 6378145.0 * (gpsLat - gpsLatRef);
+    posNED[1] = 6378145.0 * cos(gpsLatRef) * (gpsLon - gpsLonRef);
+    posNED[2] = -(hgt - hgtRef);
+}
+
+void OnGroundCheck()
+{
+    onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0) && (VtasMeas < 8.0));
+}
+
+Vector3f cross(Vector3f a, Vector3f b)
+{
+    Vector3f c;
+    c.x = a.y*b.z - a.z*b.y;
+    c.y = a.z*b.x - a.x*b.z;
+    c.z = a.x*b.y - a.y*b.x;
+    return c;
+}
+
+void CovarianceInit()
+{
+    // Calculate the initial covariance matrix P
+    P[1][1]   = 0.25*sq(1.0*deg2rad);
+    P[2][2]   = 0.25*sq(1.0*deg2rad);
+    P[3][3]   = 0.25*sq(10.0*deg2rad);
+    P[4][4]   = sq(0.7);
+    P[5][5]   = P[4][4];
+    P[6][6]   = sq(0.7);
+    P[7][7]   = sq(15.0);
+    P[8][8]   = P[7][7];
+    P[9][9]   = sq(5.0);
+    P[10][10] = sq(0.1*deg2rad*0.02);
+    P[11][11] = P[10][10];
+    P[12][12] = P[10][10];
+    P[13][13] = sq(0.1*0.02);
+    P[14][14] = P[13][13];
+    P[15][15] = P[13][13];
+    P[16][16] = sq(8.0);
+    P[17][17] = P[16][16];
+    P[18][18] = sq(0.02);
+    P[19][19] = P[18][18];
+    P[20][20] = P[18][18];
+    P[21][21] = sq(0.02);
+    P[22][22] = P[21][21];
+    P[23][23] = P[21][21];
+}
+
+void readIMUData()
+{
+    static Vector3f lastAngRate;
+    static Vector3f lastAccel;
+    for (uint8_t j=0; j<=7; j++)
     {
-        float u1 = cos(0.5*eul[0]);
-        float u2 = cos(0.5*eul[1]);
-        float u3 = cos(0.5*eul[2]);
-        float u4 = sin(0.5*eul[0]);
-        float u5 = sin(0.5*eul[1]);
-        float u6 = sin(0.5*eul[2]);
-        quat[0] = u1*u2*u3+u4*u5*u6;
-        quat[1] = u4*u2*u3-u1*u5*u6;
-        quat[2] = u1*u5*u3+u4*u2*u6;
-        quat[3] = u1*u2*u6-u4*u5*u3;
+        if (fscanf(pImuFile, "%f", &imuIn) != EOF) tempImu[j] = imuIn;
+        else endOfData = true;
     }
-
-    void quat2eul(float y[3], float u[4])
+    if (!endOfData)
     {
-        y[0] = atan2((2.0*(u[2]*u[3]+u[0]*u[1])) , (u[0]*u[0]-u[1]*u[1]-u[2]*u[2]+u[3]*u[3]));
-        y[1] = -asin(2.0*(u[1]*u[3]-u[0]*u[2]));
-        y[2] = atan2((2.0*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
+        IMUframe  = tempImu[0];
+        dtIMU     = 0.001*(tempImu[1] - IMUtime);
+        IMUtime   = tempImu[1];
+        angRate.x = tempImu[2];
+        angRate.y = tempImu[3];
+        angRate.z = tempImu[4];
+        accel.x   = tempImu[5];
+        accel.y   = tempImu[6];
+        accel.z   = tempImu[7];
+        dAngIMU = 0.5*(angRate + lastAngRate)*dtIMU;
+        lastAngRate = angRate;
+        dVelIMU = 0.5*(accel + lastAccel)*dtIMU;
+        lastAccel = accel;
     }
+}
 
-    void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+void readGpsData()
+{
+    // wind data forward to one update past current IMU data time
+    // and then take data from previous update
+
+    while (GPSframe <= IMUframe)
     {
-        velNED[0] = gpsGndSpd*cos(gpsCourse);
-        velNED[1] = gpsGndSpd*sin(gpsCourse);
-        velNED[2] = gpsVelD;
+        for (uint8_t j=0; j<=13; j++)
+        {
+            tempGpsPrev[j] = tempGps[j];
+            if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) tempGps[j] = gpsIn;
+            else endOfData = true;
+        }
+        if (!endOfData && (tempGps[1] == 3))
+        {
+            GPSframe  = tempGps[0];
+            GPStime = tempGpsPrev[2];
+            GPSstatus = tempGpsPrev[1];
+            gpsCourse = deg2rad*tempGpsPrev[11];
+            gpsGndSpd = tempGpsPrev[10];
+            gpsVelD = tempGpsPrev[12];
+            gpsLat = deg2rad*tempGpsPrev[6];
+            gpsLon = deg2rad*tempGpsPrev[7] - pi;
+            gpsHgt = tempGpsPrev[8];
+        }
     }
-
-    void calcposNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef)
+    if (GPStime > lastGPStime)
     {
-        posNED[0] = 6378145.0 * (gpsLat - gpsLatRef);
-        posNED[1] = 6378145.0 * cos(gpsLatRef) * (gpsLon - gpsLonRef);
-        posNED[2] = -(hgt - hgtRef);
+        lastGPStime = GPStime;
+        newDataGps = true;
     }
-
-    void OnGroundCheck()
+    else
     {
-        onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0) && (VtasMeas < 8.0));
+        newDataGps = false;
     }
+}
 
-    Vector3f cross(Vector3f a, Vector3f b)
+void readMagData()
+{
+    // wind data forward to one update past current IMU data time
+    // and then take data from previous update
+    while (MAGframe <= IMUframe)
     {
-        Vector3f c;
-        c.x = a.y*b.z - a.z*b.y;
-        c.y = a.z*b.x - a.x*b.z;
-        c.z = a.x*b.y - a.y*b.x;
-        return c;
-    }
-
-    void CovarianceInit()
-    {
-        // Calculate the initial covariance matrix P
-        P[1][1]   = 0.25*sq(1.0*deg2rad);
-        P[2][2]   = 0.25*sq(1.0*deg2rad);
-        P[3][3]   = 0.25*sq(10.0*deg2rad);
-        P[4][4]   = sq(0.7);
-        P[5][5]   = P[4][4];
-        P[6][6]   = sq(0.7);
-        P[7][7]   = sq(15.0);
-        P[8][8]   = P[7][7];
-        P[9][9]   = sq(5.0);
-        P[10][10] = sq(0.1*deg2rad*0.02);
-        P[11][11] = P[10][10];
-        P[12][12] = P[10][10];
-        P[13][13] = sq(0.1*0.02);
-        P[14][14] = P[13][13];
-        P[15][15] = P[13][13];
-        P[16][16] = sq(8.0);
-        P[17][17] = P[16][16];
-        P[18][18] = sq(0.02);
-        P[19][19] = P[18][18];
-        P[20][20] = P[18][18];
-        P[21][21] = sq(0.02);
-        P[22][22] = P[21][21];
-        P[23][23] = P[21][21];
-    }
-
-    void readIMUData()
-    {
-        static Vector3f lastAngRate;
-        static Vector3f lastAccel;
         for (uint8_t j=0; j<=7; j++)
         {
-            if (fscanf(pImuFile, "%f", &imuIn) != EOF) tempImu[j] = imuIn;
+            tempMagPrev[j] = tempMag[j];
+            if (fscanf(pMagFile, "%f", &magIn) != EOF) tempMag[j] = magIn;
             else endOfData = true;
         }
         if (!endOfData)
         {
-            IMUframe  = tempImu[0];
-            dtIMU     = 0.001*(tempImu[1] - IMUtime);
-            IMUtime   = tempImu[1];
-            angRate.x = tempImu[2];
-            angRate.y = tempImu[3];
-            angRate.z = tempImu[4];
-            accel.x   = tempImu[5];
-            accel.y   = tempImu[6];
-            accel.z   = tempImu[7];
-            dAngIMU = 0.5*(angRate + lastAngRate)*dtIMU;
-            lastAngRate = angRate;
-            dVelIMU = 0.5*(accel + lastAccel)*dtIMU;
-            lastAccel = accel;
+            MAGframe  = tempMag[0];
+            MAGtime = tempMagPrev[1];
+            for (uint8_t j=0; j<=2; j++)
+            {
+                magData[j] = (tempMagPrev[j+2] - tempMagPrev[j+5])/1024;
+                magBias[j] = -tempMagPrev[j+5]/1024;
+            }
         }
     }
-
-    void readGpsData()
+    if (MAGtime > lastMAGtime)
     {
-        // wind data forward to one update past current IMU data time
-        // and then take data from previous update
-
-        while (GPSframe <= IMUframe)
-        {
-            for (uint8_t j=0; j<=13; j++)
-            {
-                tempGpsPrev[j] = tempGps[j];
-                if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) tempGps[j] = gpsIn;
-                else endOfData = true;
-            }
-            if (!endOfData && (tempGps[1] == 3))
-            {
-                GPSframe  = tempGps[0];
-                GPStime = tempGpsPrev[2];
-                GPSstatus = tempGpsPrev[1];
-                gpsCourse = deg2rad*tempGpsPrev[11];
-                gpsGndSpd = tempGpsPrev[10];
-                gpsVelD = tempGpsPrev[12];
-                gpsLat = deg2rad*tempGpsPrev[6];
-                gpsLon = deg2rad*tempGpsPrev[7] - pi;
-                gpsHgt = tempGpsPrev[8];
-            }
-        }
-        if (GPStime > lastGPStime)
-        {
-            lastGPStime = GPStime;
-            newDataGps = true;
-        }
-        else
-        {
-            newDataGps = false;
-        }
+        lastMAGtime = MAGtime;
+        newDataMag = true;
     }
-
-    void readMagData()
+    else
     {
-        // wind data forward to one update past current IMU data time
-        // and then take data from previous update
-        while (MAGframe <= IMUframe)
-        {
-            for (uint8_t j=0; j<=7; j++)
-            {
-                tempMagPrev[j] = tempMag[j];
-                if (fscanf(pMagFile, "%f", &magIn) != EOF) tempMag[j] = magIn;
-                else endOfData = true;
-            }
-            if (!endOfData)
-            {
-                MAGframe  = tempMag[0];
-                MAGtime = tempMagPrev[1];
-                for (uint8_t j=0; j<=2; j++)
-                {
-                    magData[j] = (tempMagPrev[j+2] - tempMagPrev[j+5])/1024;
-                    magBias[j] = -tempMagPrev[j+5]/1024;
-                }
-            }
-        }
-        if (MAGtime > lastMAGtime)
-        {
-            lastMAGtime = MAGtime;
-            newDataMag = true;
-        }
-        else
-        {
-            newDataMag = false;
-        }
+        newDataMag = false;
     }
+}
 
-    void readAirSpdData()
+void readAirSpdData()
+{
+    // wind data forward to one update past current IMU data time
+    // and then take data from previous update
+    while (ADSframe <= IMUframe)
     {
-        // wind data forward to one update past current IMU data time
-        // and then take data from previous update
-        while (ADSframe <= IMUframe)
+        for (uint8_t j=0; j<=9; j++)
         {
-            for (uint8_t j=0; j<=9; j++)
-            {
-                tempAdsPrev[j] = tempAds[j];
-                if (fscanf(pAdsFile, "%f", &adsIn) != EOF) tempAds[j] = adsIn;
-                else endOfData = true;
-            }
-            if (!endOfData)
-            {
-                ADSframe  = tempAds[0];
-                ADStime = tempAdsPrev[1];
-                VtasMeas = EAS2TAS*tempAdsPrev[7];
-            }
+            tempAdsPrev[j] = tempAds[j];
+            if (fscanf(pAdsFile, "%f", &adsIn) != EOF) tempAds[j] = adsIn;
+            else endOfData = true;
         }
-        if (ADStime > lastADStime)
+        if (!endOfData)
         {
-            lastADStime = ADStime;
-            newAdsData = true;
-        }
-        else
-        {
-            newAdsData = false;
+            ADSframe  = tempAds[0];
+            ADStime = tempAdsPrev[1];
+            VtasMeas = EAS2TAS*tempAdsPrev[7];
         }
     }
-
-    void readAhrsData()
+    if (ADStime > lastADStime)
     {
-        // wind data forward to one update past current IMU data time
-        // and then take data from previous update
-        while (AHRSframe <= IMUframe)
+        lastADStime = ADStime;
+        newAdsData = true;
+    }
+    else
+    {
+        newAdsData = false;
+    }
+}
+
+void readAhrsData()
+{
+    // wind data forward to one update past current IMU data time
+    // and then take data from previous update
+    while (AHRSframe <= IMUframe)
+    {
+        for (uint8_t j=0; j<=6; j++)
         {
-            for (uint8_t j=0; j<=6; j++)
+            tempAhrsPrev[j] = tempAhrs[j];
+            if (fscanf(pAhrsFile, "%f", &ahrsIn) != EOF) tempAhrs[j] = ahrsIn;
+            else endOfData = true;
+        }
+        if (!endOfData != EOF)
+        {
+            AHRSframe  = tempAhrs[0];
+            AHRStime = tempAhrsPrev[1];
+            for (uint8_t j=0; j<=2; j++)
             {
-                tempAhrsPrev[j] = tempAhrs[j];
-                if (fscanf(pAhrsFile, "%f", &ahrsIn) != EOF) tempAhrs[j] = ahrsIn;
-                else endOfData = true;
-            }
-            if (!endOfData != EOF)
-            {
-                AHRSframe  = tempAhrs[0];
-                AHRStime = tempAhrsPrev[1];
-                for (uint8_t j=0; j<=2; j++)
-                {
-                    ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
-                }
+                ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
             }
         }
     }
+}
 
-    void InitialiseFilter()
+void InitialiseFilter()
+{
+    // Calculate initial filter quaternion states from ahrs solution
+    float initQuat[4];
+    eul2quat(initQuat, ahrsEul);
+
+
+
+    // Calculate initial Tbn matrix and rotate Mag measurements into NED
+    // to set initial NED magnetic field states
+    Mat3f DCM;
+    quat2Tbn(DCM, initQuat);
+    Vector3f initMagNED;
+    Vector3f initMagXYZ;
+    initMagXYZ.x = magData[0] - magBias[0];
+    initMagXYZ.y = magData[1] - magBias[1];
+    initMagXYZ.z = magData[2] - magBias[2];
+    initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
+    initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
+    initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
+
+    // calculate initial velocities
+    float initvelNED[3];
+    calcvelNED(initvelNED, gpsCourse, gpsGndSpd, gpsVelD);
+
+    //store initial lat,long and height
+    gpsLatRef = gpsLat;
+    gpsLonRef = gpsLon;
+    gpsHgtRef = gpsHgt;
+
+    // write to state vector
+    for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
+    for (uint8_t j=0; j<=2; j++) states[j+4] = initvelNED[j]; // velocities
+    for (uint8_t j=0; j<=10; j++) states[j+7] = 0.0; // positiions, dAngBias, dVelBias, windVel
+    states[18] = initMagNED.x; // Magnetic Field North
+    states[19] = initMagNED.y; // Magnetic Field East
+    states[20] = initMagNED.z; // Magnetic Field Down
+    for (uint8_t j=0; j<=3; j++) states[j+21] = magBias[j]; // Magnetic Field Bias XYZ
+
+    statesInitialised = true;
+
+    // initialise the covariance matrix
+    CovarianceInit();
+
+    //Define Earth rotation vector in the NED navigation frame
+    earthRateNED.x  = earthRate*cos(gpsLatRef);
+    earthRateNED.y  = 0.0;
+    earthRateNED.z  = -earthRate*sin(gpsLatRef);
+
+    //Initialise summed variables used by covariance prediction
+    summedDelAng.x = 0.0;
+    summedDelAng.y = 0.0;
+    summedDelAng.z = 0.0;
+    summedDelVel.x = 0.0;
+    summedDelVel.y = 0.0;
+    summedDelVel.z = 0.0;
+    dt = 0.0;
+}
+
+void WriteFilterOutput()
+{
+    fprintf(pStateOutFile," %e", float(IMUtime*0.001));
+    for (uint8_t i=0; i<=23; i++)
     {
-        // Calculate initial filter quaternion states from ahrs solution
-        float initQuat[4];
-        eul2quat(initQuat, ahrsEul);
-
-        // Calculate initial Tbn matrix and rotate Mag measurements into NED
-        // to set initial NED magnetic field states
-        Mat3f DCM;
-        quat2Tbn(DCM, initQuat);
-        Vector3f initMagNED;
-        Vector3f initMagXYZ;
-        initMagXYZ.x = magData[0] - magBias[0];
-        initMagXYZ.y = magData[1] - magBias[1];
-        initMagXYZ.z = magData[2] - magBias[2];
-        initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
-        initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
-        initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
-
-        // calculate initial velocities
-        float initvelNED[3];
-        calcvelNED(initvelNED, gpsCourse, gpsGndSpd, gpsVelD);
-
-        //store initial lat,long and height
-        gpsLatRef = gpsLat;
-        gpsLonRef = gpsLon;
-        gpsHgtRef = gpsHgt;
-
-        // write to state vector
-        for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
-        for (uint8_t j=0; j<=2; j++) states[j+4] = initvelNED[j]; // velocities
-        for (uint8_t j=0; j<=10; j++) states[j+7] = 0.0; // positiions, dAngBias, dVelBias, windVel
-        states[18] = initMagNED.x; // Magnetic Field North
-        states[19] = initMagNED.y; // Magnetic Field East
-        states[20] = initMagNED.z; // Magnetic Field Down
-        for (uint8_t j=0; j<=3; j++) states[j+21] = magBias[j]; // Magnetic Field Bias XYZ
-
-        statesInitialised = true;
-
-        // initialise the covariance matrix
-        CovarianceInit();
-
-        //Define Earth rotation vector in the NED navigation frame
-        earthRateNED.x  = earthRate*cos(gpsLatRef);
-        earthRateNED.y  = 0.0;
-        earthRateNED.z  = -earthRate*sin(gpsLatRef);
-
-        //Initialise summed variables used by covariance prediction
-        summedDelAng.x = 0.0;
-        summedDelAng.y = 0.0;
-        summedDelAng.z = 0.0;
-        summedDelVel.x = 0.0;
-        summedDelVel.y = 0.0;
-        summedDelVel.z = 0.0;
-        dt = 0.0;
+        fprintf(pStateOutFile," %e", states[i]);
     }
+    fprintf(pStateOutFile,"\n");
+
+    fprintf(pEulOutFile," %e", float(IMUtime*0.001));
+    for (uint8_t i=0; i<=2; i++)
+    {
+        fprintf(pEulOutFile," %e %e", eulerEst[i], ahrsEul[i]);
+    }
+    fprintf(pEulOutFile,"\n");
+
+    fprintf(pCovOutFile," %e", float(IMUtime*0.001));
+    for (uint8_t i=0; i<=2; i++)
+    {
+        fprintf(pCovOutFile," %e", P[i][i]);
+    }
+    fprintf(pCovOutFile,"\n");
+}
