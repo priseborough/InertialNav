@@ -206,97 +206,103 @@ uint8_t covSkipCount = 0;
 
 int main()
 {
-    uint8_t i;
-    uint8_t j;
     double dataIn;
     double statesRef[24];
-    double statesErr[24][24];
+    double statesErr[24];
     double tempVec[3];
+    int fileStatus;
 
-    // read state in
+// open files
     FILE * pstatesIn;
     pstatesIn = fopen ("statesInINS.txt","r");
-    for (i=0; i<=23; i++)
+    FILE * pdAngIMU;
+    pdAngIMU = fopen ("dAngIMU.txt","r");
+    FILE * pearthRateNED;
+    pearthRateNED = fopen ("earthRateNED.txt","r");
+    FILE * pdVelIMU;
+    pdVelIMU = fopen ("dVelIMU.txt","r");
+    FILE * pstatesOut;
+    pstatesOut = fopen ("statesOutINS.txt","r");
+    FILE * pdtIMU;
+    pdtIMU = fopen ("dtIMU.txt","r");
+
+// loop
+
+for (uint8_t frameIndex=0; frameIndex<=1249; frameIndex++)
+{
+    // read state in
+    for (uint8_t i=0; i<=23; i++)
     {
         fscanf (pstatesIn, "%lf", &dataIn);
         states[i] = dataIn;
     }
-    fclose (pstatesIn);
 
     // read dAng data
-    FILE * pdAngIMU;
-    pdAngIMU = fopen ("dAngIMU.txt","r");
-    for (i=0; i<=2; i++)
+    for (uint8_t i=0; i<=2; i++)
     {
         fscanf (pdAngIMU, "%lf", &dataIn);
         tempVec[i] = dataIn;
     }
-    fclose (pdAngIMU);
     dAngIMU.x = tempVec[0];
     dAngIMU.y = tempVec[1];
     dAngIMU.z = tempVec[2];
 
     // read earth rate NED data
-    FILE * pearthRateNED;
-    pearthRateNED = fopen ("earthRateNED.txt","r");
-    for (i=0; i<=2; i++)
+    for (uint8_t i=0; i<=2; i++)
     {
         fscanf (pearthRateNED, "%lf", &dataIn);
         tempVec[i] = dataIn;
     }
-    fclose (pearthRateNED);
     earthRateNED.x = tempVec[0];
     earthRateNED.y = tempVec[1];
     earthRateNED.z = tempVec[2];
 
     // read dVel data
-    FILE * pdVelIMU;
-    pdVelIMU = fopen ("dVelIMU.txt","r");
-    for (i=0; i<=2; i++)
+    for (uint8_t i=0; i<=2; i++)
     {
         fscanf (pdVelIMU, "%lf", &dataIn);
         tempVec[i] = dataIn;
     }
-    fclose (pdVelIMU);
     dVelIMU.x = tempVec[0];
     dVelIMU.y = tempVec[1];
     dVelIMU.z = tempVec[2];
 
     // read dt data
-    FILE * pdtIMU;
-    pdtIMU = fopen ("dt.txt","r");
     fscanf(pdtIMU, "%lf", &dataIn);
     dtIMU = dataIn;
-    fclose (pdtIMU);
 
     // read reference output data
-     FILE * pstatesOut;
-    pstatesOut = fopen ("statesOutINS.txt","r");
-    for (i=0; i<=23; i++)
+    for (uint8_t i=0; i<=23; i++)
     {
         fscanf (pstatesOut, "%lf", &dataIn);
         statesRef[i] = dataIn;
     }
-    fclose (pstatesOut);
 
     UpdateStrapdownEquationsNED();
 
     // check errors
-double maxErr = 0;
+    double maxErr = 0;
     for (uint8_t i=0; i<=23; i++)
     {
-            statesErr[i] = states[i] - statesRef[i];
-            if (fabs(statesErr[i]) > maxErr) maxErr = fabs(statesErr[i]);
-     }
-printf("max err = %g\n", maxErr);
+        statesErr[i] = states[i] - statesRef[i];
+        printf("error[%u]=%g\n", i, statesErr[i]);
+        if (fabs(statesErr[i]) > maxErr) maxErr = fabs(statesErr[i]);
+    }
+    printf("max err = %g\n", maxErr);
+}
+// close files
+    fclose (pstatesIn);
+    fclose (pdAngIMU);
+    fclose (pearthRateNED);
+    fclose (pdVelIMU);
+    fclose (pstatesOut);
+    fclose (pdtIMU);
 
 }
 
 void  UpdateStrapdownEquationsNED()
 {
     static Vector3f  prevDelAng;
-    Vector3f dAng;
-    Vector3f dVel;
     Vector3f delVelNav;
     double q00;
     double q11;
@@ -316,7 +322,7 @@ void  UpdateStrapdownEquationsNED()
     double quatMag;
     double quatMagInv;
     double deltaQuat[4];
-    double lastVelocity[3];
+    static double lastVelocity[3];
     const Vector3f gravityNED = {0.0,0.0,GRAVITY_MSS};
 
 // Remove sensor bias errors
@@ -329,7 +335,6 @@ void  UpdateStrapdownEquationsNED()
 
 // Save current measurements
     prevDelAng = correctedDelAng;
-    prevDelVel = correctedDelVel;
 
 // Apply corrections for earths rotation rate and coning errors
 // * and + operators have been overloaded
