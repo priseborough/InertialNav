@@ -32,7 +32,7 @@ public:
     Mat3f transpose(void) const;
 };
 
-static void swap_double(double &d1, double &d2)
+static void swap_var(double &d1, double &d2)
 {
     double tmp = d1;
     d1 = d2;
@@ -42,9 +42,9 @@ static void swap_double(double &d1, double &d2)
 Mat3f Mat3f::transpose(void) const
 {
     Mat3f ret = *this;
-    swap_double(ret.x.y, ret.y.x);
-    swap_double(ret.x.z, ret.z.x);
-    swap_double(ret.y.z, ret.z.y);
+    swap_var(ret.x.y, ret.y.x);
+    swap_var(ret.x.z, ret.z.x);
+    swap_var(ret.y.z, ret.z.y);
     return ret;
 }
 
@@ -208,22 +208,21 @@ double varInnovVtas; // innovation variance output
 bool fuseVtasData = false; // boolean true when airspeed data is to be fused
 double VtasMeas; // true airspeed measurement (m/s)
 double statesAtVtasMeasTime[24]; // filter states at the effective measurement time
-double gpsLatRef;
-double gpsLonRef;
-double gpsHgtRef;
-double magBias[3];
-Mat3f Tnb;
-Mat3f Tbn;
-double eulerEst[3];
-double eulerDif[3];
-uint8_t covSkipCount = 0;
+double gpsLatRef; // WGS-84 latitude of reference point (rad)
+double gpsLonRef; // WGS-84 longitude of reference point (rad)
+double gpsHgtRef; // WGS-84 height of reference point (m)
+double magBias[3]; // states representing magnetometer bias vector in XYZ body axes
+double eulerEst[3]; // Euler angles calculated from filter states
+double eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
+uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+double EAS2TAS = 1.0; // ratio f true to equivalent airspeed
+bool endOfData = false; //boolean set to true when all files have returned data
 
 // IMU input data variables
 float imuIn;
 double tempImu[8];
 uint32_t IMUframe;
 static uint32_t IMUtime = 0;
-int imuReadStatus;
 
 // GPS input data variables
 float gpsIn;
@@ -239,7 +238,6 @@ double gpsVelD;
 double gpsLat;
 double gpsLon;
 double gpsHgt;
-int gpsReadStatus;
 bool newDataGps = false;
 
 // Magnetometer input data variables
@@ -249,7 +247,6 @@ double tempMagPrev[8];
 uint32_t MAGframe = 0;
 uint32_t MAGtime = 0;
 uint32_t lastMAGtime = 0;
-int magReadStatus;
 bool newDataMag = false;
 
 // AHRS input data variables
@@ -260,7 +257,6 @@ uint32_t AHRSframe = 0;
 uint32_t AHRStime = 0;
 uint32_t lastAHRStime = 0;
 double ahrsEul[3];
-int ahrsReadStatus;
 
 // ADS input data variables
 float adsIn;
@@ -270,8 +266,7 @@ uint32_t ADSframe = 0;
 uint32_t ADStime = 0;
 uint32_t lastADStime = 0;
 double Veas;
-int adsReadStatus;
-bool newDataAds = false;
+bool newAdsData = false;
 
 // Data file identifiers
 FILE * pImuFile;
@@ -284,7 +279,7 @@ bool statesInitialised = false;
 
 int main()
 {
-    uint32_t startTime = 250000;//143760;
+    uint32_t startTime = 143760; // IMU time in msec when filter is initialised
 
     // open data files
     pImuFile = fopen ("IMU.txt","r");
@@ -293,15 +288,15 @@ int main()
     pAhrsFile = fopen ("ATT.txt","r");
     pAdsFile = fopen ("NTUN.txt","r");
 
-    while ((imuReadStatus != EOF) && (gpsReadStatus != EOF) && (magReadStatus != EOF) && (adsReadStatus != EOF) && (ahrsReadStatus != EOF))
-    {
-        // read test data from files
-        readIMUData();
-        readGpsData();
-        readMagData();
-        readAirSpdData();
-        readAhrsData();
+    // read test data from files for first frame
+    readIMUData();
+    readGpsData();
+    readMagData();
+    readAirSpdData();
+    readAhrsData();
 
+    while (!endOfData)
+    {
         // Initialise states, covariance and other data
         if ((IMUtime > startTime) && !statesInitialised && (GPSstatus == 3))
         {
@@ -309,13 +304,16 @@ int main()
         }
 
         // If valid IMU data and states initialised, predict states and covariances
-        if ((imuReadStatus != EOF) && statesInitialised)
+        if (statesInitialised)
         {
             UpdateStrapdownEquationsNED();
             double tempQuat[4];
             for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
             quat2eul(eulerEst, tempQuat);
             for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
+            if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
+            if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+
             StoreStates(IMUtime);
             OnGroundCheck();
             summedDelAng.x += correctedDelAng.x;
@@ -353,7 +351,7 @@ int main()
             fuseGPSData = true;
             fuseHgtData = true;
             // recall states stored 400msec ago
-            RecallStates(statesAtGpsTime, (IMUtime - 400));
+            RecallStates(statesAtGpsTime, (IMUtime - 400)); // assume 400 msec avg delay for gps data
             for (uint8_t j=0; j<=23; j++) statesAtHgtTime[j] = statesAtGpsTime[j];
             // run the fusion step
             FuseVelposNED();
@@ -364,23 +362,41 @@ int main()
             fuseHgtData = false;
         }
 
-//        // Fuse Magnetometer Measurements
-//        if (newDataMag && statesInitialised)
-//        {
-//            fuseMagData = true;
-//            RecallStates(statesAtMagMeasTime, (IMUtime - 50));
-//        }
-//        else
-//        {
-//            fuseMagData = false;
-//        }
-//        if (statesInitialised) FuseMagnetometer();
-        if(IMUtime > 275000)
+        // Fuse Magnetometer Measurements
+        if (newDataMag && statesInitialised)
         {
-            int8_t temp = 0;
+            fuseMagData = true;
+            RecallStates(statesAtMagMeasTime, (IMUtime - 50)); // Assume 50 msec avg delay for magnetometer data
         }
+        else
+        {
+            fuseMagData = false;
+        }
+        if (statesInitialised) FuseMagnetometer();
+
+        // Fuse Airspeed Measurements
+        if (newAdsData && statesInitialised)
+        {
+            fuseVtasData = true;
+            RecallStates(statesAtVtasMeasTime, (IMUtime - 100)); // assume 100 msec avg delay for airspeed data
+        }
+        else
+        {
+            fuseVtasData = false;
+        }
+        if (statesInitialised) FuseAirspeed();
+
+        printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
+
+        // read test data from files for next frame
+        readIMUData();
+        readGpsData();
+        readMagData();
+        readAirSpdData();
+        readAhrsData();
     }
 
+int temp=0;
     // Close data files
     fclose (pImuFile);
     fclose (pMagFile);
@@ -1515,18 +1531,15 @@ void FuseMagnetometer()
     static double magXbias = 0.0;
     static double magYbias = 0.0;
     static double magZbias = 0.0;
-    static uint8_t obsIndex = 0;
+    static uint8_t obsIndex;
     static double SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-    static double Tnb[3][3] =
+    static double DCM[3][3] =
     {
         {1.0,0.0,0.0} ,
         {0.0,1.0,0.0} ,
         {0.0,0.0,1.0}
     };
     static double MagPred[3] = {0.0,0.0,0.0};
-    uint8_t i;
-    uint8_t j;
-    uint8_t k;
     const double R_MAG = 2500.0;
     double H_MAG[24];
     double SK_MX[6];
@@ -1564,18 +1577,18 @@ void FuseMagnetometer()
             magZbias = statesAtMagMeasTime[23];
             // rotate predicted earth components into body axes and calculate
             // predicted measurments
-            Tnb[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-            Tnb[0][1] = 2.0*(q1*q2 + q0*q3);
-            Tnb[0][2] = 2.0*(q1*q3-q0*q2);
-            Tnb[1][0] = 2.0*(q1*q2 - q0*q3);
-            Tnb[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
-            Tnb[1][2] = 2.0*(q2*q3 + q0*q1);
-            Tnb[2][0] = 2.0*(q1*q3 + q0*q2);
-            Tnb[2][1] = 2.0*(q2*q3 - q0*q1);
-            Tnb[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-            MagPred[0] = Tnb[0][0]*magN + Tnb[0][1]*magE  + Tnb[0][2]*magD + magXbias;
-            MagPred[1] = Tnb[1][0]*magN + Tnb[1][1]*magE  + Tnb[1][2]*magD + magYbias;
-            MagPred[2] = Tnb[2][0]*magN + Tnb[2][1]*magE  + Tnb[0][2]*magD + magZbias;
+            DCM[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+            DCM[0][1] = 2.0*(q1*q2 + q0*q3);
+            DCM[0][2] = 2.0*(q1*q3-q0*q2);
+            DCM[1][0] = 2.0*(q1*q2 - q0*q3);
+            DCM[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+            DCM[1][2] = 2.0*(q2*q3 + q0*q1);
+            DCM[2][0] = 2.0*(q1*q3 + q0*q2);
+            DCM[2][1] = 2.0*(q2*q3 - q0*q1);
+            DCM[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+            MagPred[0] = DCM[0][0]*magN + DCM[0][1]*magE  + DCM[0][2]*magD + magXbias;
+            MagPred[1] = DCM[1][0]*magN + DCM[1][1]*magE  + DCM[1][2]*magD + magYbias;
+            MagPred[2] = DCM[2][0]*magN + DCM[2][1]*magE  + DCM[2][2]*magD + magZbias;
             // Calculate observation jacobians
             SH_MAG[0] = 2*magD*q3 + 2*magE*q2 + 2*magN*q1;
             SH_MAG[1] = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;
@@ -1723,7 +1736,7 @@ void FuseMagnetometer()
         if ((innovMag[obsIndex]*innovMag[obsIndex]/varInnovMag[obsIndex]) < 25.0)
         {
             // correct the state vector
-            for (j= 0; j<=23; j++)
+            for (uint8_t j= 0; j<=23; j++)
             {
                 states[j] = states[j] - K_MAG[j] * innovMag[obsIndex];
             }
@@ -1731,7 +1744,7 @@ void FuseMagnetometer()
             double quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
             if (quatMag > 1e-12)
             {
-                for (j= 0; j<=3; j++)
+                for (uint8_t j= 0; j<=3; j++)
                 {
                     double quatMagInv = 1.0/quatMag;
                     states[j] = states[j] * quatMagInv;
@@ -1740,40 +1753,41 @@ void FuseMagnetometer()
             // correct the covariance P = (I - K*H)*P
             // take advantage of the empty columns in KH to reduce the
             // number of operations
-            for (i = 0; i<=23; i++)
+            for (uint8_t i = 0; i<=23; i++)
             {
-                for (j = 0; j<=3; j++)
+                for (uint8_t j = 0; j<=3; j++)
                 {
                     KH[i][j] = K_MAG[i] * H_MAG[j];
                 }
-                for (j = 18; j<=23; j++)
+                for (uint8_t j = 18; j<=23; j++)
                 {
                     KH[i][j] = K_MAG[i] * H_MAG[j];
                 }
             }
-            for (i = 0; i<=23; i++)
+            for (uint8_t i = 0; i<=23; i++)
             {
-                for (j = 0; j<=23; j++)
+                for (uint8_t j = 0; j<=23; j++)
                 {
-                    for (k = 0; k<=3; k++)
+                    KHP[i][j] = 0.0;
+                    for (uint8_t k = 0; k<=3; k++)
                     {
-                        KHP[i][j] = KHP[i][j] + KH[i][j] * P[k][j];
+                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
-                    for (k = 18; k<=23; k++)
+                    for (uint8_t k = 18; k<=23; k++)
                     {
-                        KHP[i][j] = KHP[i][j] + KH[i][j] * P[k][j];
+                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
                 }
             }
-            for (i = 0; i<=23; i++)
+            for (uint8_t i = 0; i<=23; i++)
             {
-                for (j = 0; j<=23; j++)
+                for (uint8_t j = 0; j<=23; j++)
                 {
                     P[i][j] = P[i][j] - KHP[i][j];
                 }
             }
-            obsIndex = obsIndex + 1;
         }
+        obsIndex = obsIndex + 1;
     }
 }
 
@@ -1885,13 +1899,14 @@ void FuseAirspeed()
             {
                 for (j = 0; j<=23; j++)
                 {
+                    KHP[i][j] = 0.0;
                     for (k = 4; k<=6; k++)
                     {
-                        KHP[i][j] = KHP[i][j] + KH[i][j] * P[k][j];
+                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
                     for (k = 16; k<=17; k++)
                     {
-                        KHP[i][j] = KHP[i][j] + KH[i][j] * P[k][j];
+                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
                 }
             }
@@ -1993,12 +2008,12 @@ void quat2Tnb(Mat3f &Tnb, double quat[4])
     Tnb.x.x = q00 + q11 - q22 - q33;
     Tnb.y.y = q00 - q11 + q22 - q33;
     Tnb.z.z = q00 - q11 - q22 + q33;
-    Tnb.x.y = 2.0*(q12 + q03);
-    Tnb.x.z = 2.0*(q13 - q02);
-    Tnb.y.x = 2.0*(q12 - q03);
-    Tnb.y.z = 2.0*(q23 + q01);
-    Tnb.z.x = 2.0*(q13 + q02);
-    Tnb.z.y = 2.0*(q23 - q01);
+    Tnb.y.x = 2*(q12 - q03);
+    Tnb.z.x = 2*(q13 + q02);
+    Tnb.x.y = 2*(q12 + q03);
+    Tnb.z.y = 2*(q23 - q01);
+    Tnb.x.z = 2*(q13 - q02);
+    Tnb.y.z = 2*(q23 + q01);
 }
 
 void quat2Tbn(Mat3f &Tbn, double quat[4])
@@ -2018,12 +2033,12 @@ void quat2Tbn(Mat3f &Tbn, double quat[4])
     Tbn.x.x = q00 + q11 - q22 - q33;
     Tbn.y.y = q00 - q11 + q22 - q33;
     Tbn.z.z = q00 - q11 - q22 + q33;
-    Tbn.y.x = 2.0*(q12 + q03);
-    Tbn.z.x = 2.0*(q13 - q02);
-    Tbn.x.y = 2.0*(q12 - q03);
-    Tbn.z.y = 2.0*(q23 + q01);
-    Tbn.x.z = 2.0*(q13 + q02);
-    Tbn.y.z = 2.0*(q23 - q01);
+    Tbn.x.y = 2*(q12 - q03);
+    Tbn.x.z = 2*(q13 + q02);
+    Tbn.y.x = 2*(q12 + q03);
+    Tbn.y.z = 2*(q23 - q01);
+    Tbn.z.x = 2*(q13 - q02);
+    Tbn.z.y = 2*(q23 + q01);
 }
 
 void eul2quat(double quat[4], double eul[3])
@@ -2109,10 +2124,10 @@ void readIMUData()
     static Vector3f lastAccel;
     for (uint8_t j=0; j<=7; j++)
     {
-        imuReadStatus = fscanf (pImuFile, "%f", &imuIn);
-        if (imuReadStatus != EOF) tempImu[j] = imuIn;
+        if (fscanf(pImuFile, "%f", &imuIn) != EOF) tempImu[j] = imuIn;
+        else endOfData = true;
     }
-    if (imuReadStatus != EOF)
+    if (!endOfData)
     {
         IMUframe  = tempImu[0];
         dtIMU     = 0.001*(tempImu[1] - IMUtime);
@@ -2140,10 +2155,10 @@ void readGpsData()
         for (uint8_t j=0; j<=13; j++)
         {
             tempGpsPrev[j] = tempGps[j];
-            gpsReadStatus = fscanf (pGpsFile, "%f", &gpsIn);
-            if (gpsReadStatus != EOF) tempGps[j] = gpsIn;
+            if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) tempGps[j] = gpsIn;
+            else endOfData = true;
         }
-        if ((gpsReadStatus != EOF) && (tempGps[1] == 3))
+        if (!endOfData && (tempGps[1] == 3))
         {
             GPSframe  = tempGps[0];
             GPStime = tempGpsPrev[2];
@@ -2176,10 +2191,10 @@ void readMagData()
         for (uint8_t j=0; j<=7; j++)
         {
             tempMagPrev[j] = tempMag[j];
-            magReadStatus = fscanf (pMagFile, "%f", &magIn);
-            if (magReadStatus != EOF) tempMag[j] = magIn;
+            if (fscanf(pMagFile, "%f", &magIn) != EOF) tempMag[j] = magIn;
+            else endOfData = true;
         }
-        if (magReadStatus != EOF)
+        if (!endOfData)
         {
             MAGframe  = tempMag[0];
             MAGtime = tempMagPrev[1];
@@ -2210,24 +2225,24 @@ void readAirSpdData()
         for (uint8_t j=0; j<=9; j++)
         {
             tempAdsPrev[j] = tempAds[j];
-            adsReadStatus = fscanf (pAdsFile, "%f", &adsIn);
-            if (adsReadStatus != EOF) tempAds[j] = adsIn;
+            if (fscanf(pAdsFile, "%f", &adsIn) != EOF) tempAds[j] = adsIn;
+            else endOfData = true;
         }
-        if (magReadStatus != EOF)
+        if (!endOfData)
         {
             ADSframe  = tempAds[0];
             ADStime = tempAdsPrev[1];
-            Veas = tempAdsPrev[7];
+            VtasMeas = EAS2TAS*tempAdsPrev[7];
         }
     }
     if (ADStime > lastADStime)
     {
         lastADStime = ADStime;
-        newDataAds = true;
+        newAdsData = true;
     }
     else
     {
-        newDataAds = false;
+        newAdsData = false;
     }
 }
 
@@ -2240,10 +2255,10 @@ void readAhrsData()
         for (uint8_t j=0; j<=6; j++)
         {
             tempAhrsPrev[j] = tempAhrs[j];
-            ahrsReadStatus = fscanf (pAhrsFile, "%f", &ahrsIn);
-            if (ahrsReadStatus != EOF) tempAhrs[j] = ahrsIn;
+            if (fscanf(pAhrsFile, "%f", &ahrsIn) != EOF) tempAhrs[j] = ahrsIn;
+            else endOfData = true;
         }
-        if (ahrsReadStatus != EOF)
+        if (!endOfData != EOF)
         {
             AHRSframe  = tempAhrs[0];
             AHRStime = tempAhrsPrev[1];
@@ -2263,14 +2278,16 @@ void InitialiseFilter()
 
     // Calculate initial Tbn matrix and rotate Mag measurements into NED
     // to set initial NED magnetic field states
-
-    quat2Tbn(Tbn, initQuat);
+    Mat3f DCM;
+    quat2Tbn(DCM, initQuat);
     Vector3f initMagNED;
     Vector3f initMagXYZ;
     initMagXYZ.x = magData[0] - magBias[0];
     initMagXYZ.y = magData[1] - magBias[1];
     initMagXYZ.z = magData[2] - magBias[2];
-    initMagNED = Tbn*initMagXYZ;
+    initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
+    initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
+    initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
 
     // calculate initial velocities
     double initvelNED[3];
