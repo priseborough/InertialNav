@@ -272,6 +272,8 @@ uint32_t AHRSframe = 0;
 uint32_t AHRStime = 0;
 uint32_t lastAHRStime = 0;
 float ahrsEul[3];
+float ahrsErrorRP;
+float ahrsErrorYaw;
 
 // ADS input data variables
 float adsIn;
@@ -2356,6 +2358,8 @@ void readAhrsData()
             {
                 ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
             }
+            ahrsErrorRP = tempAhrs[5];
+            ahrsErrorYaw = tempAhrs[6];
         }
     }
 }
@@ -2433,6 +2437,7 @@ void WriteFilterOutput()
     {
         fprintf(pEulOutFile," %e %e", eulerEst[i], ahrsEul[i]);
     }
+    fprintf(pEulOutFile," %e %e", ahrsErrorRP, ahrsErrorYaw);
     fprintf(pEulOutFile,"\n");
 
     fprintf(pCovOutFile," %e", float(IMUtime*0.001));
