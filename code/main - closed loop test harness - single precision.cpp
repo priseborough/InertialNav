@@ -199,6 +199,7 @@ float dt; // time lapsed since last covariance prediction
 bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
 bool useAirspeed = true; // boolean true if airspeed data is being used
 bool useCompass = true; // boolean true if magnetometer data is being used
+uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outpus 2D velocity, 2 = GPS outputs no velocity
 float innovVelPos[6]; // innovation output
 float varInnovVelPos[6]; // innovation variance output
 bool fuseGPSData = false; // this boolean causes the posNE and velNED obs to be fused
@@ -1357,9 +1358,9 @@ void FuseVelposNED()
 {
 
 // declare variables used by fault isolation logic
-    float gpsRetryTime = 30.0;
-    float gpsRetryTimeNoTAS = 5.0;
-    float hgtRetryTime = 30.0;
+    float gpsRetryTime = 30.0; // time in sec before GPS fusion will be retried following innovation consistency failure
+    float gpsRetryTimeNoTAS = 5.0; // retry time if no TAS measurement available
+    float hgtRetryTime = 5.0; // height measurement retry time
     unsigned int maxVelFailCount;
     unsigned int maxPosFailCount;
     unsigned int maxHgtFailCount;
@@ -1426,22 +1427,24 @@ void FuseVelposNED()
 // data from the GPS receiver it is the only assumption we can make
 // so we might as well take advantage of the computational efficiencies
 // associated with sequential fusion
-    if (fuseGPSData || fuseHgtData)
+    if ((fuseGPSData && (fusionModeGPS <= 2)) || fuseHgtData)
     {
         // Set innovation variances to zero default
         for (i = 0; i<=5; i++)
         {
             varInnovVelPos[i] = 0.0;
         }
-        // calculate innovations and check GPS data validity against limits using a 5-sigma test
+        // calculate innovations and check GPS data validity using an innovation consistency check
         if (fuseGPSData)
         {
+            // test velocity measurements
             for (i = 0; i<=2; i++)
             {
                 velInnov[i] = statesAtGpsTime[i+4] - velNED[i];
                 stateIndex = 4 + i;
                 varInnovVelPos[i] = P[stateIndex][stateIndex] + R_OBS[i];
             }
+            // apply a 5-sigma threshold
             if ((velInnov[0]*velInnov[0] + velInnov[1]*velInnov[1] + velInnov[2]*velInnov[2]) < 25.0*(varInnovVelPos[0] + varInnovVelPos[1] + varInnovVelPos[2]) || (velFailCount > maxVelFailCount))
             {
                 velHealth = true;
@@ -1452,10 +1455,12 @@ void FuseVelposNED()
                 velHealth = false;
                 velFailCount = velFailCount + 1;
             }
+            // test horizontal position measurements
             posInnov[0] = statesAtGpsTime[7] - posNE[0];
             posInnov[1] = statesAtGpsTime[8] - posNE[1];
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
+            // apply a 10-sigma threshold
             if ((posInnov[0]*posInnov[0] + posInnov[1]*posInnov[1]) < 100.0*(varInnovVelPos[3] + varInnovVelPos[4]) || (posFailCount > maxPosFailCount))
             {
                 posHealth = true;
@@ -1467,11 +1472,12 @@ void FuseVelposNED()
                 posFailCount = posFailCount + 1;
             }
         }
-        // calculate innovations and check height data validity against limits using a 10-sigma test
+        // test height measurements
         if (fuseHgtData)
         {
             hgtInnov = statesAtHgtTime[9] + hgtMea;
             varInnovVelPos[5] = P[9][9] + R_OBS[5];
+            // apply a 10-sigma threshold
             if ((hgtInnov*hgtInnov) < 100.0*varInnovVelPos[5] || (hgtFailCount > maxHgtFailCount))
             {
                 hgtHealth = true;
@@ -1485,14 +1491,20 @@ void FuseVelposNED()
         }
         // Set range for sequential fusion of velocity and position measurements depending
         // on which data is available
-        if (fuseGPSData)
+        // set start observation index
+        if (fuseGPSData &&  (fusionModeGPS == 0 || fusionModeGPS == 1))
         {
             startIndex = 0;
+        }
+        else if (fuseGPSData && fusionModeGPS == 2)
+        {
+            startIndex = 3;
         }
         else
         {
             startIndex = 5;
         }
+        // set end observation index
         if (fuseHgtData)
         {
             endIndex = 5;
@@ -1505,7 +1517,7 @@ void FuseVelposNED()
         for (obsIndex=startIndex; obsIndex<=endIndex; obsIndex++)
         {
             // Apply data health checks
-            if ((velHealth && (obsIndex >= 0 && obsIndex <= 2)) || (posHealth && (obsIndex == 3 || obsIndex == 4)) || (hgtHealth && (obsIndex == 5)))
+            if ((velHealth && (obsIndex >= 0 && obsIndex <= 2)) || (posHealth && (obsIndex == 3 || obsIndex == 4)) || (hgtHealth && (obsIndex == 5)) || (obsIndex == 2 && fusionModeGPS == 0))
             {
                 stateIndex = 4 + obsIndex;
                 // Calculate the measurement innovation, using states from a
