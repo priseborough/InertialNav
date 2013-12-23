@@ -199,7 +199,7 @@ float dt; // time lapsed since last covariance prediction
 bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
 bool useAirspeed = true; // boolean true if airspeed data is being used
 bool useCompass = true; // boolean true if magnetometer data is being used
-uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outpus 2D velocity, 2 = GPS outputs no velocity
+uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
 float innovVelPos[6]; // innovation output
 float varInnovVelPos[6]; // innovation variance output
 bool fuseGPSData = false; // this boolean causes the posNE and velNED obs to be fused
@@ -1517,7 +1517,7 @@ void FuseVelposNED()
         for (obsIndex=startIndex; obsIndex<=endIndex; obsIndex++)
         {
             // Apply data health checks
-            if ((velHealth && (obsIndex >= 0 && obsIndex <= 2)) || (posHealth && (obsIndex == 3 || obsIndex == 4)) || (hgtHealth && (obsIndex == 5)) || (obsIndex == 2 && fusionModeGPS == 0))
+            if (((velHealth && (obsIndex == 0 || obsIndex == 1)) || (velHealth && obsIndex == 2 && fusionModeGPS == 0))|| (posHealth && (obsIndex == 3 || obsIndex == 4)) || (hgtHealth && (obsIndex == 5)))
             {
                 stateIndex = 4 + obsIndex;
                 // Calculate the measurement innovation, using states from a
