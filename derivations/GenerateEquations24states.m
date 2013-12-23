@@ -148,6 +148,10 @@ G = jacobian(processEqns, distVector);
 [G,SG]=OptimiseAlgebra(G,'SG');
 
 % derive the state error matrix
+% Note - this derivation of the covariance update equations does not include
+% any general state noise - this will be added at the implementation stage
+% by adding an approriately scaled diagonal process noise matrix to the 
+% covariance matrix
 imuNoise = diag([daxCov dayCov dazCov dvxCov dvyCov dvzCov]);
 Q = G*imuNoise*transpose(G);
 [Q,SQ]=OptimiseAlgebra(Q,'SQ');
