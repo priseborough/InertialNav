@@ -291,6 +291,10 @@ FILE * pAdsFile;
 FILE * pStateOutFile;
 FILE * pEulOutFile;
 FILE * pCovOutFile;
+FILE * pRefPosVelOutFile;
+FILE * pVelPosFuseFile;
+FILE * pMagFuseFile;
+FILE * pTasFuseFile;
 
 bool statesInitialised = false;
 
@@ -307,6 +311,10 @@ int main()
     pStateOutFile = fopen ("StateDataOut.txt","w");
     pEulOutFile = fopen ("EulDataOut.txt","w");
     pCovOutFile = fopen ("CovDataOut.txt","w");
+    pRefPosVelOutFile = fopen ("RefVelPosDataOut.txt","w");
+    pVelPosFuseFile = fopen ("VelPosFuse.txt","w");
+    pMagFuseFile = fopen ("MagFuse.txt","w");
+    pTasFuseFile = fopen ("TasFuse.txt","w");
 
     // read test data from files for first frame
     readIMUData();
@@ -425,6 +433,10 @@ int main()
     fclose (pStateOutFile);
     fclose (pEulOutFile);
     fclose (pCovOutFile);
+    fclose (pRefPosVelOutFile);
+    fclose (pVelPosFuseFile);
+    fclose (pMagFuseFile);
+    fclose (pTasFuseFile);
 
 }
 
@@ -537,7 +549,7 @@ void  UpdateStrapdownEquationsNED()
 
 // calculate the magnitude of the nav acceleration (required for GPS
 // variance estimation)
-    accNavMag = delVelNav.length();
+    accNavMag = delVelNav.length()/dtIMU;
 
 // If calculating position save previous velocity
     lastVelocity[0] = states[4];
@@ -1387,9 +1399,9 @@ void FuseVelposNED()
     observation[5] = -(hgtMea);
 
 // Estimate the GPS Velocity, GPS horiz position and height measurement variances.
-    velErr = 0.15*accNavMag; // additional error in GPS velocities caused by manoeuvring
-    posErr = 0.15*accNavMag; // additional error in GPS position caused by manoeuvring
-    for (i=0; i<=2; i++) R_OBS[i] = 0.01 + velErr*velErr;
+    velErr = 0.2*accNavMag; // additional error in GPS velocities caused by manoeuvring
+    posErr = 0.2*accNavMag; // additional error in GPS position caused by manoeuvring
+    for (i=0; i<=2; i++) R_OBS[i] = 0.02 + velErr*velErr;
     for (i=3; i<=4; i++) R_OBS[i] = 4.0 + posErr*posErr;
     R_OBS[5] = 4.0;
 
@@ -1455,12 +1467,12 @@ void FuseVelposNED()
                 posFailCount = posFailCount + 1;
             }
         }
-        // calculate innovations and check height data validity against limits using a 5-sigma test
+        // calculate innovations and check height data validity against limits using a 10-sigma test
         if (fuseHgtData)
         {
             hgtInnov = statesAtHgtTime[9] + hgtMea;
             varInnovVelPos[5] = P[9][9] + R_OBS[5];
-            if ((hgtInnov*hgtInnov) < 25.0*varInnovVelPos[5] || (hgtFailCount > maxHgtFailCount))
+            if ((hgtInnov*hgtInnov) < 100.0*varInnovVelPos[5] || (hgtFailCount > maxHgtFailCount))
             {
                 hgtHealth = true;
                 hgtFailCount = 0;
@@ -2412,9 +2424,32 @@ void WriteFilterOutput()
     fprintf(pEulOutFile,"\n");
 
     fprintf(pCovOutFile," %e", float(IMUtime*0.001));
-    for (uint8_t i=0; i<=2; i++)
+    for (uint8_t i=0; i<=23; i++)
     {
         fprintf(pCovOutFile," %e", P[i][i]);
     }
     fprintf(pCovOutFile,"\n");
+
+    fprintf(pRefPosVelOutFile," %e", float(IMUtime*0.001));
+    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
+    fprintf(pRefPosVelOutFile,"\n");
+
+    fprintf(pVelPosFuseFile," %e", float(IMUtime*0.001));
+    for (uint8_t i=0; i<=5; i++)
+    {
+        fprintf(pVelPosFuseFile," %e %e", innovVelPos[i], varInnovVelPos[i]);
+    }
+    fprintf(pVelPosFuseFile,"\n");
+
+    fprintf(pMagFuseFile," %e", float(IMUtime*0.001));
+    for (uint8_t i=0; i<=2; i++)
+    {
+        fprintf(pMagFuseFile," %e %e", innovMag[i], varInnovMag[i]);
+    }
+    fprintf(pMagFuseFile,"\n");
+
+    fprintf(pTasFuseFile," %e", float(IMUtime*0.001));
+    fprintf(pTasFuseFile," %e %e", innovVtas, varInnovVtas);
+    fprintf(pTasFuseFile,"\n");
+
 }
