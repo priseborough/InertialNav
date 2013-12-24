@@ -33,6 +33,9 @@ The three test data sets were obtained from a PX4 FMU and digital airspeed senso
 airframe. The 2nd and 3rd data sets include aerobatic manoeuvres (loops and axial rolls), but no spinning due to
 airframe limitations.
 
+========================================================================================================================
+Instructions To Run Simulink Model:
+
 You will need Matlab + Simulink 2012a or later to run this model
 
 Instructions to run:
@@ -45,3 +48,22 @@ Instructions to run:
 
 You can load other test data by modifying the file load command at the top of the LoadNavFilterTestData.m script file.
 
+========================================================================================================================
+Instructions To Run C++ code test harness
+
+1) Build the main - closed loop test harness - single precision.cpp file
+2) Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable
+3) Run and exit when the Euler difference display stops updating
+4) The program will put the results into the folliwing space deliminted data files:
+
+CovDataOut.txt
+EulDataOut.txt
+MagFuse.txt
+RefVelPosDataOut.txt
+StateDataOut.txt
+TasFuse.txt
+
+5) These text files can be plotted using the Matlab script PlotCcodeOutput.m , if you don't have Matlab a the
+   script file will show you what data is in each column so you can use your plotting tool of choice - 
+   you could even use Excel....
+VelPosFuse.txt
