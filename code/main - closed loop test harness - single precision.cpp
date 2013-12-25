@@ -134,14 +134,12 @@ void zeroCols(float covMat[24][24], uint8_t first, uint8_t last);
 
 float sq(float valIn);
 
-Vector3f cross(Vector3f vecIn1, Vector3f vecIn2);
-
 void quatNorm(float quatOut[4], float quatIn[4]);
 
 uint32_t millis();
 
 // store staes along with system time stamp in msces
-void StoreStates(uint32_t msec);
+void StoreStates();
 
 // recall stste vector stored at closest time to the one specified by msec
 void RecallStates(float statesForFusion[24], uint32_t msec);
@@ -150,13 +148,17 @@ void quat2Tnb(Mat3f &Tnb, float quat[4]);
 
 void quat2Tbn(Mat3f &Tbn, float quat[4]);
 
+void calcEarthRateNED(Vector3f &omega, float latitude);
+
 void eul2quat(float quat[4], float eul[3]);
 
 void quat2eul(float eul[3],float quat[4]);
 
 void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
 
-void calcposNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef);
+void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
+
+void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
 
 void OnGroundCheck();
 
@@ -182,6 +184,8 @@ void WriteFilterOutput();
 #define rad2deg 57.295780
 #define pi 3.141592657
 #define earthRate 0.000072921
+#define earthRadius 6378145.0
+#define earthRadiusInv  1.5678540e-7
 float KH[24][24]; //  intermediate result used for covariance updates
 float KHP[24][24]; // intermediate result used for covariance updates
 static float P[24][24]; // covariance matrix
@@ -226,9 +230,9 @@ float varInnovVtas; // innovation variance output
 bool fuseVtasData = false; // boolean true when airspeed data is to be fused
 float VtasMeas; // true airspeed measurement (m/s)
 float statesAtVtasMeasTime[24]; // filter states at the effective measurement time
-float gpsLatRef; // WGS-84 latitude of reference point (rad)
-float gpsLonRef; // WGS-84 longitude of reference point (rad)
-float gpsHgtRef; // WGS-84 height of reference point (m)
+float latRef; // WGS-84 latitude of reference point (rad)
+float lonRef; // WGS-84 longitude of reference point (rad)
+float hgtRef; // WGS-84 height of reference point (m)
 float magBias[3]; // states representing magnetometer bias vector in XYZ body axes
 float eulerEst[3]; // Euler angles calculated from filter states
 float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
@@ -245,20 +249,14 @@ uint32_t IMUframe;
 static uint32_t IMUtime = 0;
 
 // GPS input data variables
-float gpsIn;
-float tempGps[14];
-float tempGpsPrev[14];
-uint32_t GPSframe = 0;
-uint8_t GPSstatus;
-uint32_t GPStime = 0;
-uint32_t lastGPStime = 0;
 float gpsCourse;
 float gpsGndSpd;
 float gpsVelD;
 float gpsLat;
 float gpsLon;
 float gpsHgt;
-bool newDataGps = false;
+bool newDataGps;
+uint8_t GPSstatus;
 
 // Magnetometer input data variables
 float magIn;
@@ -352,7 +350,7 @@ int main()
             if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
             if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
             // store the predicted states for subsequent use by measurement fusion
-            StoreStates(IMUtime);
+            StoreStates();
             // Check if on ground - status is used by covariance prediction
             OnGroundCheck();
             // sum delta angles and time used by covariance prediction
@@ -375,7 +373,7 @@ int main()
         {
             // Convert GPS measurements to Pos NE, hgt and Vel NED
             calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
-            calcposNED(posNED, gpsLat, gpsLon, gpsHgt, gpsLatRef, gpsLonRef, gpsHgtRef);
+            calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
             posNE[0] = posNED[0];
             posNE[1] = posNED[1];
             hgtMea =  -posNED[2];
@@ -2027,12 +2025,12 @@ float sq(float valIn)
 }
 
 // Store states in a history array along with time stamp
-void StoreStates(uint32_t msec)
+void StoreStates()
 {
     static uint8_t storeIndex = 0;
     if (storeIndex > 49) storeIndex = 0;
     for (uint8_t i=0; i<=23; i++) storedStates[i][storeIndex] = states[i];
-    statetimeStamp[storeIndex] = msec;
+    statetimeStamp[storeIndex] = millis();
     storeIndex = storeIndex + 1;
 }
 
@@ -2141,25 +2139,23 @@ void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD
     velNED[2] = gpsVelD;
 }
 
-void calcposNED(float posNED[3], float gpsLat, float gpsLon, float hgt, float gpsLatRef, float gpsLonRef, float hgtRef)
+void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
 {
-    posNED[0] = 6378145.0 * (gpsLat - gpsLatRef);
-    posNED[1] = 6378145.0 * cos(gpsLatRef) * (gpsLon - gpsLonRef);
+    posNED[0] = earthRadius * (lat - latRef);
+    posNED[1] = earthRadius * cos(latRef) * (lon - lonRef);
     posNED[2] = -(hgt - hgtRef);
+}
+
+void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
+{
+    lat = latRef + posNED[0] * earthRadiusInv;
+    lon = lonRef + posNED[1] * earthRadiusInv / cos(latRef);
+    hgt = hgtRef - posNED[2];
 }
 
 void OnGroundCheck()
 {
     onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0) && (VtasMeas < 8.0));
-}
-
-Vector3f cross(Vector3f a, Vector3f b)
-{
-    Vector3f c;
-    c.x = a.y*b.z - a.z*b.y;
-    c.y = a.z*b.x - a.x*b.z;
-    c.z = a.x*b.y - a.y*b.x;
-    return c;
 }
 
 void CovarianceInit()
@@ -2221,6 +2217,14 @@ void readGpsData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
+
+    float gpsIn;
+
+    static uint32_t GPStime;
+    static float tempGps[14];
+    static float tempGpsPrev[14];
+    static uint32_t GPSframe = 0;
+    static uint32_t lastGPStime = 0;
 
     while (GPSframe <= IMUframe)
     {
@@ -2370,9 +2374,9 @@ void InitialiseFilter()
     calcvelNED(initvelNED, gpsCourse, gpsGndSpd, gpsVelD);
 
     //store initial lat,long and height
-    gpsLatRef = gpsLat;
-    gpsLonRef = gpsLon;
-    gpsHgtRef = gpsHgt;
+    latRef = gpsLat;
+    lonRef = gpsLon;
+    hgtRef = gpsHgt;
 
     // write to state vector
     for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
@@ -2389,9 +2393,7 @@ void InitialiseFilter()
     CovarianceInit();
 
     //Define Earth rotation vector in the NED navigation frame
-    earthRateNED.x  = earthRate*cos(gpsLatRef);
-    earthRateNED.y  = 0.0;
-    earthRateNED.z  = -earthRate*sin(gpsLatRef);
+    calcEarthRateNED(earthRateNED, latRef);
 
     //Initialise summed variables used by covariance prediction
     summedDelAng.x = 0.0;
@@ -2450,4 +2452,12 @@ void WriteFilterOutput()
     fprintf(pTasFuseFile," %e %e", innovVtas, varInnovVtas);
     fprintf(pTasFuseFile,"\n");
 
+}
+
+void calcEarthRateNED(Vector3f &omega, float latitude)
+{
+    //Define Earth rotation vector in the NED navigation frame
+    omega.x  = earthRate*cos(latitude);
+    omega.y  = 0.0;
+    omega.z  = -earthRate*sin(latitude);
 }
