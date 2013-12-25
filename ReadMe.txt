@@ -62,8 +62,8 @@ MagFuse.txt
 RefVelPosDataOut.txt
 StateDataOut.txt
 TasFuse.txt
+VelPosFuse.txt
 
 5) These text files can be plotted using the Matlab script PlotCcodeOutput.m , if you don't have Matlab a the
    script file will show you what data is in each column so you can use your plotting tool of choice - 
    you could even use Excel....
-VelPosFuse.txt
