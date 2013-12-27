@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.880"
+    ComputedModelVersion    "1.883"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -38,9 +38,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "user"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Fri Dec 27 08:41:32 2013"
+  LastModifiedDate	  "Fri Dec 27 10:08:16 2013"
   RTWModifiedTimeStamp	  310034419
-  ModelVersionFormat	  "1.%<AutoIncrement:880>"
+  ModelVersionFormat	  "1.%<AutoIncrement:883>"
   ConfigurationManager	  "None"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -1159,8 +1159,8 @@ Model {
 	Simulink.SolverCC {
 	  $ObjectID		  28
 	  Version		  "1.12.0"
-	  StartTime		  "min(IMUtime)"
-	  StopTime		  "max(IMUtime)"
+	  StartTime		  "startTime"
+	  StopTime		  "endTime"
 	  AbsTol		  "auto"
 	  FixedStep		  "0.001"
 	  InitialStep		  "auto"
@@ -2238,7 +2238,7 @@ Model {
       Name		      "Delay Start"
       SID		      "716"
       Ports		      [0, 1]
-      Position		      [90, 13, 195, 47]
+      Position		      [80, 13, 185, 47]
       ZOrder		      -22
       TreatAsAtomicUnit	      on
       MinAlgLoopOccurrences   off
@@ -2260,7 +2260,7 @@ Model {
       MaskIconRotate	      "none"
       MaskPortRotate	      "default"
       MaskIconUnits	      "autoscale"
-      MaskValueString	      "800"
+      MaskValueString	      "alignTime"
       System {
 	Name			"Delay Start"
 	Location		[16, 52, 1828, 1525]
@@ -15252,7 +15252,7 @@ Model {
     Line {
       SrcBlock		      "Delay Start"
       SrcPort		      1
-      Points		      [45, 0]
+      Points		      [55, 0]
       DstBlock		      "Logical\nOperator1"
       DstPort		      1
     }
