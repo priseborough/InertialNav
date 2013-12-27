@@ -1,14 +1,6 @@
 clear all;
-LoadNavFilterTestDataStruct;
-alignTime = min(IMUtime(IMUframe>GPSframe(find(GndSpd  >8, 1 )))) - 10;
-startTime = alignTime - 30;
-endTime = max(IMUtime)-1;
-msecVelDelay = 180;
-msecPosDelay = 160;
-msecHgtDelay = 360;
-msecMagDelay = 20;
-msecTasDelay = 280;
-EAS2TAS = 1.08;
+%LoadNavFilterTestDataStruct;
+LoadNavFilterTestData;
 for i = 1:1
     
     % Find best vel delay
@@ -76,4 +68,4 @@ for i = 1:1
     msecTasDelay = delay(variance == min(variance))
     
 end
-PlotNavFilter24
+PlotNavFilterData24;

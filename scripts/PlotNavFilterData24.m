@@ -284,7 +284,7 @@ grid on;
 xlabel('time (sec)');ylabel('Down (m/s)');
 saveas(gcf,strcat(dirName,fileName,'.fig'));
 saveas(gcf,strcat(dirName,fileName,'.pdf'));
-mean([var(innovVelN),var(innovVelE),var(innovVelD)])
+
 %% Magnetometer Innovations
 nSamples = min([length(innovMagX),length(innovMagY),length(innovMagZ)]);
 fileName = 'MagInnovations';

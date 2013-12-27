@@ -38,9 +38,19 @@ ylim([-200 200]);
 xlabel('time (sec)');ylabel('yaw (deg)');
 
 %% NED velocity
+% remove repeated GPS data points
+lastRow = RefVelPosDataOut(1,:);
+for i = 2:length(RefVelPosDataOut)
+    sameRow = ((sum(RefVelPosDataOut(i,:) == lastRow)) == 6);
+    if sameRow
+        RefVelPosDataOut(i,:) = NaN(1,7);
+    else
+        lastRow = RefVelPosDataOut(i,:);
+    end
+end
 figure;
 subplot(3,1,1);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,2),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,2),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,6),'b');
@@ -49,7 +59,7 @@ grid on;
 xlabel('time (sec)');ylabel('North Velocity (m/s)');
 title('NED Velocity Estimates');
 subplot(3,1,2);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,3),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,3),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,7),'b');
@@ -57,7 +67,7 @@ hold off;
 grid on;
 xlabel('time (sec)');ylabel('East Velocity (m/s)');
 subplot(3,1,3);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,4),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,4),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,8),'b');
@@ -68,7 +78,7 @@ xlabel('time (sec)');ylabel('Down Velocity (m/s)');
 %% NE Position and Height
 figure;
 subplot(3,1,1);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,5),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,5),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,9),'b');
@@ -77,7 +87,7 @@ grid on;
 xlabel('time (sec)');ylabel('North Position (m)');
 title('NED Position Estimates');
 subplot(3,1,2);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,6),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,6),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,10),'b');
@@ -85,7 +95,7 @@ hold off;
 grid on;
 xlabel('time (sec)');ylabel('East Position (m)');
 subplot(3,1,3);
-plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,7),'r');
+plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,7),'.r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),-StateDataOut(:,11),'b');

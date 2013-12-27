@@ -1,7 +1,7 @@
 clear all;
 %load('TestLog1.mat')
 %load('TestLog2.mat')
-%load('TestLog3.mat')
+load('TestLog3.mat')
 
 %% IMU Data
 
@@ -71,3 +71,13 @@ save('../code/ATT.txt','ATT','-ascii');
 save('../code/NTUN.txt','NTUN','-ascii');
 clear all;
 load('NavFilterTestData.mat');
+alignTime = min(IMUtime(IMUframe>GPSframe(find(GndSpd  >8, 1 )))) - 10;
+startTime = alignTime - 30;
+endTime = max(IMUtime)-1;
+msecVelDelay = 300;
+msecPosDelay = 300;
+msecHgtDelay = 420;
+msecMagDelay = 30;
+msecTasDelay = 200;
+EAS2TAS = 1.0;
+save('../code/timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
