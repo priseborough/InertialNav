@@ -254,8 +254,8 @@ uint32_t msecTasDelay = 200;
 // IMU input data variables
 float imuIn;
 float tempImu[8];
-uint32_t IMUframe;
-static uint32_t IMUtime = 0;
+float IMUtimestamp;
+static uint32_t IMUmsec = 0;
 
 // GPS input data variables
 float gpsCourse;
@@ -271,17 +271,17 @@ uint8_t GPSstatus;
 float magIn;
 float tempMag[8];
 float tempMagPrev[8];
-uint32_t MAGframe = 0;
-uint32_t MAGtime = 0;
-uint32_t lastMAGtime = 0;
+float MAGtimestamp = 0;
+uint32_t MAGmsec = 0;
+uint32_t lastMAGmsec = 0;
 bool newDataMag = false;
 
 // AHRS input data variables
 float ahrsIn;
 float tempAhrs[7];
 float tempAhrsPrev[7];
-uint32_t AHRSframe = 0;
-uint32_t AHRStime = 0;
+float AHRStimestamp = 0;
+uint32_t AHRSmsec = 0;
 uint32_t lastAHRStime = 0;
 float ahrsEul[3];
 float ahrsErrorRP;
@@ -291,9 +291,9 @@ float ahrsErrorYaw;
 float adsIn;
 float tempAds[10];
 float tempAdsPrev[10];
-uint32_t ADSframe = 0;
-uint32_t ADStime = 0;
-uint32_t lastADStime = 0;
+float ADStimestamp = 0;
+uint32_t ADSmsec = 0;
+uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
 
@@ -337,7 +337,7 @@ int main()
     pMagFuseFile = fopen ("MagFuse.txt","w");
     pTasFuseFile = fopen ("TasFuse.txt","w");
 
-    // read test data from files for first frame
+    // read test data from files for first timestamp
     readIMUData();
     readGpsData();
     readMagData();
@@ -347,10 +347,10 @@ int main()
 
     while (!endOfData)
     {
-        if ((IMUtime >= msecStartTime) && (IMUtime <= msecEndTime))
+        if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
         {
             // Initialise states, covariance and other data
-            if ((IMUtime > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
+            if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
                 InitialiseFilter();
             }
@@ -400,9 +400,9 @@ int main()
                 fusePosData = true;
                 fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
-                RecallStates(statesAtVelTime, (IMUtime - msecVelDelay));
-                RecallStates(statesAtPosTime, (IMUtime - msecPosDelay));
-                RecallStates(statesAtHgtTime, (IMUtime - msecHgtDelay));
+                RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
+                RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
+                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 FuseVelposNED();
             }
@@ -417,7 +417,7 @@ int main()
             if (newDataMag && statesInitialised)
             {
                 fuseMagData = true;
-                RecallStates(statesAtMagMeasTime, (IMUtime - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+                RecallStates(statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
             }
             else
             {
@@ -429,7 +429,7 @@ int main()
             if (newAdsData && statesInitialised && VtasMeas > 8.0)
             {
                 fuseVtasData = true;
-                RecallStates(statesAtVtasMeasTime, (IMUtime - msecTasDelay)); // assume 100 msec avg delay for airspeed data
+                RecallStates(statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
                 FuseAirspeed();
             }
             else
@@ -441,13 +441,13 @@ int main()
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
         }
-        // read test data from files for next frame
+        // read test data from files for next timestamp
         readIMUData();
         readGpsData();
         readMagData();
         readAirSpdData();
         readAhrsData();
-        if (IMUtime > msecEndTime)
+        if (IMUmsec > msecEndTime)
         {
             CloseFiles();
             endOfData = true;
@@ -2004,7 +2004,7 @@ void FuseAirspeed()
 
 uint32_t millis()
 {
-    return IMUtime;
+    return IMUmsec;
 }
 
 void zeroRows(float covMat[24][24], uint8_t first, uint8_t last)
@@ -2211,9 +2211,9 @@ void readIMUData()
     }
     if (!endOfData)
     {
-        IMUframe  = tempImu[0];
-        dtIMU     = 0.001*(tempImu[1] - IMUtime);
-        IMUtime   = tempImu[1];
+        IMUtimestamp  = tempImu[0];
+        dtIMU     = 0.001*(tempImu[1] - IMUmsec);
+        IMUmsec   = tempImu[1];
         angRate.x = tempImu[2];
         angRate.y = tempImu[3];
         angRate.z = tempImu[4];
@@ -2234,13 +2234,13 @@ void readGpsData()
 
     float gpsIn;
 
-    static uint32_t GPStime;
+    static uint32_t GPSmsec = 0;
+    static uint32_t lastGPSmsec = 0;
     static float tempGps[14];
     static float tempGpsPrev[14];
-    static uint32_t GPSframe = 0;
-    static uint32_t lastGPStime = 0;
+    static float GPStimestamp = 0;
 
-    while (GPSframe <= IMUframe)
+    while (GPStimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=13; j++)
         {
@@ -2250,8 +2250,8 @@ void readGpsData()
         }
         if (!endOfData && (tempGps[1] == 3))
         {
-            GPSframe  = tempGps[0];
-            GPStime = tempGpsPrev[2];
+            GPStimestamp  = tempGps[0];
+            GPSmsec = tempGpsPrev[2];
             GPSstatus = tempGpsPrev[1];
             gpsCourse = deg2rad*tempGpsPrev[11];
             gpsGndSpd = tempGpsPrev[10];
@@ -2261,9 +2261,9 @@ void readGpsData()
             gpsHgt = tempGpsPrev[8];
         }
     }
-    if (GPStime > lastGPStime)
+    if (GPSmsec > lastGPSmsec)
     {
-        lastGPStime = GPStime;
+        lastGPSmsec = GPSmsec;
         newDataGps = true;
     }
     else
@@ -2276,7 +2276,7 @@ void readMagData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (MAGframe <= IMUframe)
+    while (MAGtimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=7; j++)
         {
@@ -2286,8 +2286,8 @@ void readMagData()
         }
         if (!endOfData)
         {
-            MAGframe  = tempMag[0];
-            MAGtime = tempMagPrev[1];
+            MAGtimestamp  = tempMag[0];
+            MAGmsec = tempMagPrev[1];
             for (uint8_t j=0; j<=2; j++)
             {
                 magData[j] = (tempMagPrev[j+2] - tempMagPrev[j+5])/1024;
@@ -2295,9 +2295,9 @@ void readMagData()
             }
         }
     }
-    if (MAGtime > lastMAGtime)
+    if (MAGmsec > lastMAGmsec)
     {
-        lastMAGtime = MAGtime;
+        lastMAGmsec = MAGmsec;
         newDataMag = true;
     }
     else
@@ -2310,7 +2310,7 @@ void readAirSpdData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (ADSframe <= IMUframe)
+    while (ADStimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=9; j++)
         {
@@ -2320,14 +2320,14 @@ void readAirSpdData()
         }
         if (!endOfData)
         {
-            ADSframe  = tempAds[0];
-            ADStime = tempAdsPrev[1];
+            ADStimestamp  = tempAds[0];
+            ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
         }
     }
-    if (ADStime > lastADStime)
+    if (ADSmsec > lastADSmsec)
     {
-        lastADStime = ADStime;
+        lastADSmsec = ADSmsec;
         newAdsData = true;
     }
     else
@@ -2340,7 +2340,7 @@ void readAhrsData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (AHRSframe <= IMUframe)
+    while (AHRStimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=6; j++)
         {
@@ -2350,8 +2350,8 @@ void readAhrsData()
         }
         if (!endOfData != EOF)
         {
-            AHRSframe  = tempAhrs[0];
-            AHRStime = tempAhrsPrev[1];
+            AHRStimestamp  = tempAhrs[0];
+            AHRSmsec = tempAhrsPrev[1];
             for (uint8_t j=0; j<=2; j++)
             {
                 ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
@@ -2422,14 +2422,14 @@ void InitialiseFilter()
 void WriteFilterOutput()
 {
     // filter states
-    fprintf(pStateOutFile," %e", float(IMUtime*0.001));
+    fprintf(pStateOutFile," %e", float(IMUmsec*0.001));
     for (uint8_t i=0; i<=23; i++)
     {
         fprintf(pStateOutFile," %e", states[i]);
     }
     fprintf(pStateOutFile,"\n");
     // Euler angles from filter states, AHRS euler angles and AHRS error RP and error Yaw
-    fprintf(pEulOutFile," %e", float(IMUtime*0.001));
+    fprintf(pEulOutFile," %e", float(IMUmsec*0.001));
     for (uint8_t i=0; i<=2; i++)
     {
         fprintf(pEulOutFile," %e %e", eulerEst[i], ahrsEul[i]);
@@ -2437,32 +2437,32 @@ void WriteFilterOutput()
     fprintf(pEulOutFile," %e %e", ahrsErrorRP, ahrsErrorYaw);
     fprintf(pEulOutFile,"\n");
     // covariance matrix diagonals
-    fprintf(pCovOutFile," %e", float(IMUtime*0.001));
+    fprintf(pCovOutFile," %e", float(IMUmsec*0.001));
     for (uint8_t i=0; i<=23; i++)
     {
         fprintf(pCovOutFile," %e", P[i][i]);
     }
     fprintf(pCovOutFile,"\n");
     // velocity, position and height observations used by the filter
-    fprintf(pRefPosVelOutFile," %e", float(IMUtime*0.001));
+    fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001));
     fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
     // velocity and position innovations and innovation variances
-    fprintf(pVelPosFuseFile," %e", float(IMUtime*0.001));
+    fprintf(pVelPosFuseFile," %e", float(IMUmsec*0.001));
     for (uint8_t i=0; i<=5; i++)
     {
         fprintf(pVelPosFuseFile," %e %e", innovVelPos[i], varInnovVelPos[i]);
     }
     fprintf(pVelPosFuseFile,"\n");
     // magnetometer innovations and innovation variances
-    fprintf(pMagFuseFile," %e", float(IMUtime*0.001));
+    fprintf(pMagFuseFile," %e", float(IMUmsec*0.001));
     for (uint8_t i=0; i<=2; i++)
     {
         fprintf(pMagFuseFile," %e %e", innovMag[i], varInnovMag[i]);
     }
     fprintf(pMagFuseFile,"\n");
     // airspeed innovation and innovation variance
-    fprintf(pTasFuseFile," %e", float(IMUtime*0.001));
+    fprintf(pTasFuseFile," %e", float(IMUmsec*0.001));
     fprintf(pTasFuseFile," %e %e", innovVtas, varInnovVtas);
     fprintf(pTasFuseFile,"\n");
 
