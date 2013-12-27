@@ -1,6 +1,3 @@
-// *** ADDED BY HEADER FIXUP ***
-#include <cstdio>
-// *** END ***
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -179,6 +176,8 @@ void readTimingData();
 void InitialiseFilter();
 
 void WriteFilterOutput();
+
+void CloseFiles();
 
 // Global variables
 #define GRAVITY_MSS 9.80665
@@ -439,7 +438,7 @@ int main()
             }
 
             // debug output
-            printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
+            //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
         }
         // read test data from files for next frame
@@ -448,25 +447,12 @@ int main()
         readMagData();
         readAirSpdData();
         readAhrsData();
+        if (IMUtime > msecEndTime)
+        {
+            CloseFiles();
+            endOfData = true;
+        }
     }
-
-    printf("End of data files reached");
-
-    // Close data files
-    fclose (pImuFile);
-    fclose (pMagFile);
-    fclose (pGpsFile);
-    fclose (pAhrsFile);
-    fclose (pAdsFile);
-    fclose (pStateOutFile);
-    fclose (pEulOutFile);
-    fclose (pCovOutFile);
-    fclose (pRefPosVelOutFile);
-    fclose (pVelPosFuseFile);
-    fclose (pMagFuseFile);
-    fclose (pTasFuseFile);
-    fclose (pTimeFile);
-
 }
 
 void  UpdateStrapdownEquationsNED()
@@ -2413,7 +2399,7 @@ void InitialiseFilter()
     states[18] = initMagNED.x; // Magnetic Field North
     states[19] = initMagNED.y; // Magnetic Field East
     states[20] = initMagNED.z; // Magnetic Field Down
-    for (uint8_t j=0; j<=3; j++) states[j+21] = magBias[j]; // Magnetic Field Bias XYZ
+    for (uint8_t j=0; j<=2; j++) states[j+21] = magBias[j]; // Magnetic Field Bias XYZ
 
     statesInitialised = true;
 
@@ -2510,4 +2496,21 @@ void readTimingData()
     msecMagDelay  = uint32_t(timeArray[6]);
     msecTasDelay  = uint32_t(timeArray[7]);
     EAS2TAS       = timeArray[8];
+}
+
+void CloseFiles()
+{
+    fclose (pImuFile);
+    fclose (pMagFile);
+    fclose (pGpsFile);
+    fclose (pAhrsFile);
+    fclose (pAdsFile);
+    fclose (pStateOutFile);
+    fclose (pEulOutFile);
+    fclose (pCovOutFile);
+    fclose (pRefPosVelOutFile);
+    fclose (pVelPosFuseFile);
+    fclose (pMagFuseFile);
+    fclose (pTasFuseFile);
+    fclose (pTimeFile);
 }
