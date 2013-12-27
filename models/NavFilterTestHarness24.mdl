@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.883"
+    ComputedModelVersion    "1.884"
     NumModelReferences	    0
     NumTestPointedSignals   0
   }
@@ -38,9 +38,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "user"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Fri Dec 27 10:08:16 2013"
-  RTWModifiedTimeStamp	  310034419
-  ModelVersionFormat	  "1.%<AutoIncrement:883>"
+  LastModifiedDate	  "Fri Dec 27 14:28:10 2013"
+  RTWModifiedTimeStamp	  310047611
+  ModelVersionFormat	  "1.%<AutoIncrement:884>"
   ConfigurationManager	  "None"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -2211,7 +2211,7 @@ Model {
   }
   System {
     Name		    "NavFilterTestHarness24"
-    Location		    [-101, -1126, 1599, -21]
+    Location		    [202, 74, 1902, 1179]
     Open		    on
     ModelBrowserVisibility  on
     ModelBrowserWidth	    200
@@ -16683,15 +16683,15 @@ Stateflow {
       "0);\n        nextP(:,19:24) = single(0);\n    end\n    \n    % If on ground or not using airspeed sensing, inhib"
       "it wind velocity\n    % covariance growth by setting the coresponding covariance terms to zero.\n    % To be % e"
       "fficient, the corresponding terms should also not be calculated above\n    if onGround || ~useAirspeed\n        "
-      "% Inhibit Wind velocity state updates and covariance growth\n        nextP(17:18,:) = P(17:18,:);\n        nextP"
-      "(:,17:18) = P(:,17:18);\n    end\n    \n    % If the total position variance exceds 1E6 (1000m), then stop covar"
-      "iance\n    % growth by setting the predicted to the previous values\n    % This prevent an ill conditioned matri"
-      "x from occurring for long periods\n    % without GPS\n    if (P(8,8) + P(9,9)) > 1E6\n        nextP(8:9,:) = P(8"
-      ":9,:);\n        nextP(:,8:9) = P(:,8:9);\n    end\n    \n    % Force symmetry on the covariance matrix to preven"
-      "t ill-conditioning\n    % of the matrix which would cause the filter to blow-up\n    for i = 2:24\n        for j"
-      " = 1:(i-1)\n            temp = 0.5*(nextP(i,j) + nextP(j,i));\n            nextP(i,j) = temp;\n            nextP"
-      "(j,i) = temp;\n        end\n    end\n    \n    % reset the accumulated values\n    storedDelAng = single([0;0;0]"
-      ");\n    storedDelVel = single([0;0;0]);\n    dt = single(0.0);\n    \nelse\n    nextP = P;\nend\n\nend"
+      "% Inhibit Wind velocity state updates and covariance growth\n        nextP(17:18,:) = 0.0;\n        nextP(:,17:1"
+      "8) = 0.0;\n    end\n    \n    % If the total position variance exceds 1E6 (1000m), then stop covariance\n    % g"
+      "rowth by setting the predicted to the previous values\n    % This prevent an ill conditioned matrix from occurri"
+      "ng for long periods\n    % without GPS\n    if (P(8,8) + P(9,9)) > 1E6\n        nextP(8:9,:) = P(8:9,:);\n      "
+      "  nextP(:,8:9) = P(:,8:9);\n    end\n    \n    % Force symmetry on the covariance matrix to prevent ill-conditio"
+      "ning\n    % of the matrix which would cause the filter to blow-up\n    for i = 2:24\n        for j = 1:(i-1)\n  "
+      "          temp = 0.5*(nextP(i,j) + nextP(j,i));\n            nextP(i,j) = temp;\n            nextP(j,i) = temp;\n"
+      "        end\n    end\n    \n    % reset the accumulated values\n    storedDelAng = single([0;0;0]);\n    storedD"
+      "elVel = single([0;0;0]);\n    dt = single(0.0);\n    \nelse\n    nextP = P;\nend\n\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
       fimathString	      "fimath(...\n'RoundMode', 'floor',...\n'OverflowMode', 'wrap',...\n'ProductMode', 'KeepLSB', "
       "'ProductWordLength', 32,...\n'SumMode', 'KeepLSB', 'SumWordLength', 32,...\n'CastBeforeSum', true)"
