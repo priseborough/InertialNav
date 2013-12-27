@@ -174,6 +174,8 @@ void readAirSpdData();
 
 void readAhrsData();
 
+void readTimingData();
+
 void InitialiseFilter();
 
 void WriteFilterOutput();
@@ -211,14 +213,15 @@ bool useCompass = true; // boolean true if magnetometer data is being used
 uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
 float innovVelPos[6]; // innovation output
 float varInnovVelPos[6]; // innovation variance output
-bool fuseGPSData = false; // this boolean causes the posNE and velNED obs to be fused
-float velNED[3]; // North, East, Down velocity obs (m/s)
-bool useVelD = true; // this boolean casues the D component of the velNED vector to be used
-float posNE[2]; // North, East position obs (m)
-float posNED[3]; // North, East Down position (m)
-float statesAtGpsTime[24]; // States at the effective measurement time for posNE and velNED measurements
+bool fuseVelData = false; // this boolean causes the posNE and velNED obs to be fused
+bool fusePosData = false; // this boolean causes the posNE and velNED obs to be fused
 bool fuseHgtData = false; // this boolean causes the hgtMea obs to be fused
+float velNED[3]; // North, East, Down velocity obs (m/s)
+float posNE[2]; // North, East position obs (m)
 float hgtMea; //  measured height (m)
+float posNED[3]; // North, East Down position (m)
+float statesAtVelTime[24]; // States at the effective measurement time for posNE and velNED measurements
+float statesAtPosTime[24]; // States at the effective measurement time for posNE and velNED measurements
 float statesAtHgtTime[24]; // States at the effective measurement time for the hgtMea measurement
 float innovMag[3]; // innovation output
 float varInnovMag[3]; // innovation variance output
@@ -241,6 +244,13 @@ const float covTimeStepMax = 0.07; // maximum time allowed between covariance pr
 const float covDelAngMax = 0.05; // maximum delta angle between covariance predictions
 float EAS2TAS = 1.0; // ratio f true to equivalent airspeed
 bool endOfData = false; //boolean set to true when all files have returned data
+
+// Estimated time delays (msec)
+uint32_t msecVelDelay = 300;
+uint32_t msecPosDelay = 300;
+uint32_t msecHgtDelay = 420;
+uint32_t msecMagDelay = 30;
+uint32_t msecTasDelay = 200;
 
 // IMU input data variables
 float imuIn;
@@ -288,6 +298,9 @@ uint32_t lastADStime = 0;
 float Veas;
 bool newAdsData = false;
 
+// input data timing
+uint32_t msecAlignTime;
+
 // Data file identifiers
 FILE * pImuFile;
 FILE * pMagFile;
@@ -301,12 +314,12 @@ FILE * pRefPosVelOutFile;
 FILE * pVelPosFuseFile;
 FILE * pMagFuseFile;
 FILE * pTasFuseFile;
+FILE * pTimeFile;
 
 bool statesInitialised = false;
 
 int main()
 {
-    uint32_t startTime = 30000; // IMU time in msec when filter is initialised
 
     // open data files
     pImuFile = fopen ("IMU.txt","r");
@@ -314,6 +327,7 @@ int main()
     pGpsFile = fopen ("GPS.txt","r");
     pAhrsFile = fopen ("ATT.txt","r");
     pAdsFile = fopen ("NTUN.txt","r");
+    pTimeFile = fopen ("timing.txt","r");
     pStateOutFile = fopen ("StateDataOut.txt","w");
     pEulOutFile = fopen ("EulDataOut.txt","w");
     pCovOutFile = fopen ("CovDataOut.txt","w");
@@ -328,11 +342,12 @@ int main()
     readMagData();
     readAirSpdData();
     readAhrsData();
+    readTimingData();
 
     while (!endOfData)
     {
         // Initialise states, covariance and other data
-        if ((IMUtime > startTime) && !statesInitialised && (GPSstatus == 3))
+        if ((IMUtime > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
         {
             InitialiseFilter();
         }
@@ -378,17 +393,20 @@ int main()
             posNE[1] = posNED[1];
             hgtMea =  -posNED[2];
             // set fusion flags
-            fuseGPSData = true;
+            fuseVelData = true;
+            fusePosData = true;
             fuseHgtData = true;
-            // recall states stored 400msec ago
-            RecallStates(statesAtGpsTime, (IMUtime - 400)); // assume 400 msec avg delay for gps data
-            for (uint8_t j=0; j<=23; j++) statesAtHgtTime[j] = statesAtGpsTime[j];
+            // recall states stored at time of measurement after adjusting for delays
+            RecallStates(statesAtVelTime, (IMUtime - msecVelDelay));
+            RecallStates(statesAtPosTime, (IMUtime - msecPosDelay));
+            RecallStates(statesAtHgtTime, (IMUtime - msecHgtDelay));
             // run the fusion step
             FuseVelposNED();
         }
         else
         {
-            fuseGPSData = false;
+            fuseVelData = false;
+            fusePosData = false;
             fuseHgtData = false;
         }
 
@@ -396,7 +414,7 @@ int main()
         if (newDataMag && statesInitialised)
         {
             fuseMagData = true;
-            RecallStates(statesAtMagMeasTime, (IMUtime - 50)); // Assume 50 msec avg delay for magnetometer data
+            RecallStates(statesAtMagMeasTime, (IMUtime - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
         }
         else
         {
@@ -408,7 +426,7 @@ int main()
         if (newAdsData && statesInitialised && VtasMeas > 8.0)
         {
             fuseVtasData = true;
-            RecallStates(statesAtVtasMeasTime, (IMUtime - 100)); // assume 100 msec avg delay for airspeed data
+            RecallStates(statesAtVtasMeasTime, (IMUtime - msecTasDelay)); // assume 100 msec avg delay for airspeed data
             FuseAirspeed();
         }
         else
@@ -443,6 +461,7 @@ int main()
     fclose (pVelPosFuseFile);
     fclose (pMagFuseFile);
     fclose (pTasFuseFile);
+    fclose (pTimeFile);
 
 }
 
@@ -1382,7 +1401,8 @@ void FuseVelposNED()
     float posInnov[2] = {0.0,0.0};
     float hgtInnov = 0.0;
 
-// declare indices used to access arrays
+// declare variables used to control access to arrays
+    bool fuseData[6] = {false,false,false,false,false,false};
     uint8_t stateIndex;
     uint8_t obsIndex;
 
@@ -1393,8 +1413,6 @@ void FuseVelposNED()
     float observation[6];
     float SK;
     float quatMag;
-    uint8_t startIndex;
-    uint8_t endIndex;
 
 // Perform sequential fusion of GPS measurements. This assumes that the
 // errors in the different velocity and position components are
@@ -1402,7 +1420,7 @@ void FuseVelposNED()
 // data from the GPS receiver it is the only assumption we can make
 // so we might as well take advantage of the computational efficiencies
 // associated with sequential fusion
-    if ((fuseGPSData && (fusionModeGPS <= 2)) || fuseHgtData)
+    if (fuseVelData || fusePosData || fuseHgtData)
     {
         // set the GPS data timeout depending on whether airspeed data is present
         if (useAirspeed) horizRetryTime = gpsRetryTime;
@@ -1426,12 +1444,14 @@ void FuseVelposNED()
             varInnovVelPos[i] = 0.0;
         }
         // calculate innovations and check GPS data validity using an innovation consistency check
-        if (fuseGPSData)
+        if (fuseVelData)
         {
             // test velocity measurements
-            for (uint8_t i = 0; i<=2; i++)
+            uint8_t imax = 2;
+            if (fusionModeGPS == 1) imax = 1;
+            for (uint8_t i = 0; i<=imax; i++)
             {
-                velInnov[i] = statesAtGpsTime[i+4] - velNED[i];
+                velInnov[i] = statesAtVelTime[i+4] - velNED[i];
                 stateIndex = 4 + i;
                 varInnovVelPos[i] = P[stateIndex][stateIndex] + R_OBS[i];
             }
@@ -1447,9 +1467,12 @@ void FuseVelposNED()
             {
                 velHealth = false;
             }
+        }
+        if (fusePosData)
+        {
             // test horizontal position measurements
-            posInnov[0] = statesAtGpsTime[7] - posNE[0];
-            posInnov[1] = statesAtGpsTime[8] - posNE[1];
+            posInnov[0] = statesAtPosTime[7] - posNE[0];
+            posInnov[1] = statesAtPosTime[8] - posNE[1];
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
             // apply a 10-sigma threshold
@@ -1484,45 +1507,46 @@ void FuseVelposNED()
             }
         }
         // Set range for sequential fusion of velocity and position measurements depending
-        // on which data is available
-        // set start observation index
-        if (fuseGPSData &&  (fusionModeGPS == 0 || fusionModeGPS == 1))
+        // on which data is available and its health
+        if (fuseVelData && fusionModeGPS == 0 && velHealth)
         {
-            startIndex = 0;
+            fuseData[0] = true;
+            fuseData[1] = true;
+            fuseData[2] = true;
         }
-        else if (fuseGPSData && fusionModeGPS == 2)
+        if (fuseVelData && fusionModeGPS == 1 && velHealth)
         {
-            startIndex = 3;
+            fuseData[0] = true;
+            fuseData[1] = true;
         }
-        else
+        if (fusePosData && fusionModeGPS <= 2 && posHealth)
         {
-            startIndex = 5;
+            fuseData[3] = true;
+            fuseData[4] = true;
         }
-        // set end observation index
-        if (fuseHgtData)
+        if (fuseHgtData && hgtHealth)
         {
-            endIndex = 5;
-        }
-        else
-        {
-            endIndex = 4;
+            fuseData[5] = true;
         }
         // Fuse measurements sequentially
-        for (obsIndex=startIndex; obsIndex<=endIndex; obsIndex++)
+        for (obsIndex=0; obsIndex<=5; obsIndex++)
         {
-            // Apply data health checks
-            if (((velHealth && (obsIndex == 0 || obsIndex == 1)) || (velHealth && obsIndex == 2 && fusionModeGPS == 0))|| (posHealth && (obsIndex == 3 || obsIndex == 4)) || (hgtHealth && (obsIndex == 5)))
+            if (fuseData[obsIndex])
             {
                 stateIndex = 4 + obsIndex;
                 // Calculate the measurement innovation, using states from a
                 // different time coordinate if fusing height data
-                if (obsIndex == 5)
+                if (obsIndex >= 0 && obsIndex <= 2)
+                {
+                    innovVelPos[obsIndex] = statesAtVelTime[stateIndex] - observation[obsIndex];
+                }
+                else if (obsIndex == 3 || obsIndex == 4)
+                {
+                    innovVelPos[obsIndex] = statesAtPosTime[stateIndex] - observation[obsIndex];
+                }
+                else if (obsIndex == 5)
                 {
                     innovVelPos[obsIndex] = statesAtHgtTime[stateIndex] - observation[obsIndex];
-                }
-                else
-                {
-                    innovVelPos[obsIndex] = statesAtGpsTime[stateIndex] - observation[obsIndex];
                 }
                 // Calculate the Kalman Gain
                 // Calculate innovation variances - also used for data logging
@@ -1656,7 +1680,7 @@ void FuseMagnetometer()
             H_MAG[1] = SH_MAG[0];
             H_MAG[2] = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;
             H_MAG[3] = SH_MAG[2];
-            for (uint8_t i=4;i<=17;i++) H_MAG[i] = 0;
+            for (uint8_t i=4; i<=17; i++) H_MAG[i] = 0;
             H_MAG[18] = SH_MAG[5] - SH_MAG[4] - SH_MAG[3] + SH_MAG[6];
             H_MAG[19] = 2*q0*q3 + 2*q1*q2;
             H_MAG[20] = 2*q1*q3 - 2*q0*q2;
@@ -1708,7 +1732,7 @@ void FuseMagnetometer()
             H_MAG[1] = SH_MAG[1];
             H_MAG[2] = SH_MAG[0];
             H_MAG[3] = 2*magD*q2 - SH_MAG[8] - SH_MAG[7];
-            for (uint8_t i=4;i<=17;i++) H_MAG[i] = 0;
+            for (uint8_t i=4; i<=17; i++) H_MAG[i] = 0;
             H_MAG[18] = 2*q1*q2 - 2*q0*q3;
             H_MAG[19] = SH_MAG[4] - SH_MAG[3] - SH_MAG[5] + SH_MAG[6];
             H_MAG[20] = 2*q0*q1 + 2*q2*q3;
@@ -1755,7 +1779,7 @@ void FuseMagnetometer()
             H_MAG[1] = 2*magN*q3 - 2*magE*q0 - 2*magD*q1;
             H_MAG[2] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             H_MAG[3] = SH_MAG[0];
-            for (uint8_t i=4;i<=17;i++) H_MAG[i] = 0;
+            for (uint8_t i=4; i<=17; i++) H_MAG[i] = 0;
             H_MAG[18] = 2*q0*q2 + 2*q1*q3;
             H_MAG[19] = 2*q2*q3 - 2*q0*q1;
             H_MAG[20] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
@@ -2461,3 +2485,23 @@ void calcEarthRateNED(Vector3f &omega, float latitude)
     omega.y  = 0.0;
     omega.z  = -earthRate*sin(latitude);
 }
+
+void readTimingData()
+{
+    float timeDataIn;
+    float timeArray[9];
+        for (uint8_t j=0; j<=8; j++)
+        {
+            if (fscanf(pTimeFile, "%f", &timeDataIn) != EOF)
+            {
+                timeArray[j] = timeDataIn;
+            }
+        }
+            msecAlignTime = uint32_t(1000*timeArray[0]);
+            msecVelDelay  = uint32_t(timeArray[3]);
+            msecPosDelay  = uint32_t(timeArray[4]);
+            msecHgtDelay  = uint32_t(timeArray[5]);
+            msecMagDelay  = uint32_t(timeArray[6]);
+            msecTasDelay  = uint32_t(timeArray[7]);
+            EAS2TAS       = timeArray[8];
+ }
