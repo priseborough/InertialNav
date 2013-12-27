@@ -104,27 +104,27 @@ saveas(gcf,strcat(dirName,fileName,'.pdf'));
 fileName = 'GyroBiasEstimates';
 figure;
 subplot(3,1,1);
-plot(time_est,dAngBiasX_est*50*60);
+plot(time_est,dAngBiasX_est*50*60*180/pi);
 hold on;
-plot(time_est,(dAngBiasX_est+sqrt(variance_est(:,11)))*50*60,'r:');
-plot(time_est,(dAngBiasX_est-sqrt(variance_est(:,11)))*50*60,'r:');
+plot(time_est,(dAngBiasX_est+sqrt(variance_est(:,11)))*50*60*180/pi,'r:');
+plot(time_est,(dAngBiasX_est-sqrt(variance_est(:,11)))*50*60*180/pi,'r:');
 hold off
 grid on;
 xlabel('time (sec)');ylabel('X bias (deg/min)');
 title('Gyro Bias Error Estimates');
 subplot(3,1,2);
-plot(time_est,dAngBiasY_est*50*60);
+plot(time_est,dAngBiasY_est*50*60*180/pi);
 hold on;
-plot(time_est,(dAngBiasY_est+sqrt(variance_est(:,12)))*50*60,'r:');
-plot(time_est,(dAngBiasY_est-sqrt(variance_est(:,12)))*50*60,'r:');
+plot(time_est,(dAngBiasY_est+sqrt(variance_est(:,12)))*50*60*180/pi,'r:');
+plot(time_est,(dAngBiasY_est-sqrt(variance_est(:,12)))*50*60*180/pi,'r:');
 hold off
 grid on;
 xlabel('time (sec)');ylabel('Y bias (deg/min)');
 subplot(3,1,3);
-plot(time_est,dAngBiasZ_est*50*60);
+plot(time_est,dAngBiasZ_est*50*60*180/pi);
 hold on;
-plot(time_est,(dAngBiasZ_est+sqrt(variance_est(:,13)))*50*60,'r:');
-plot(time_est,(dAngBiasZ_est-sqrt(variance_est(:,13)))*50*60,'r:');
+plot(time_est,(dAngBiasZ_est+sqrt(variance_est(:,13)))*50*60*180/pi,'r:');
+plot(time_est,(dAngBiasZ_est-sqrt(variance_est(:,13)))*50*60*180/pi,'r:');
 hold off
 grid on;
 xlabel('time (sec)');ylabel('Z bias (deg/min)');
@@ -284,7 +284,7 @@ grid on;
 xlabel('time (sec)');ylabel('Down (m/s)');
 saveas(gcf,strcat(dirName,fileName,'.fig'));
 saveas(gcf,strcat(dirName,fileName,'.pdf'));
-
+mean([var(innovVelN),var(innovVelE),var(innovVelD)])
 %% Magnetometer Innovations
 nSamples = min([length(innovMagX),length(innovMagY),length(innovMagZ)]);
 fileName = 'MagInnovations';

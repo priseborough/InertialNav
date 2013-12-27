@@ -1,7 +1,8 @@
 clear all;
 %load('TestLog1.mat')
 %load('TestLog2.mat')
-load('TestLog3.mat')
+%load('TestLog3.mat')
+
 %% IMU Data
 
 IMUframe = IMU(:,1);
