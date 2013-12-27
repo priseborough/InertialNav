@@ -300,6 +300,8 @@ bool newAdsData = false;
 
 // input data timing
 uint32_t msecAlignTime;
+uint32_t msecStartTime;
+uint32_t msecEndTime;
 
 // Data file identifiers
 FILE * pImuFile;
@@ -346,98 +348,100 @@ int main()
 
     while (!endOfData)
     {
-        // Initialise states, covariance and other data
-        if ((IMUtime > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
+        if ((IMUtime >= msecStartTime) && (IMUtime <= msecEndTime))
         {
-            InitialiseFilter();
-        }
-
-        // If valid IMU data and states initialised, predict states and covariances
-        if (statesInitialised)
-        {
-            // Run the strapdown INS equations every IMU update
-            UpdateStrapdownEquationsNED();
-            // debug code - could be tunred into a filter mnitoring/watchdog function
-            float tempQuat[4];
-            for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
-            quat2eul(eulerEst, tempQuat);
-            for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
-            if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
-            if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
-            // store the predicted states for subsequent use by measurement fusion
-            StoreStates();
-            // Check if on ground - status is used by covariance prediction
-            OnGroundCheck();
-            // sum delta angles and time used by covariance prediction
-            summedDelAng = summedDelAng + correctedDelAng;
-            summedDelVel = summedDelVel + correctedDelVel;
-            dt += dtIMU;
-            // perform a covariance prediction if the total delta angle has exceeded the limit
-            // or the time limit will be exceeded at the next IMU update
-            if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
+            // Initialise states, covariance and other data
+            if ((IMUtime > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
-                CovariancePrediction();
-                summedDelAng = summedDelAng.zero();
-                summedDelVel = summedDelVel.zero();
-                dt = 0.0;
+                InitialiseFilter();
             }
-        }
 
-        // Fuse GPS Measurements
-        if (newDataGps && statesInitialised)
-        {
-            // Convert GPS measurements to Pos NE, hgt and Vel NED
-            calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
-            calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
-            posNE[0] = posNED[0];
-            posNE[1] = posNED[1];
-            hgtMea =  -posNED[2];
-            // set fusion flags
-            fuseVelData = true;
-            fusePosData = true;
-            fuseHgtData = true;
-            // recall states stored at time of measurement after adjusting for delays
-            RecallStates(statesAtVelTime, (IMUtime - msecVelDelay));
-            RecallStates(statesAtPosTime, (IMUtime - msecPosDelay));
-            RecallStates(statesAtHgtTime, (IMUtime - msecHgtDelay));
-            // run the fusion step
-            FuseVelposNED();
-        }
-        else
-        {
-            fuseVelData = false;
-            fusePosData = false;
-            fuseHgtData = false;
-        }
+            // If valid IMU data and states initialised, predict states and covariances
+            if (statesInitialised)
+            {
+                // Run the strapdown INS equations every IMU update
+                UpdateStrapdownEquationsNED();
+                // debug code - could be tunred into a filter mnitoring/watchdog function
+                float tempQuat[4];
+                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+                quat2eul(eulerEst, tempQuat);
+                for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
+                if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
+                if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+                // store the predicted states for subsequent use by measurement fusion
+                StoreStates();
+                // Check if on ground - status is used by covariance prediction
+                OnGroundCheck();
+                // sum delta angles and time used by covariance prediction
+                summedDelAng = summedDelAng + correctedDelAng;
+                summedDelVel = summedDelVel + correctedDelVel;
+                dt += dtIMU;
+                // perform a covariance prediction if the total delta angle has exceeded the limit
+                // or the time limit will be exceeded at the next IMU update
+                if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
+                {
+                    CovariancePrediction();
+                    summedDelAng = summedDelAng.zero();
+                    summedDelVel = summedDelVel.zero();
+                    dt = 0.0;
+                }
+            }
 
-        // Fuse Magnetometer Measurements
-        if (newDataMag && statesInitialised)
-        {
-            fuseMagData = true;
-            RecallStates(statesAtMagMeasTime, (IMUtime - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
-        }
-        else
-        {
-            fuseMagData = false;
-        }
-        if (statesInitialised) FuseMagnetometer();
+            // Fuse GPS Measurements
+            if (newDataGps && statesInitialised)
+            {
+                // Convert GPS measurements to Pos NE, hgt and Vel NED
+                calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
+                posNE[0] = posNED[0];
+                posNE[1] = posNED[1];
+                hgtMea =  -posNED[2];
+                // set fusion flags
+                fuseVelData = true;
+                fusePosData = true;
+                fuseHgtData = true;
+                // recall states stored at time of measurement after adjusting for delays
+                RecallStates(statesAtVelTime, (IMUtime - msecVelDelay));
+                RecallStates(statesAtPosTime, (IMUtime - msecPosDelay));
+                RecallStates(statesAtHgtTime, (IMUtime - msecHgtDelay));
+                // run the fusion step
+                FuseVelposNED();
+            }
+            else
+            {
+                fuseVelData = false;
+                fusePosData = false;
+                fuseHgtData = false;
+            }
 
-        // Fuse Airspeed Measurements
-        if (newAdsData && statesInitialised && VtasMeas > 8.0)
-        {
-            fuseVtasData = true;
-            RecallStates(statesAtVtasMeasTime, (IMUtime - msecTasDelay)); // assume 100 msec avg delay for airspeed data
-            FuseAirspeed();
-        }
-        else
-        {
-            fuseVtasData = false;
-        }
+            // Fuse Magnetometer Measurements
+            if (newDataMag && statesInitialised)
+            {
+                fuseMagData = true;
+                RecallStates(statesAtMagMeasTime, (IMUtime - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+            }
+            else
+            {
+                fuseMagData = false;
+            }
+            if (statesInitialised) FuseMagnetometer();
 
-        // debug output
-        printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-        WriteFilterOutput();
+            // Fuse Airspeed Measurements
+            if (newAdsData && statesInitialised && VtasMeas > 8.0)
+            {
+                fuseVtasData = true;
+                RecallStates(statesAtVtasMeasTime, (IMUtime - msecTasDelay)); // assume 100 msec avg delay for airspeed data
+                FuseAirspeed();
+            }
+            else
+            {
+                fuseVtasData = false;
+            }
 
+            // debug output
+            printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
+            WriteFilterOutput();
+        }
         // read test data from files for next frame
         readIMUData();
         readGpsData();
@@ -2490,18 +2494,20 @@ void readTimingData()
 {
     float timeDataIn;
     float timeArray[9];
-        for (uint8_t j=0; j<=8; j++)
+    for (uint8_t j=0; j<=8; j++)
+    {
+        if (fscanf(pTimeFile, "%f", &timeDataIn) != EOF)
         {
-            if (fscanf(pTimeFile, "%f", &timeDataIn) != EOF)
-            {
-                timeArray[j] = timeDataIn;
-            }
+            timeArray[j] = timeDataIn;
         }
-            msecAlignTime = uint32_t(1000*timeArray[0]);
-            msecVelDelay  = uint32_t(timeArray[3]);
-            msecPosDelay  = uint32_t(timeArray[4]);
-            msecHgtDelay  = uint32_t(timeArray[5]);
-            msecMagDelay  = uint32_t(timeArray[6]);
-            msecTasDelay  = uint32_t(timeArray[7]);
-            EAS2TAS       = timeArray[8];
- }
+    }
+    msecAlignTime = uint32_t(1000*timeArray[0]);
+    msecStartTime = uint32_t(1000*timeArray[1]);
+    msecEndTime   = uint32_t(1000*timeArray[2]);
+    msecVelDelay  = uint32_t(timeArray[3]);
+    msecPosDelay  = uint32_t(timeArray[4]);
+    msecHgtDelay  = uint32_t(timeArray[5]);
+    msecMagDelay  = uint32_t(timeArray[6]);
+    msecTasDelay  = uint32_t(timeArray[7]);
+    EAS2TAS       = timeArray[8];
+}
