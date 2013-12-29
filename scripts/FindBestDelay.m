@@ -1,71 +1,85 @@
 clear all;
-%LoadNavFilterTestDataStruct;
-LoadNavFilterTestData;
-for i = 1:1
+LoadNavFilterTestDataStruct;
+%LoadNavFilterTestData;
+for i = 1:2
     
     % Find best vel delay
-    maxIndex = 21;
-    delay = zeros(1,maxIndex);
-    variance = delay;
+    maxIndex = 26;
+    velDelay = zeros(1,maxIndex);
+    velVar = velDelay;
     for index = 1:maxIndex
         msecVelDelay = (index-1)*20;
-        sim('NavFilterTestHarness24')
-        delay(index) = msecVelDelay;
-        variance(index) = mean([var(innovVelN),var(innovVelE),var(innovVelD)]);
+        save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+        dos('NavFilterEKF');
+        importfile('VelPosFuse.txt');
+        velDelay(index) = msecVelDelay;
+        velVar(index) = mean([var(VelPosFuse(:,2)),var(VelPosFuse(:,4)),var(VelPosFuse(:,6))]);
     end
-    figure;plot(delay,variance);
-    msecVelDelay = delay(variance == min(variance))
+    msecVelDelay = velDelay(velVar == min(velVar))
     
     % Find best pos delay
-    maxIndex = 21;
-    delay = zeros(1,maxIndex);
-    variance = delay;
+    maxIndex = 26;
+    posDelay = zeros(1,maxIndex);
+    posVar = posDelay;
     for index = 1:maxIndex
         msecPosDelay = (index-1)*20;
-        sim('NavFilterTestHarness24')
-        delay(index) = msecPosDelay;
-        variance(index) = mean([var(innovPosN),var(innovPosE)]);
+        save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+        dos('NavFilterEKF');
+        importfile('VelPosFuse.txt');
+        posDelay(index) = msecPosDelay;
+        posVar(index) = mean([var(VelPosFuse(:,8)),var(VelPosFuse(:,10))]);
     end
-    figure;plot(delay,variance);
-    msecPosDelay = delay(variance == min(variance))
+    msecPosDelay = posDelay(posVar == min(posVar))
+    
     % Find best hgt delay
     maxIndex = 26;
-    delay = zeros(1,maxIndex);
-    variance = delay;
+    hgtDelay = zeros(1,maxIndex);
+    hgtVar = hgtDelay;
     for index = 1:maxIndex
         msecHgtDelay = (index-1)*20;
-        sim('NavFilterTestHarness24')
-        delay(index) = msecHgtDelay;
-        variance(index) = mean(var(innovPosD));
+        save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+        dos('NavFilterEKF');
+        importfile('VelPosFuse.txt');
+        hgtDelay(index) = msecHgtDelay;
+        hgtVar(index) = mean(var(VelPosFuse(:,12)));
     end
-    figure;plot(delay,variance);
-    msecHgtDelay = delay(variance == min(variance))
+    msecHgtDelay = hgtDelay(hgtVar == min(hgtVar))
     
     % Find best magnetometer delay
     maxIndex = 11;
-    delay = zeros(1,maxIndex);
-    variance = delay;
+    magDelay = zeros(1,maxIndex);
+    magVar = magDelay;
     for index = 1:maxIndex
         msecMagDelay = (index-1)*20;
-        sim('NavFilterTestHarness24')
-        delay(index) = msecMagDelay;
-        variance(index) = mean([var(innovMagX),var(innovMagY),var(innovMagZ)]);
+        save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+        dos('NavFilterEKF');
+        importfile('MagFuse.txt');
+        magDelay(index) = msecMagDelay;
+        magVar(index) = mean([var(MagFuse(:,2)),var(MagFuse(:,4)),var(MagFuse(:,6))]);
     end
-    figure;plot(delay,variance);
-    msecMagDelay = delay(variance == min(variance))
+    msecMagDelay = magDelay(magVar == min(magVar))
     
     % Find best airspeed delay
-    maxIndex = 20;
-    delay = zeros(1,maxIndex);
-    variance = delay;
+    maxIndex = 21;
+    tasDelay = zeros(1,maxIndex);
+    tasVar = tasDelay;
     for index = 1:maxIndex
         msecTasDelay = (index-1)*20;
-        sim('NavFilterTestHarness24')
-        delay(index) = msecTasDelay;
-        variance(index) = mean(var(innovVtas));
+        save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+        dos('NavFilterEKF');
+        importfile('TasFuse.txt');
+        tasDelay(index) = msecTasDelay;
+        tasVar(index) = mean(var(TasFuse(:,2)));
     end
-    figure;plot(delay,variance);
-    msecTasDelay = delay(variance == min(variance))
+    msecTasDelay = tasDelay(tasVar == min(tasVar))
     
 end
-PlotNavFilterData24;
+save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
+    figure;plot(velDelay,velVar);
+    figure;plot(posDelay,posVar);
+    figure;plot(hgtDelay,hgtVar);
+    figure;plot(magDelay,magVar);
+    figure;plot(tasDelay,tasVar);
+
+%dos('NavFilterEKF')
+%PlotCcodeOutput;
