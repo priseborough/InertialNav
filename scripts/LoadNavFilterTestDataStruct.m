@@ -1,10 +1,11 @@
 clear all;
 %load('NEO.mat')
-load('LEA.mat');
+%load('LEA.mat');
 %load('SITL1.mat'); % sim_gps_delay = 0
 %load('SITL2.mat'); % sim_gps_delay = 3
 %load('SITL3.mat'); % sim_gps_delay = 2
 %load('SITL4.mat'); % sim_gps_delay = 1
+load('test2.mat');
 
 %% IMU Data
 
@@ -67,8 +68,11 @@ if ~isempty(ATT.data)
 end
 
 %% Save to files
-alignTime = min(IMUtime(IMUtimestamp>GPStimestamp(find(GndSpd  >8, 1 )))) - 10;
-startTime = max((alignTime - 30),(IMUtime(1,1) + 1));
+% alignTime = min(IMUtime(IMUtimestamp>GPStimestamp(find(GndSpd  >8, 1 )))) - 10;
+% startTime = max((alignTime - 30),(IMUtime(1,1) + 1));
+% alignTime = max((startTime+1),alignTime);
+startTime = (IMUtime(1,1) + 1);
+alignTime = startTime + 10;
 alignTime = max((startTime+1),alignTime);
 endTime = max(IMUtime)-10;
 msecVelDelay = 230;
@@ -76,7 +80,7 @@ msecPosDelay = 210;
 msecHgtDelay = 350;
 msecMagDelay = 30;
 msecTasDelay = 210;
-EAS2TAS = 1.08;
+EAS2TAS = 1.0;
 
 save('NavFilterTestData.mat', ...
     'IMUtimestamp','IMUtime','angRate','accel', ...

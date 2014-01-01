@@ -1,5 +1,5 @@
 %% Load data
-load('simtest9.mat');
+load('FlightData.mat');
 dirName = '../plots/';
 t0 = EKF1.data(1,1);
 %% Euler Angles
@@ -110,16 +110,16 @@ figure;
 subplot(3,1,1);
 plot(EKF2.data(:,1)-t0,EKF2.data(:,3),'b');
 grid on;
-xlabel('time (sec)');ylabel('X bias (m/s^2)');
+xlabel('time (sec)');ylabel('X bias (cm/s^2)');
 title('Accelerometer Bias Error Estimates');
 subplot(3,1,2);
 plot(EKF2.data(:,1)-t0,EKF2.data(:,4),'b');
 grid on;
-xlabel('time (sec)');ylabel('Y bias (m/s^2)');
+xlabel('time (sec)');ylabel('Y bias (cm/s^2)');
 subplot(3,1,3);
 plot(EKF2.data(:,1)-t0,EKF2.data(:,5),'b');
 grid on;
-xlabel('time (sec)');ylabel('Z bias (m/s^2)');
+xlabel('time (sec)');ylabel('Z bias (cm/s^2)');
 saveas(gcf,strcat(dirName,fileName,'.fig'));
 print(gcf, '-djpeg', strcat(dirName,fileName,'.jpg'), '-r200');
 
