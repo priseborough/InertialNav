@@ -55,7 +55,6 @@ syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
 syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
 syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
-syms m_k % conversion from m to km
 
 %% define the process equations
 
@@ -101,7 +100,7 @@ delQuat = [1;
 qNew = QuatMult(quat,delQuat);
 
 % define the velocity update equations
-vNew = [vn;ve;vd] + m_k*[gn;ge;gd]*dt + m_k*Tbn*deltaVelocity;% - cross(2*[omn; ome; omd],[vn;ve;vd])*dt;
+vNew = [vn;ve;vd] + [gn;ge;gd]*dt + Tbn*deltaVelocity;% - cross(2*[omn; ome; omd],[vn;ve;vd])*dt;
 
 % define the position update equations
 pNew = [pn;pe;pd] + [vn;ve;vd]*dt;

@@ -165,12 +165,13 @@ for lineIndex = 1:length(SymbolicOutput)
 end
 
 %% Replace Divisions
-for lineIndex = 1:length(SymbolicOutput)
-    strIn = char(SymbolicOutput(lineIndex));
-    strIn = regexprep(strIn,'\/2','\*0\.5');
-    strIn = regexprep(strIn,'\/4','\*0\.25');
-    SymbolicOutput(lineIndex) = cellstr(strIn);
-end
+% Compiler looks after this type of optimisation for us
+% for lineIndex = 1:length(SymbolicOutput)
+%     strIn = char(SymbolicOutput(lineIndex));
+%     strIn = regexprep(strIn,'\/2','\*0\.5');
+%     strIn = regexprep(strIn,'\/4','\*0\.25');
+%     SymbolicOutput(lineIndex) = cellstr(strIn);
+% end
 
 %% Convert declarations
 for lineIndex = 1:length(SymbolicOutput)
