@@ -1,18 +1,78 @@
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
+#include "estimator.h"
 
-class Vector3f
-{
-private:
-public:
-    float x;
-    float y;
-    float z;
+// Global variables
+float KH[24][24]; //  intermediate result used for covariance updates
+float KHP[24][24]; // intermediate result used for covariance updates
+float P[24][24]; // covariance matrix
+float Kfusion[24]; // Kalman gains
+float states[24]; // state matrix
+float storedStates[24][50]; // state vectors stored for the last 50 time steps
+uint32_t statetimeStamp[50]; // time stamp for each state vector stored
+Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
+Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
+Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
+Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
+float accNavMag; // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
+Vector3f earthRateNED; // earths angular rate vector in NED (rad/s)
+Vector3f angRate; // angular rate vector in XYZ body axes measured by the IMU (rad/s)
+Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
+Vector3f dVelIMU;
+Vector3f dAngIMU;
+float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
+float dt; // time lapsed since last covariance prediction
+bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
+bool useAirspeed = true; // boolean true if airspeed data is being used
+bool useCompass = true; // boolean true if magnetometer data is being used
+uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
+float innovVelPos[6]; // innovation output
+float varInnovVelPos[6]; // innovation variance output
+bool fuseVelData = false; // this boolean causes the posNE and velNED obs to be fused
+bool fusePosData = false; // this boolean causes the posNE and velNED obs to be fused
+bool fuseHgtData = false; // this boolean causes the hgtMea obs to be fused
+bool fuseMagData = false; // boolean true when magnetometer data is to be fused
 
-    float length(void) const;
-    Vector3f zero(void) const;
-};
+float velNED[3]; // North, East, Down velocity obs (m/s)
+float posNE[2]; // North, East position obs (m)
+float hgtMea; //  measured height (m)
+float posNED[3]; // North, East Down position (m)
+
+float statesAtVelTime[24]; // States at the effective measurement time for posNE and velNED measurements
+float statesAtPosTime[24]; // States at the effective measurement time for posNE and velNED measurements
+float statesAtHgtTime[24]; // States at the effective measurement time for the hgtMea measurement
+float innovMag[3]; // innovation output
+float varInnovMag[3]; // innovation variance output
+Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
+float statesAtMagMeasTime[24]; // filter satates at the effective measurement time
+float innovVtas; // innovation output
+float varInnovVtas; // innovation variance output
+bool fuseVtasData = false; // boolean true when airspeed data is to be fused
+float VtasMeas; // true airspeed measurement (m/s)
+float statesAtVtasMeasTime[24]; // filter states at the effective measurement time
+float latRef; // WGS-84 latitude of reference point (rad)
+float lonRef; // WGS-84 longitude of reference point (rad)
+float hgtRef; // WGS-84 height of reference point (m)
+Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
+float eulerEst[3]; // Euler angles calculated from filter states
+float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
+uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
+
+float ahrsEul[3];
+float ahrsErrorRP;
+float ahrsErrorYaw;
+
+// GPS input data variables
+float gpsCourse;
+float gpsGndSpd;
+float gpsVelD;
+float gpsLat;
+float gpsLon;
+float gpsHgt;
+bool newDataGps;
+uint8_t GPSstatus;
+
+bool statesInitialised = false;
+
 
 float Vector3f::length(void) const
 {
@@ -26,24 +86,6 @@ Vector3f Vector3f::zero(void) const
     ret.y = 0.0;
     ret.z = 0.0;
     return ret;
-}
-
-class Mat3f
-{
-private:
-public:
-    Vector3f x;
-    Vector3f y;
-    Vector3f z;
-
-    Mat3f transpose(void) const;
-};
-
-static void swap_var(float &d1, float &d2)
-{
-    float tmp = d1;
-    d1 = d2;
-    d2 = tmp;
 }
 
 Mat3f Mat3f::transpose(void) const
@@ -115,344 +157,11 @@ Vector3f operator*(float sclIn1, Vector3f vecIn1)
     return vecOut;
 }
 
-void  UpdateStrapdownEquationsNED();
-
-void CovariancePrediction();
-
-void FuseVelposNED();
-
-void FuseMagnetometer();
-
-void FuseAirspeed();
-
-void zeroRows(float covMat[24][24], uint8_t first, uint8_t last);
-
-void zeroCols(float covMat[24][24], uint8_t first, uint8_t last);
-
-float sq(float valIn);
-
-void quatNorm(float quatOut[4], float quatIn[4]);
-
-uint32_t millis();
-
-// store staes along with system time stamp in msces
-void StoreStates();
-
-// recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float statesForFusion[24], uint32_t msec);
-
-void quat2Tnb(Mat3f &Tnb, float quat[4]);
-
-void quat2Tbn(Mat3f &Tbn, float quat[4]);
-
-void calcEarthRateNED(Vector3f &omega, float latitude);
-
-void eul2quat(float quat[4], float eul[3]);
-
-void quat2eul(float eul[3],float quat[4]);
-
-void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
-
-void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
-
-void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
-
-void OnGroundCheck();
-
-void CovarianceInit();
-
-void readIMUData();
-
-void readGpsData();
-
-void readMagData();
-
-void readAirSpdData();
-
-void readAhrsData();
-
-void readTimingData();
-
-void InitialiseFilter();
-
-void WriteFilterOutput();
-
-void CloseFiles();
-
-// Global variables
-#define GRAVITY_MSS 9.80665f
-#define deg2rad 0.017453292f
-#define rad2deg 57.295780f
-#define pi 3.141592657f
-#define earthRate 0.000072921f
-#define earthRadius 6378145.0f
-#define earthRadiusInv  1.5678540e-7f
-float KH[24][24]; //  intermediate result used for covariance updates
-float KHP[24][24]; // intermediate result used for covariance updates
-static float P[24][24]; // covariance matrix
-float Kfusion[24]; // Kalman gains
-static float states[24]; // state matrix
-static float storedStates[24][50]; // state vectors stored for the last 50 time steps
-uint32_t statetimeStamp[50]; // time stamp for each state vector stored
-Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
-Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
-Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
-Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
-float accNavMag; // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
-Vector3f earthRateNED; // earths angular rate vector in NED (rad/s)
-Vector3f angRate; // angular rate vector in XYZ body axes measured by the IMU (rad/s)
-Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
-Vector3f dVelIMU;
-Vector3f dAngIMU;
-float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
-float dt; // time lapsed since last covariance prediction
-bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
-bool useAirspeed = true; // boolean true if airspeed data is being used
-bool useCompass = true; // boolean true if magnetometer data is being used
-uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
-float innovVelPos[6]; // innovation output
-float varInnovVelPos[6]; // innovation variance output
-bool fuseVelData = false; // this boolean causes the posNE and velNED obs to be fused
-bool fusePosData = false; // this boolean causes the posNE and velNED obs to be fused
-bool fuseHgtData = false; // this boolean causes the hgtMea obs to be fused
-float velNED[3]; // North, East, Down velocity obs (m/s)
-float posNE[2]; // North, East position obs (m)
-float hgtMea; //  measured height (m)
-float posNED[3]; // North, East Down position (m)
-float statesAtVelTime[24]; // States at the effective measurement time for posNE and velNED measurements
-float statesAtPosTime[24]; // States at the effective measurement time for posNE and velNED measurements
-float statesAtHgtTime[24]; // States at the effective measurement time for the hgtMea measurement
-float innovMag[3]; // innovation output
-float varInnovMag[3]; // innovation variance output
-bool fuseMagData = false; // boolean true when magnetometer data is to be fused
-Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
-float statesAtMagMeasTime[24]; // filter satates at the effective measurement time
-float innovVtas; // innovation output
-float varInnovVtas; // innovation variance output
-bool fuseVtasData = false; // boolean true when airspeed data is to be fused
-float VtasMeas; // true airspeed measurement (m/s)
-float statesAtVtasMeasTime[24]; // filter states at the effective measurement time
-float latRef; // WGS-84 latitude of reference point (rad)
-float lonRef; // WGS-84 longitude of reference point (rad)
-float hgtRef; // WGS-84 height of reference point (m)
-Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
-float eulerEst[3]; // Euler angles calculated from filter states
-float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
-uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
-const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
-const float covDelAngMax = 0.05f; // maximum delta angle between covariance predictions
-float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
-bool endOfData = false; //boolean set to true when all files have returned data
-
-// Estimated time delays (msec)
-uint32_t msecVelDelay = 230;
-uint32_t msecPosDelay = 210;
-uint32_t msecHgtDelay = 350;
-uint32_t msecMagDelay = 30;
-uint32_t msecTasDelay = 210;
-
-// IMU input data variables
-float imuIn;
-float tempImu[8];
-float IMUtimestamp;
-static uint32_t IMUmsec = 0;
-
-// GPS input data variables
-float gpsCourse;
-float gpsGndSpd;
-float gpsVelD;
-float gpsLat;
-float gpsLon;
-float gpsHgt;
-bool newDataGps;
-uint8_t GPSstatus;
-
-// Magnetometer input data variables
-float magIn;
-float tempMag[8];
-float tempMagPrev[8];
-float MAGtimestamp = 0;
-uint32_t MAGmsec = 0;
-uint32_t lastMAGmsec = 0;
-bool newDataMag = false;
-
-// AHRS input data variables
-float ahrsIn;
-float tempAhrs[7];
-float tempAhrsPrev[7];
-float AHRStimestamp = 0;
-uint32_t AHRSmsec = 0;
-uint32_t lastAHRStime = 0;
-float ahrsEul[3];
-float ahrsErrorRP;
-float ahrsErrorYaw;
-
-// ADS input data variables
-float adsIn;
-float tempAds[10];
-float tempAdsPrev[10];
-float ADStimestamp = 0;
-uint32_t ADSmsec = 0;
-uint32_t lastADSmsec = 0;
-float Veas;
-bool newAdsData = false;
-
-// input data timing
-uint32_t msecAlignTime;
-uint32_t msecStartTime;
-uint32_t msecEndTime;
-
-// Data file identifiers
-FILE * pImuFile;
-FILE * pMagFile;
-FILE * pGpsFile;
-FILE * pAhrsFile;
-FILE * pAdsFile;
-FILE * pStateOutFile;
-FILE * pEulOutFile;
-FILE * pCovOutFile;
-FILE * pRefPosVelOutFile;
-FILE * pVelPosFuseFile;
-FILE * pMagFuseFile;
-FILE * pTasFuseFile;
-FILE * pTimeFile;
-
-bool statesInitialised = false;
-
-int main()
+void swap_var(float &d1, float &d2)
 {
-
-    // open data files
-    pImuFile = fopen ("IMU.txt","r");
-    pMagFile = fopen ("MAG.txt","r");
-    pGpsFile = fopen ("GPS.txt","r");
-    pAhrsFile = fopen ("ATT.txt","r");
-    pAdsFile = fopen ("NTUN.txt","r");
-    pTimeFile = fopen ("timing.txt","r");
-    pStateOutFile = fopen ("StateDataOut.txt","w");
-    pEulOutFile = fopen ("EulDataOut.txt","w");
-    pCovOutFile = fopen ("CovDataOut.txt","w");
-    pRefPosVelOutFile = fopen ("RefVelPosDataOut.txt","w");
-    pVelPosFuseFile = fopen ("VelPosFuse.txt","w");
-    pMagFuseFile = fopen ("MagFuse.txt","w");
-    pTasFuseFile = fopen ("TasFuse.txt","w");
-
-    // read test data from files for first timestamp
-    readIMUData();
-    readGpsData();
-    readMagData();
-    readAirSpdData();
-    readAhrsData();
-    readTimingData();
-
-    while (!endOfData)
-    {
-        if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
-        {
-            // Initialise states, covariance and other data
-            if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
-            {
-                InitialiseFilter();
-            }
-
-            // If valid IMU data and states initialised, predict states and covariances
-            if (statesInitialised)
-            {
-                // Run the strapdown INS equations every IMU update
-                UpdateStrapdownEquationsNED();
-                // debug code - could be tunred into a filter mnitoring/watchdog function
-                float tempQuat[4];
-                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
-                quat2eul(eulerEst, tempQuat);
-                for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
-                if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
-                if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
-                // store the predicted states for subsequent use by measurement fusion
-                StoreStates();
-                // Check if on ground - status is used by covariance prediction
-                OnGroundCheck();
-                // sum delta angles and time used by covariance prediction
-                summedDelAng = summedDelAng + correctedDelAng;
-                summedDelVel = summedDelVel + correctedDelVel;
-                dt += dtIMU;
-                // perform a covariance prediction if the total delta angle has exceeded the limit
-                // or the time limit will be exceeded at the next IMU update
-                if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
-                {
-                    CovariancePrediction();
-                    summedDelAng = summedDelAng.zero();
-                    summedDelVel = summedDelVel.zero();
-                    dt = 0.0f;
-                }
-            }
-
-            // Fuse GPS Measurements
-            if (newDataGps && statesInitialised)
-            {
-                // Convert GPS measurements to Pos NE, hgt and Vel NED
-                calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
-                calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
-                posNE[0] = posNED[0];
-                posNE[1] = posNED[1];
-                hgtMea =  -posNED[2];
-                // set fusion flags
-                fuseVelData = true;
-                fusePosData = true;
-                fuseHgtData = true;
-                // recall states stored at time of measurement after adjusting for delays
-                RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
-                RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
-                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
-                // run the fusion step
-                FuseVelposNED();
-            }
-            else
-            {
-                fuseVelData = false;
-                fusePosData = false;
-                fuseHgtData = false;
-            }
-
-            // Fuse Magnetometer Measurements
-            if (newDataMag && statesInitialised)
-            {
-                fuseMagData = true;
-                RecallStates(statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
-            }
-            else
-            {
-                fuseMagData = false;
-            }
-            if (statesInitialised) FuseMagnetometer();
-
-            // Fuse Airspeed Measurements
-            if (newAdsData && statesInitialised && VtasMeas > 8.0f)
-            {
-                fuseVtasData = true;
-                RecallStates(statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
-                FuseAirspeed();
-            }
-            else
-            {
-                fuseVtasData = false;
-            }
-
-            // debug output
-            //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-            WriteFilterOutput();
-        }
-        // read test data from files for next timestamp
-        readIMUData();
-        readGpsData();
-        readMagData();
-        readAirSpdData();
-        readAhrsData();
-        if (IMUmsec > msecEndTime)
-        {
-            CloseFiles();
-            endOfData = true;
-        }
-    }
+    float tmp = d1;
+    d1 = d2;
+    d2 = tmp;
 }
 
 void  UpdateStrapdownEquationsNED()
@@ -2023,11 +1732,6 @@ void FuseAirspeed()
     }
 }
 
-uint32_t millis()
-{
-    return IMUmsec;
-}
-
 void zeroRows(float covMat[24][24], uint8_t first, uint8_t last)
 {
     uint8_t row;
@@ -2221,169 +1925,6 @@ void CovarianceInit()
     P[23][23] = P[21][21];
 }
 
-void readIMUData()
-{
-    static Vector3f lastAngRate;
-    static Vector3f lastAccel;
-    for (uint8_t j=0; j<=7; j++)
-    {
-        if (fscanf(pImuFile, "%f", &imuIn) != EOF) tempImu[j] = imuIn;
-        else endOfData = true;
-    }
-    if (!endOfData)
-    {
-        IMUtimestamp  = tempImu[0];
-        dtIMU     = 0.001f*(tempImu[1] - IMUmsec);
-        IMUmsec   = tempImu[1];
-        angRate.x = tempImu[2];
-        angRate.y = tempImu[3];
-        angRate.z = tempImu[4];
-        accel.x   = tempImu[5];
-        accel.y   = tempImu[6];
-        accel.z   = tempImu[7];
-        dAngIMU = 0.5f*(angRate + lastAngRate)*dtIMU;
-        lastAngRate = angRate;
-        dVelIMU = 0.5f*(accel + lastAccel)*dtIMU;
-        lastAccel = accel;
-    }
-}
-
-void readGpsData()
-{
-    // wind data forward to one update past current IMU data time
-    // and then take data from previous update
-
-    float gpsIn;
-
-    static uint32_t GPSmsec = 0;
-    static uint32_t lastGPSmsec = 0;
-    static float tempGps[14];
-    static float tempGpsPrev[14];
-    static float GPStimestamp = 0;
-
-    while (GPStimestamp <= IMUtimestamp)
-    {
-        for (uint8_t j=0; j<=13; j++)
-        {
-            tempGpsPrev[j] = tempGps[j];
-            if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) tempGps[j] = gpsIn;
-            else endOfData = true;
-        }
-        if (!endOfData && (tempGps[1] == 3))
-        {
-            GPStimestamp  = tempGps[0];
-            GPSmsec = tempGpsPrev[2];
-            GPSstatus = tempGpsPrev[1];
-            gpsCourse = deg2rad*tempGpsPrev[11];
-            gpsGndSpd = tempGpsPrev[10];
-            gpsVelD = tempGpsPrev[12];
-            gpsLat = deg2rad*tempGpsPrev[6];
-            gpsLon = deg2rad*tempGpsPrev[7] - pi;
-            gpsHgt = tempGpsPrev[8];
-        }
-    }
-    if (GPSmsec > lastGPSmsec)
-    {
-        lastGPSmsec = GPSmsec;
-        newDataGps = true;
-    }
-    else
-    {
-        newDataGps = false;
-    }
-}
-
-void readMagData()
-{
-    // wind data forward to one update past current IMU data time
-    // and then take data from previous update
-    while (MAGtimestamp <= IMUtimestamp)
-    {
-        for (uint8_t j=0; j<=7; j++)
-        {
-            tempMagPrev[j] = tempMag[j];
-            if (fscanf(pMagFile, "%f", &magIn) != EOF) tempMag[j] = magIn;
-            else endOfData = true;
-        }
-        if (!endOfData)
-        {
-            MAGtimestamp  = tempMag[0];
-            MAGmsec = tempMagPrev[1];
-            magData.x =  0.001f*(tempMagPrev[2] - tempMagPrev[5]);
-            magBias.x = -0.001f*tempMagPrev[5];
-            magData.y =  0.001f*(tempMagPrev[3] - tempMagPrev[6]);
-            magBias.y = -0.001f*tempMagPrev[6];
-            magData.z =  0.001f*(tempMagPrev[4] - tempMagPrev[7]);
-            magBias.z = -0.001f*tempMagPrev[7];
-        }
-    }
-    if (MAGmsec > lastMAGmsec)
-    {
-        lastMAGmsec = MAGmsec;
-        newDataMag = true;
-    }
-    else
-    {
-        newDataMag = false;
-    }
-}
-
-void readAirSpdData()
-{
-    // wind data forward to one update past current IMU data time
-    // and then take data from previous update
-    while (ADStimestamp <= IMUtimestamp)
-    {
-        for (uint8_t j=0; j<=9; j++)
-        {
-            tempAdsPrev[j] = tempAds[j];
-            if (fscanf(pAdsFile, "%f", &adsIn) != EOF) tempAds[j] = adsIn;
-            else endOfData = true;
-        }
-        if (!endOfData)
-        {
-            ADStimestamp  = tempAds[0];
-            ADSmsec = tempAdsPrev[1];
-            VtasMeas = EAS2TAS*tempAdsPrev[7];
-        }
-    }
-    if (ADSmsec > lastADSmsec)
-    {
-        lastADSmsec = ADSmsec;
-        newAdsData = true;
-    }
-    else
-    {
-        newAdsData = false;
-    }
-}
-
-void readAhrsData()
-{
-    // wind data forward to one update past current IMU data time
-    // and then take data from previous update
-    while (AHRStimestamp <= IMUtimestamp)
-    {
-        for (uint8_t j=0; j<=6; j++)
-        {
-            tempAhrsPrev[j] = tempAhrs[j];
-            if (fscanf(pAhrsFile, "%f", &ahrsIn) != EOF) tempAhrs[j] = ahrsIn;
-            else endOfData = true;
-        }
-        if (!endOfData != EOF)
-        {
-            AHRStimestamp  = tempAhrs[0];
-            AHRSmsec = tempAhrsPrev[1];
-            for (uint8_t j=0; j<=2; j++)
-            {
-                ahrsEul[j] = deg2rad*tempAhrsPrev[j+2];
-            }
-            ahrsErrorRP = tempAhrs[5];
-            ahrsErrorYaw = tempAhrs[6];
-        }
-    }
-}
-
 void InitialiseFilter()
 {
     // Calculate initial filter quaternion states from ahrs solution
@@ -2441,98 +1982,10 @@ void InitialiseFilter()
     dt = 0.0f;
 }
 
-void WriteFilterOutput()
-{
-    // filter states
-    fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
-    {
-        fprintf(pStateOutFile," %e", states[i]);
-    }
-    fprintf(pStateOutFile,"\n");
-    // Euler angles from filter states, AHRS euler angles and AHRS error RP and error Yaw
-    fprintf(pEulOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=2; i++)
-    {
-        fprintf(pEulOutFile," %e %e", eulerEst[i], ahrsEul[i]);
-    }
-    fprintf(pEulOutFile," %e %e", ahrsErrorRP, ahrsErrorYaw);
-    fprintf(pEulOutFile,"\n");
-    // covariance matrix diagonals
-    fprintf(pCovOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
-    {
-        fprintf(pCovOutFile," %e", P[i][i]);
-    }
-    fprintf(pCovOutFile,"\n");
-    // velocity, position and height observations used by the filter
-    fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
-    fprintf(pRefPosVelOutFile,"\n");
-    // velocity and position innovations and innovation variances
-    fprintf(pVelPosFuseFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=5; i++)
-    {
-        fprintf(pVelPosFuseFile," %e %e", innovVelPos[i], varInnovVelPos[i]);
-    }
-    fprintf(pVelPosFuseFile,"\n");
-    // magnetometer innovations and innovation variances
-    fprintf(pMagFuseFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=2; i++)
-    {
-        fprintf(pMagFuseFile," %e %e", innovMag[i], varInnovMag[i]);
-    }
-    fprintf(pMagFuseFile,"\n");
-    // airspeed innovation and innovation variance
-    fprintf(pTasFuseFile," %e", float(IMUmsec*0.001f));
-    fprintf(pTasFuseFile," %e %e", innovVtas, varInnovVtas);
-    fprintf(pTasFuseFile,"\n");
-
-}
-
 void calcEarthRateNED(Vector3f &omega, float latitude)
 {
     //Define Earth rotation vector in the NED navigation frame
     omega.x  = earthRate*cos(latitude);
     omega.y  = 0.0;
     omega.z  = -earthRate*sin(latitude);
-}
-
-void readTimingData()
-{
-    float timeDataIn;
-    float timeArray[9];
-    for (uint8_t j=0; j<=8; j++)
-    {
-        if (fscanf(pTimeFile, "%f", &timeDataIn) != EOF)
-        {
-            timeArray[j] = timeDataIn;
-        }
-    }
-    msecAlignTime = uint32_t(1000*timeArray[0]);
-    msecStartTime = uint32_t(1000*timeArray[1]);
-    msecEndTime   = uint32_t(1000*timeArray[2]);
-    msecVelDelay  = uint32_t(timeArray[3]);
-    msecPosDelay  = uint32_t(timeArray[4]);
-    msecHgtDelay  = uint32_t(timeArray[5]);
-    msecMagDelay  = uint32_t(timeArray[6]);
-    msecTasDelay  = uint32_t(timeArray[7]);
-    EAS2TAS       = timeArray[8];
-}
-
-void CloseFiles()
-{
-    fclose (pImuFile);
-    fclose (pMagFile);
-    fclose (pGpsFile);
-    fclose (pAhrsFile);
-    fclose (pAdsFile);
-    fclose (pStateOutFile);
-    fclose (pEulOutFile);
-    fclose (pCovOutFile);
-    fclose (pRefPosVelOutFile);
-    fclose (pVelPosFuseFile);
-    fclose (pMagFuseFile);
-    fclose (pTasFuseFile);
-    fclose (pTimeFile);
 }
