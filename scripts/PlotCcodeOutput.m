@@ -33,20 +33,20 @@ for i = 1:length(EulDataOut)
 end
 figure;
 subplot(3,1,1);
-plot(EulDataOut(:,1),EulDataOut(:,2:3)*rad2deg);
+plot(EulDataOut(:,1),[EulDataOut(:,3),EulDataOut(:,2)]*rad2deg);
 xlim([xmin,xmax]);
 grid on;
 ylim([-200 200]);
 xlabel('time (sec)');ylabel('roll (deg)');
 title('Euler Angle Estimates');
 subplot(3,1,2);
-plot(EulDataOut(:,1),EulDataOut(:,4:5)*rad2deg);
+plot(EulDataOut(:,1),[EulDataOut(:,5),EulDataOut(:,4)]*rad2deg);
 xlim([xmin,xmax]);
 grid on;
 ylim([-200 200]);
 xlabel('time (sec)');ylabel('pitch (deg)');
 subplot(3,1,3);
-plot(EulDataOut(:,1),EulDataOut(:,6:7)*rad2deg);
+plot(EulDataOut(:,1),[EulDataOut(:,7),EulDataOut(:,6)]*rad2deg);
 xlim([xmin,xmax]);
 grid on;
 ylim([-200 200]);

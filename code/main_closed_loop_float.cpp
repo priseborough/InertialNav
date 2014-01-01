@@ -623,6 +623,7 @@ void CovariancePrediction()
     float nextP[24][24];
 
     // calculate covariance prediction process noise
+    const float yawVarScale = 10.0f;
     windVelSigma = dt*0.1f;
     dAngBiasSigma = dt*5.0e-7f;
     dVelBiasSigma = dt*1.0e-4f;
@@ -630,6 +631,7 @@ void CovariancePrediction()
     magBodySigma  = dt*1.5e-4f;
     for (uint8_t i= 0; i<=9; i++) processNoise[i]  = 1.0e-9f;
     for (uint8_t i=10; i<=12; i++) processNoise[i] = dAngBiasSigma;
+    if (onGround) processNoise[12] = dAngBiasSigma * yawVarScale;
     for (uint8_t i=13; i<=15; i++) processNoise[i] = dVelBiasSigma;
     for (uint8_t i=16; i<=17; i++) processNoise[i] = windVelSigma;
     for (uint8_t i=18; i<=20; i++) processNoise[i] = magEarthSigma;
@@ -656,6 +658,7 @@ void CovariancePrediction()
     daxCov = sq(dt*1.4544411e-2f);
     dayCov = sq(dt*1.4544411e-2f);
     dazCov = sq(dt*1.4544411e-2f);
+    if (onGround) dazCov = dazCov * sq(yawVarScale);
     dvxCov = sq(dt*0.5f);
     dvyCov = sq(dt*0.5f);
     dvzCov = sq(dt*0.5);
@@ -1300,30 +1303,16 @@ void CovariancePrediction()
         nextP[i][i] = nextP[i][i] + processNoise[i];
     }
 
-    // If on ground, inhibit accelerometer bias, wind  and magnetic field state updates by
-    // setting the corresponding covariance terms to zero
-    // This is a quick hack - for efficiency should really not calculate terms above when this condition is true
-    if (onGround)
-    {
-        zeroRows(nextP,13,15);
-        zeroCols(nextP,13,15);
-        zeroRows(nextP,16,17);
-        zeroCols(nextP,16,17);
-        zeroRows(nextP,18,23);
-        zeroCols(nextP,18,23);
-    }
     // If on ground, inhibit accelerometer bias updates by setting the coresponding
-    // covariance terms to zero. To be efficient, the corresponding terms should
-    // also not be calculated above
+    // covariance terms to zero.
     if (onGround)
     {
         zeroRows(nextP,13,15);
         zeroCols(nextP,13,15);
     }
 
-    // If on ground or no magnnextP[i][j] + nextP[j][i]etometer fitted, inhibit magnetometer bias updates by
-    // setting the coresponding covariance terms to zero. To be efficient, the
-    // corresponding terms should also not be calculated above
+    // If on ground or no magnetometer fitted, inhibit magnetometer bias updates by
+    // setting the coresponding covariance terms to zero.
     if (onGround || !useCompass)
     {
         zeroRows(nextP,18,23);
@@ -1331,8 +1320,7 @@ void CovariancePrediction()
     }
 
     // If on ground or not using airspeed sensing, inhibit wind velocity
-    // covariance growth. To be efficient, the corresponding terms should also
-    // not be calculated above
+    // covariance growth.
     if (onGround || !useAirspeed)
     {
         zeroRows(nextP,16,17);
@@ -1395,6 +1383,7 @@ void FuseVelposNED()
     bool fuseData[6] = {false,false,false,false,false,false};
     uint8_t stateIndex;
     uint8_t obsIndex;
+    uint8_t indexLimit;
 
 // declare variables used by state and covariance update calculations
     float velErr;
@@ -1518,6 +1507,15 @@ void FuseVelposNED()
         {
             fuseData[5] = true;
         }
+        // Limit range of states modified when on ground
+        if(!onGround)
+        {
+            indexLimit = 23;
+        }
+        else
+        {
+            indexLimit = 12;
+        }
         // Fuse measurements sequentially
         for (obsIndex=0; obsIndex<=5; obsIndex++)
         {
@@ -1542,14 +1540,12 @@ void FuseVelposNED()
                 // Calculate innovation variances - also used for data logging
                 varInnovVelPos[obsIndex] = P[stateIndex][stateIndex] + R_OBS[obsIndex];
                 SK = 1.0/varInnovVelPos[obsIndex];
-                // Check the innovation for consistency and don't fuse if > TBD Sigma
-                // Currently disabled for testing
-                for (uint8_t i= 0; i<=23; i++)
+                for (uint8_t i= 0; i<=indexLimit; i++)
                 {
                     Kfusion[i] = P[i][stateIndex]*SK;
                 }
                 // Calculate state corrections and re-normalise the quaternions
-                for (uint8_t i = 0; i<=23; i++)
+                for (uint8_t i = 0; i<=indexLimit; i++)
                 {
                     states[i] = states[i] - Kfusion[i] * innovVelPos[obsIndex];
                 }
@@ -1564,16 +1560,16 @@ void FuseVelposNED()
                 // Update the covariance - take advantage of direct observation of a
                 // single state at index = stateIndex to reduce computations
                 // Optimised implementation of standard equation P = (I - K*H)*P;
-                for (uint8_t i= 0; i<=23; i++)
+                for (uint8_t i= 0; i<=indexLimit; i++)
                 {
-                    for (uint8_t j= 0; j<=23; j++)
+                    for (uint8_t j= 0; j<=indexLimit; j++)
                     {
                         KHP[i][j] = Kfusion[i] * P[stateIndex][j];
                     }
                 }
-                for (uint8_t i= 0; i<=23; i++)
+                for (uint8_t i= 0; i<=indexLimit; i++)
                 {
-                    for (uint8_t j= 0; j<=23; j++)
+                    for (uint8_t j= 0; j<=indexLimit; j++)
                     {
                         P[i][j] = P[i][j] - KHP[i][j];
                     }
@@ -1597,6 +1593,7 @@ void FuseMagnetometer()
     static float magYbias = 0.0;
     static float magZbias = 0.0;
     static uint8_t obsIndex;
+    uint8_t indexLimit;
     float DCM[3][3] =
     {
         {1.0,0.0,0.0} ,
@@ -1619,6 +1616,15 @@ void FuseMagnetometer()
 // associated with sequential fusion
     if (useCompass && (fuseMagData || obsIndex == 1 || obsIndex == 2))
     {
+        // Limit range of states modified when on ground
+        if(!onGround)
+        {
+            indexLimit = 23;
+        }
+        else
+        {
+            indexLimit = 12;
+        }
 
         // Sequential fusion of XYZ components to spread processing load across
         // three prediction time steps.
@@ -1818,7 +1824,7 @@ void FuseMagnetometer()
         if ((innovMag[obsIndex]*innovMag[obsIndex]/varInnovMag[obsIndex]) < 25.0)
         {
             // correct the state vector
-            for (uint8_t j= 0; j<=23; j++)
+            for (uint8_t j= 0; j<=indexLimit; j++)
             {
                 states[j] = states[j] - Kfusion[j] * innovMag[obsIndex];
             }
@@ -1835,43 +1841,56 @@ void FuseMagnetometer()
             // correct the covariance P = (I - K*H)*P
             // take advantage of the empty columns in KH to reduce the
             // number of operations
-            for (uint8_t i = 0; i<=23; i++)
+            for (uint8_t i = 0; i<=indexLimit; i++)
             {
                 for (uint8_t j = 0; j<=3; j++)
                 {
                     KH[i][j] = Kfusion[i] * H_MAG[j];
                 }
-                for (uint8_t j = 4; j<=17; j++) KH[i][j] = 0.0;
-                for (uint8_t j = 18; j<=23; j++)
+                for (uint8_t j = 4; j<=17; j++) KH[i][j] = 0.0f;
+                if (!onGround)
                 {
-                    KH[i][j] = Kfusion[i] * H_MAG[j];
+                    for (uint8_t j = 18; j<=23; j++)
+                    {
+                        KH[i][j] = Kfusion[i] * H_MAG[j];
+                    }
+                }
+                else
+                {
+                    for (uint8_t j = 18; j<=23; j++)
+                    {
+                        KH[i][j] = 0.0f;
+                    }
                 }
             }
-            for (uint8_t i = 0; i<=23; i++)
+            for (uint8_t i = 0; i<=indexLimit; i++)
             {
-                for (uint8_t j = 0; j<=23; j++)
+                for (uint8_t j = 0; j<=indexLimit; j++)
                 {
-                    KHP[i][j] = 0.0;
+                    KHP[i][j] = 0.0f;
                     for (uint8_t k = 0; k<=3; k++)
                     {
                         KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
-                    for (uint8_t k = 18; k<=23; k++)
+                    if (!onGround)
                     {
-                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
+                        for (uint8_t k = 18; k<=23; k++)
+                        {
+                            KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
+                        }
                     }
                 }
             }
-            for (uint8_t i = 0; i<=23; i++)
+        }
+        for (uint8_t i = 0; i<=indexLimit; i++)
+        {
+            for (uint8_t j = 0; j<=indexLimit; j++)
             {
-                for (uint8_t j = 0; j<=23; j++)
-                {
-                    P[i][j] = P[i][j] - KHP[i][j];
-                }
+                P[i][j] = P[i][j] - KHP[i][j];
             }
         }
-        obsIndex = obsIndex + 1;
     }
+    obsIndex = obsIndex + 1;
 }
 
 void FuseAirspeed()
@@ -2296,7 +2315,7 @@ void readMagData()
             magBias.y = -0.001f*tempMagPrev[6];
             magData.z =  0.001f*(tempMagPrev[4] - tempMagPrev[7]);
             magBias.z = -0.001f*tempMagPrev[7];
-         }
+        }
     }
     if (MAGmsec > lastMAGmsec)
     {
