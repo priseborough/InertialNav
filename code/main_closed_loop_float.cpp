@@ -126,13 +126,13 @@ int main()
             {
                 // Run the strapdown INS equations every IMU update
                 UpdateStrapdownEquationsNED();
-                // // debug code - could be tunred into a filter mnitoring/watchdog function
-                // float tempQuat[4];
-                // for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
-                // quat2eul(eulerEst, tempQuat);
-                // for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
-                // if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
-                // if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+                // debug code - could be tunred into a filter mnitoring/watchdog function
+                float tempQuat[4];
+                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+                quat2eul(eulerEst, tempQuat);
+                for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
+                if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
+                if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
                 // store the predicted states for subsequent use by measurement fusion
                 StoreStates();
                 // Check if on ground - status is used by covariance prediction
