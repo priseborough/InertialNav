@@ -52,8 +52,6 @@ float latRef; // WGS-84 latitude of reference point (rad)
 float lonRef; // WGS-84 longitude of reference point (rad)
 float hgtRef; // WGS-84 height of reference point (m)
 Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
-float eulerEst[3]; // Euler angles calculated from filter states
-float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
 uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
 

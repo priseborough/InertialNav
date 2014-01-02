@@ -54,6 +54,8 @@ uint32_t lastAHRStime = 0;
 float ahrsEul[3];
 float ahrsErrorRP;
 float ahrsErrorYaw;
+float eulerEst[3]; // Euler angles calculated from filter states
+float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
 
 // ADS input data variables
 float adsIn;
