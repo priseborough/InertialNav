@@ -107,10 +107,6 @@ extern float eulerDif[3]; // difference between Euler angle estimated by EKF and
 extern uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 extern float EAS2TAS; // ratio f true to equivalent airspeed
 
-extern float ahrsEul[3];
-extern float ahrsErrorRP;
-extern float ahrsErrorYaw;
-
 // GPS input data variables
 extern float gpsCourse;
 extern float gpsGndSpd;

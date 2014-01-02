@@ -57,10 +57,6 @@ float eulerDif[3]; // difference between Euler angle estimated by EKF and the AH
 uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
 
-float ahrsEul[3];
-float ahrsErrorRP;
-float ahrsErrorYaw;
-
 // GPS input data variables
 float gpsCourse;
 float gpsGndSpd;
@@ -1925,21 +1921,55 @@ void CovarianceInit()
     P[23][23] = P[21][21];
 }
 
+void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat)
+{
+    float initialRoll, initialPitch;
+    float cosRoll, sinRoll, cosPitch, sinPitch;
+    float magX, magY;
+    float initialHdg, cosHeading, sinHeading;
+
+    initialRoll = atan2(-ay, -az);
+    initialPitch = atan2(ax, -az);
+
+    cosRoll = cosf(initialRoll);
+    sinRoll = sinf(initialRoll);
+    cosPitch = cosf(initialPitch);
+    sinPitch = sinf(initialPitch);
+
+    magX = mx * cosPitch + my * sinRoll * sinPitch + mz * cosRoll * sinPitch;
+
+    magY = my * cosRoll - mz * sinRoll;
+
+    initialHdg = atan2f(-magY, magX);
+
+    cosRoll = cosf(initialRoll * 0.5f);
+    sinRoll = sinf(initialRoll * 0.5f);
+
+    cosPitch = cosf(initialPitch * 0.5f);
+    sinPitch = sinf(initialPitch * 0.5f);
+
+    cosHeading = cosf(initialHdg * 0.5f);
+    sinHeading = sinf(initialHdg * 0.5f);
+
+    initQuat[0] = cosRoll * cosPitch * cosHeading + sinRoll * sinPitch * sinHeading;
+    initQuat[1] = sinRoll * cosPitch * cosHeading - cosRoll * sinPitch * sinHeading;
+    initQuat[2] = cosRoll * sinPitch * cosHeading + sinRoll * cosPitch * sinHeading;
+    initQuat[3] = cosRoll * cosPitch * sinHeading - sinRoll * sinPitch * cosHeading;
+}
+
 void InitialiseFilter()
 {
-    // Calculate initial filter quaternion states from ahrs solution
+    // Calculate initial filter quaternion states from raw measurements
     float initQuat[4];
-    eul2quat(initQuat, ahrsEul);
-
-
+    Vector3f initMagXYZ;
+    initMagXYZ   = magData - magBias;
+    AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, initQuat);
 
     // Calculate initial Tbn matrix and rotate Mag measurements into NED
     // to set initial NED magnetic field states
     Mat3f DCM;
     quat2Tbn(DCM, initQuat);
     Vector3f initMagNED;
-    Vector3f initMagXYZ;
-    initMagXYZ   = magData - magBias;
     initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
     initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
     initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;

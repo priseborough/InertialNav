@@ -51,6 +51,9 @@ float tempAhrsPrev[7];
 float AHRStimestamp = 0;
 uint32_t AHRSmsec = 0;
 uint32_t lastAHRStime = 0;
+float ahrsEul[3];
+float ahrsErrorRP;
+float ahrsErrorYaw;
 
 // ADS input data variables
 float adsIn;
