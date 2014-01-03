@@ -1,12 +1,25 @@
 %% Load data
 close all;
-importfile('StateDataOut.txt');
-importfile('EulDataOut.txt');
-importfile('CovDataOut.txt');
-importfile('RefVelPosDataOut.txt');
-importfile('VelPosFuse.txt');
-importfile('MagFuse.txt');
-importfile('TasFuse.txt');
+clear all;
+StateDataOut = load('StateDataOut.txt');
+EulDataOut = load('EulDataOut.txt');
+CovDataOut = load('CovDataOut.txt');
+RefVelPosDataOut = load('RefVelPosDataOut.txt');
+VelPosFuse = load('VelPosFuse.txt');
+MagFuse = load('MagFuse.txt');
+TasFuse = load('TasFuse.txt');
+
+gpsraw_available = 0;
+
+if exist('GPSrawOut.txt', 'file') == 2
+    GPSraw = load('GPSrawOut.txt');
+    gpsraw_available = 1;
+else
+    % Fake zero data in case people do not check
+    % if the data is available - compatibility
+    GPSraw = zeros(size(RefVelPosDataOut, 1), 7);
+end
+
 
 xmin = max([StateDataOut(1,1),EulDataOut(1,1),CovDataOut(1,1),RefVelPosDataOut(1,1),VelPosFuse(1,1),MagFuse(1,1),TasFuse(1,1)]);
 xmax = min([max(StateDataOut(:,1)),max(EulDataOut(:,1)),max(CovDataOut(:,1)),max(RefVelPosDataOut(:,1)),max(VelPosFuse(:,1)),max(MagFuse(:,1)),max(TasFuse(:,1))]);
@@ -33,20 +46,29 @@ for i = 1:length(EulDataOut)
 end
 figure;
 subplot(3,1,1);
-plot(EulDataOut(:,1),[EulDataOut(:,3),EulDataOut(:,2)]*rad2deg);
+plot(EulDataOut(:,1),EulDataOut(:,2)*rad2deg, 'b');
+hold on;
+plot(EulDataOut(:,1),EulDataOut(:,3)*rad2deg, 'r');
+legend('Proposed', 'Onboard');
 xlim([xmin,xmax]);
 grid on;
-ylim([-200 200]);
+ylim([-100 100]);
 xlabel('time (sec)');ylabel('roll (deg)');
 title('Euler Angle Estimates');
 subplot(3,1,2);
-plot(EulDataOut(:,1),[EulDataOut(:,5),EulDataOut(:,4)]*rad2deg);
+plot(EulDataOut(:,1),EulDataOut(:,4)*rad2deg, 'b');
+hold on;
+plot(EulDataOut(:,1),EulDataOut(:,5)*rad2deg, 'r');
+legend('Proposed', 'Onboard');
 xlim([xmin,xmax]);
 grid on;
-ylim([-200 200]);
+ylim([-100 100]);
 xlabel('time (sec)');ylabel('pitch (deg)');
 subplot(3,1,3);
-plot(EulDataOut(:,1),[EulDataOut(:,7),EulDataOut(:,6)]*rad2deg);
+plot(EulDataOut(:,1),EulDataOut(:,6)*rad2deg, 'b');
+hold on;
+plot(EulDataOut(:,1),EulDataOut(:,7)*rad2deg, 'r');
+legend('Proposed', 'Onboard');
 xlim([xmin,xmax]);
 grid on;
 ylim([-200 200]);
@@ -62,26 +84,56 @@ plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,2),'r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,6),'b');
+if gpsraw_available
+    hold on;
+    plot(GPSraw(:,1),GPSraw(:,5),'g');
+end
 hold off;
 grid on;
 xlabel('time (sec)');ylabel('North Velocity (m/s)');
 title('NED Velocity Estimates');
+if gpsraw_available
+    legend('Onboard', 'Proposed', 'GPS raw');
+else
+    legend('Onboard', 'Proposed');
+end
+
 subplot(3,1,2);
 plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,3),'r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,7),'b');
+if gpsraw_available
+    hold on;
+    plot(GPSraw(:,1),GPSraw(:,6),'g');
+end
 hold off;
 grid on;
 xlabel('time (sec)');ylabel('East Velocity (m/s)');
+if gpsraw_available
+    legend('Onboard', 'Proposed', 'GPS raw');
+else
+    legend('Onboard', 'Proposed');
+end
+
 subplot(3,1,3);
 plot(RefVelPosDataOut(:,1),RefVelPosDataOut(:,4),'r');
 xlim([xmin,xmax]);
 hold on;
 plot(StateDataOut(:,1),StateDataOut(:,8),'b');
+if gpsraw_available
+    hold on;
+    plot(GPSraw(:,1),GPSraw(:,7),'g');
+end
 hold off;
 grid on;
 xlabel('time (sec)');ylabel('Down Velocity (m/s)');
+if gpsraw_available
+    legend('Onboard', 'Proposed', 'GPS raw');
+else
+    legend('Onboard', 'Proposed');
+end
+
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6])
 saveas(gcf,strcat(dirName,fileName,'.fig')); 
 print(gcf, '-djpeg', strcat(dirName,fileName,'.jpg'), '-r200');
