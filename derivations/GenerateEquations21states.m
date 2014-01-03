@@ -78,12 +78,6 @@ Tbn = Quat2Tbn([q0,q1,q2,q3]);
 % deltaAngle = da - da_b + 1/12*cross(da_prev,da) - transpose(Cbn)*([omn; ome; omd])*dt;
 deltaAngle = da - da_b;
 
-% define the bias corrected delta velocity
-% Ignore sculling as this effect is negligible in terms of covariance growth 
-% compared to other effects for our grade of sensor
-% deltaVelocity = dv - dv_b + 0.5*cross(da,dv) + 1/12*(cross(da_prev,dv) + cross(dv_prev,da));
-deltaVelocity = dv;
-
 % define the quaternion rotation vector
 quat = [q0;q1;q2;q3];
 
@@ -99,7 +93,7 @@ qNew = QuatMult(quat,delQuat);
 
 % define the velocity update equations
 % ignore coriolis terms for linearisation purposes
-vNew = [vn;ve;vd] + [gn;ge;gd]*dt + Tbn*deltaVelocity;% - cross(2*[omn; ome; omd],[vn;ve;vd])*dt;
+vNew = [vn;ve;vd] + [gn;ge;gd]*dt + Tbn*dv;% - cross(2*[omn; ome; omd],[vn;ve;vd])*dt;
 
 % define the position update equations
 pNew = [pn;pe;pd] + [vn;ve;vd]*dt;
