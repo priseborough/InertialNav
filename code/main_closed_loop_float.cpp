@@ -51,6 +51,11 @@ float tempAhrsPrev[7];
 float AHRStimestamp = 0;
 uint32_t AHRSmsec = 0;
 uint32_t lastAHRStime = 0;
+float ahrsEul[3];
+float ahrsErrorRP;
+float ahrsErrorYaw;
+float eulerEst[3]; // Euler angles calculated from filter states
+float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
 
 // ADS input data variables
 float adsIn;
@@ -123,13 +128,13 @@ int main()
             {
                 // Run the strapdown INS equations every IMU update
                 UpdateStrapdownEquationsNED();
-                // // debug code - could be tunred into a filter mnitoring/watchdog function
-                // float tempQuat[4];
-                // for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
-                // quat2eul(eulerEst, tempQuat);
-                // for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
-                // if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
-                // if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+                // debug code - could be tunred into a filter mnitoring/watchdog function
+                float tempQuat[4];
+                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+                quat2eul(eulerEst, tempQuat);
+                for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
+                if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
+                if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
                 // store the predicted states for subsequent use by measurement fusion
                 StoreStates();
                 // Check if on ground - status is used by covariance prediction
