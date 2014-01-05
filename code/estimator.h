@@ -112,7 +112,6 @@ extern float gpsVelD;
 extern float gpsLat;
 extern float gpsLon;
 extern float gpsHgt;
-extern bool newDataGps;
 extern uint8_t GPSstatus;
 
 extern bool statesInitialised;

@@ -68,6 +68,7 @@ uint32_t ADSmsec = 0;
 uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
+bool newDataGps = false;
 
 // input data timing
 uint32_t msecAlignTime;
