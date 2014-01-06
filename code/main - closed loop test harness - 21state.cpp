@@ -167,7 +167,7 @@ void readGpsData();
 
 void readMagData();
 
-void readAirSpdData();
+void readAirData();
 
 void readAhrsData();
 
@@ -179,6 +179,12 @@ void WriteFilterOutput();
 
 void CloseFiles();
 
+void ForceSymmetry();
+
+void ConstrainVariances();
+
+void constrain_float(float var, float varLL, float varUL);
+
 // Global variables
 #define GRAVITY_MSS 9.80665f
 #define deg2rad 0.017453292f
@@ -187,6 +193,7 @@ void CloseFiles();
 #define earthRate 0.000072921f
 #define earthRadius 6378145.0f
 #define earthRadiusInv  1.5678540e-7f
+
 float KH[21][21]; //  intermediate result used for covariance updates
 float KHP[21][21]; // intermediate result used for covariance updates
 static float P[21][21]; // covariance matrix
@@ -294,6 +301,7 @@ float ADStimestamp = 0;
 uint32_t ADSmsec = 0;
 uint32_t lastADSmsec = 0;
 float Veas;
+float baroHgt;
 bool newAdsData = false;
 
 // input data timing
@@ -340,7 +348,7 @@ int main()
     readIMUData();
     readGpsData();
     readMagData();
-    readAirSpdData();
+    readAirData();
     readAhrsData();
     readTimingData();
 
@@ -393,15 +401,12 @@ int main()
                 calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
                 posNE[0] = posNED[0];
                 posNE[1] = posNED[1];
-                hgtMea =  -posNED[2];
-                // set fusion flags
+                 // set fusion flags
                 fuseVelData = true;
                 fusePosData = true;
-                fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
                 RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
                 RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
-                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 FuseVelposNED();
             }
@@ -409,6 +414,20 @@ int main()
             {
                 fuseVelData = false;
                 fusePosData = false;
+            }
+
+            if (newAdsData && statesInitialised)
+            {
+                // Could use a blend of GPS and baro alt data if desired
+                hgtMea = 1.0f*baroHgt + 0.0f*gpsHgt;
+                fuseHgtData = true;
+                // recall states stored at time of measurement after adjusting for delays
+                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                // run the fusion step
+                FuseVelposNED();
+            }
+            else
+            {
                 fuseHgtData = false;
             }
 
@@ -444,7 +463,7 @@ int main()
         readIMUData();
         readGpsData();
         readMagData();
-        readAirSpdData();
+        readAirData();
         readAhrsData();
         if (IMUmsec > msecEndTime)
         {
@@ -619,12 +638,11 @@ void CovariancePrediction()
     float nextP[21][21];
 
     // calculate covariance prediction process noise
-    const float yawVarScale = 10.0f;
+    const float yawVarScale = 1.0f;
     windVelSigma = dt*0.1f;
     dAngBiasSigma = dt*5.0e-7f;
-    dVelBiasSigma = dt*1.0e-4f;
-    magEarthSigma = dt*1.5e-4f;
-    magBodySigma  = dt*1.5e-4f;
+    magEarthSigma = dt*3.0e-4f;
+    magBodySigma  = dt*3.0e-4f;
     for (uint8_t i= 0; i<=9; i++) processNoise[i]  = 1.0e-9f;
     for (uint8_t i=10; i<=12; i++) processNoise[i] = dAngBiasSigma;
     if (onGround) processNoise[12] = dAngBiasSigma * yawVarScale;
@@ -1191,6 +1209,8 @@ void CovariancePrediction()
             P[j][i] = P[i][j];
         }
     }
+
+    //
 }
 
 void FuseVelposNED()
@@ -2099,7 +2119,7 @@ void readGpsData()
             gpsVelD = tempGpsPrev[12];
             gpsLat = deg2rad*tempGpsPrev[6];
             gpsLon = deg2rad*tempGpsPrev[7] - pi;
-            gpsHgt = tempGpsPrev[8];
+            gpsHgt = tempGpsPrev[9];
         }
     }
     if (GPSmsec > lastGPSmsec)
@@ -2148,7 +2168,7 @@ void readMagData()
     }
 }
 
-void readAirSpdData()
+void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
@@ -2165,6 +2185,7 @@ void readAirSpdData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
+            baroHgt = tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -2355,4 +2376,40 @@ void CloseFiles()
     fclose (pMagFuseFile);
     fclose (pTasFuseFile);
     fclose (pTimeFile);
+}
+
+void ForceSymmetry()
+{
+    // Force symmetry on the covariance matrix to prevent ill-conditioning
+    // of the matrix which would cause the filter to blow-up
+    for (uint8_t i=1; i<=20; i++)
+    {
+        for (uint8_t j=0; j<=i-1; j++)
+        {
+            float temp = 0.5f*(P[i][j] + P[j][i]);
+            P[i][j] = temp;
+            P[j][i] = temp;
+        }
+    }
+}
+
+void ConstrainVariances()
+{
+    // Constrain variances to be within set limits
+    for (uint8_t i=0; i<=3; i++) constrain_float(P[i][i],0.0f,0.1f);
+    for (uint8_t i=4; i<=6; i++) constrain_float(P[i][i],0.0f,1.0e3f);
+    for (uint8_t i=7; i<=9; i++) constrain_float(P[i][i],0.0f,1.0e5f);
+    for (uint8_t i=10; i<=12; i++) constrain_float(P[i][i],0.0f,sq(0.0175 * dtIMU));
+    for (uint8_t i=13; i<=14; i++) constrain_float(P[i][i],0.0f,1.0e3f);
+    for (uint8_t i=15; i<=20; i++) constrain_float(P[i][i],0.0f,1.0f);
+}
+
+void constrain_float(float var, const float varLL, const float varUL)
+{
+    if (var < varLL){
+        var = varLL;
+    }
+    else if (var > varUL){
+        var = varUL;
+    }
 }
