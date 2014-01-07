@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 void readIMUData();
 
@@ -56,6 +57,7 @@ float ahrsErrorRP;
 float ahrsErrorYaw;
 float eulerEst[3]; // Euler angles calculated from filter states
 float eulerDif[3]; // difference between Euler angle estimated by EKF and the AHRS solution
+float gpsRaw[7];
 
 // ADS input data variables
 float adsIn;
@@ -66,6 +68,7 @@ uint32_t ADSmsec = 0;
 uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
+bool newDataGps = false;
 
 // input data timing
 uint32_t msecAlignTime;
@@ -86,6 +89,8 @@ FILE * pVelPosFuseFile;
 FILE * pMagFuseFile;
 FILE * pTasFuseFile;
 FILE * pTimeFile;
+FILE * pGpsRawOUTFile;
+FILE * pGpsRawINFile;
 
 int main()
 {
@@ -104,6 +109,10 @@ int main()
     pVelPosFuseFile = fopen ("VelPosFuse.txt","w");
     pMagFuseFile = fopen ("MagFuse.txt","w");
     pTasFuseFile = fopen ("TasFuse.txt","w");
+    pGpsRawINFile = fopen ("GPSraw.txt","r");
+    pGpsRawOUTFile = fopen ("GPSrawOut.txt","w");
+
+    memset(gpsRaw, 0, sizeof(gpsRaw));
 
     // read test data from files for first timestamp
     readIMUData();
@@ -270,12 +279,34 @@ void readGpsData()
 
     while (GPStimestamp <= IMUtimestamp)
     {
-        for (uint8_t j=0; j<=13; j++)
+
+        // Load APM GPS file format
+        for (unsigned j = 0; j < 14; j++)
         {
             tempGpsPrev[j] = tempGps[j];
-            if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) tempGps[j] = gpsIn;
-            else endOfData = true;
+            if (fscanf(pGpsFile, "%f", &gpsIn) != EOF) {
+                tempGps[j] = gpsIn;
+            }
+            else
+            {
+                endOfData = true;
+            }
         }
+
+        if (pGpsRawINFile > 0) {
+            // Load RAW GPS file format in addition
+            for (unsigned j = 0; j < sizeof(gpsRaw) / sizeof(gpsRaw[0]); j++)
+            {
+                if (fscanf(pGpsRawINFile, "%f", &gpsIn) != EOF) {
+                    gpsRaw[j] = gpsIn;
+                }
+                else
+                {
+                    endOfData = true;
+                }
+            }
+        }
+
         if (!endOfData && (tempGps[1] == 3))
         {
             GPStimestamp  = tempGps[0];
@@ -377,9 +408,7 @@ void readAhrsData()
             if (fscanf(pAhrsFile, "%f", &ahrsIn) != EOF) tempAhrs[j] = ahrsIn;
             else endOfData = true;
         }
-        if (!endOfData != EOF)
-            // XXX the above comparison is always true - right fix?
-            // !endOfData != EOF
+        if (!endOfData)
         {
             AHRStimestamp  = tempAhrs[0];
             AHRSmsec = tempAhrsPrev[1];
@@ -421,6 +450,12 @@ void WriteFilterOutput()
     fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
     fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
+
+    // raw GPS outputs
+    fprintf(pGpsRawOUTFile," %e", float(IMUmsec*0.001f));
+    fprintf(pGpsRawOUTFile," %e %e %e %e %e %e", gpsRaw[1], gpsRaw[2], gpsRaw[3], gpsRaw[4], gpsRaw[5], gpsRaw[6]);
+    fprintf(pGpsRawOUTFile,"\n");
+
     // velocity and position innovations and innovation variances
     fprintf(pVelPosFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=5; i++)
@@ -479,4 +514,6 @@ void CloseFiles()
     fclose (pMagFuseFile);
     fclose (pTasFuseFile);
     fclose (pTimeFile);
+    fclose (pGpsRawINFile);
+    fclose (pGpsRawOUTFile);
 }

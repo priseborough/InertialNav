@@ -62,8 +62,8 @@ float gpsVelD;
 float gpsLat;
 float gpsLon;
 float gpsHgt;
-bool newDataGps;
 uint8_t GPSstatus;
+
 
 bool statesInitialised = false;
 
@@ -1169,6 +1169,8 @@ void FuseVelposNED()
             {
                 posHealth = false;
             }
+        } else {
+            posHealth = false;
         }
         // test height measurements
         if (fuseHgtData)
@@ -1187,6 +1189,8 @@ void FuseVelposNED()
             {
                 hgtHealth = false;
             }
+        } else {
+            hgtHealth = false;
         }
         // Set range for sequential fusion of velocity and position measurements depending
         // on which data is available and its health
