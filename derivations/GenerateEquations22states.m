@@ -58,7 +58,7 @@ syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 %% define the process equations
 
 % Define the state vector & number of states
-stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
+stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dvz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
 nStates=numel(stateVector);
 
 % define the measured Delta angle and delta velocity vectors
