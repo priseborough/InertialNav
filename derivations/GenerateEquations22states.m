@@ -5,19 +5,20 @@
 % Sequential fusion of velocity and position measurements
 % Fusion of true airspeed
 % Sequential fusion of magnetic flux measurements
-% 21 state architecture.
+% 22 state architecture.
 % IMU data is assumed to arrive at a constant rate with a time step of dt
 % IMU delta angle and velocity data are used as time varying parameters,
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 3 Dec 2013
+% Last Modified: 7 Jan 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
 % Velocity - m/sec (North, East, Down)
 % Position - m (North, East, Down)
 % Delta Angle bias - rad (X,Y,Z)
+% Delta Velocity bias - m/s (Z)
 % Wind Vector  - m/sec (North,East)
 % Earth Magnetic Field Vector - milligauss (North, East, Down)
 % Body Magnetic Field Vector - milligauss (X,Y,Z)
@@ -42,10 +43,9 @@ syms q0 q1 q2 q3 real % quaternions defining attitude of body axes relative to l
 syms vn ve vd real % NED velocity - m/sec
 syms pn pe pd real % NED position - m
 syms dax_b day_b daz_b real % delta angle bias - rad
-syms dvx_b dvy_b dvz_b real % delta velocity bias - m/sec
+syms dvz_b real % delta velocity bias - m/sec
 syms dt real % IMU time step - sec
 syms gn ge gd real % NED gravity vector - m/sec^2
-syms omn ome omd real; % Earth rotation vector in local NED axes rad/sec - rad/sec
 syms daxCov dayCov dazCov dvxCov dvyCov dvzCov real; % IMU delta angle and delta velocity measurement variances
 syms vwn vwe real; % NE wind velocity - m/sec
 syms magX magY magZ real; % XYZ body fixed magnetic field measurements - milligauss
@@ -58,7 +58,7 @@ syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 %% define the process equations
 
 % Define the state vector & number of states
-stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
+stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dvz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
 nStates=numel(stateVector);
 
 % define the measured Delta angle and delta velocity vectors
@@ -67,39 +67,35 @@ dv = [dvx; dvy; dvz];
 
 % define the delta angle and delta velocity bias errors
 da_b = [dax_b; day_b; daz_b];
+dv_b = [0; 0; dvz_b];
 
 % derive the body to nav direction cosine matrix
 Tbn = Quat2Tbn([q0,q1,q2,q3]);
 
-% define the bias corrected delta angle
-% Ignore coning compensation and earths rotation as these effect are
-% negligible in terms of covariance growth compared to other efects for our
-% grade of sensor
-% deltaAngle = da - da_b + 1/12*cross(da_prev,da) - transpose(Cbn)*([omn; ome; omd])*dt;
-deltaAngle = da - da_b;
+% define the bias corrected delta angles and velocities
+dAngCor = da - da_b;
+dVelCor = dv - dv_b;
 
 % define the quaternion rotation vector
 quat = [q0;q1;q2;q3];
 
 % define the attitude update equations
-% use a first order expansion of rotation to calculate the quaternion increment
-% acceptable for propagation of covariances
 delQuat = [1;
-    0.5*deltaAngle(1);
-    0.5*deltaAngle(2);
-    0.5*deltaAngle(3);
+    0.5*dAngCor(1);
+    0.5*dAngCor(2);
+    0.5*dAngCor(3);
     ];
 qNew = QuatMult(quat,delQuat);
 
 % define the velocity update equations
-% ignore coriolis terms for linearisation purposes
-vNew = [vn;ve;vd] + [gn;ge;gd]*dt + Tbn*dv;% - cross(2*[omn; ome; omd],[vn;ve;vd])*dt;
+vNew = [vn;ve;vd] + [gn;ge;gd]*dt + Tbn*dVelCor;
 
 % define the position update equations
 pNew = [pn;pe;pd] + [vn;ve;vd]*dt;
 
 % define the IMU bias error update equations
 dabNew = [dax_b; day_b; daz_b];
+dvbNew = dvz_b;
 
 % define the wind velocity update equations
 vwnNew = vwn;
@@ -116,7 +112,7 @@ magYnew = magY;
 magZnew = magZ;
 
 % Define the process equations output vector
-processEqns = [qNew;vNew;pNew;dabNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew];
+processEqns = [qNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew];
 
 %% derive the state transition matrix
 
@@ -181,7 +177,7 @@ H_PD= jacobian(pd,stateVector); % measurement Jacobian
 K_PD = (P*transpose(H_PD))/(H_PD*P*transpose(H_PD) + R_PD);
 
 % combine into a single H and K matrix (note these matrices cannot be used
-% for a single step fusion, so each row|column mst be used in a separate
+% for a single step fusion, so each row|column must be used in a separate
 % fusion step
 H_VP  = [H_VN;H_VE;H_VD;H_PN;H_PE;H_PD];
 clear    H_VN H_VE H_VD H_PN H_PE H_PD

@@ -5,22 +5,24 @@
 % Sequential fusion of velocity and position measurements
 % Fusion of true airspeed
 % Sequential fusion of magnetic flux measurements
-% 21 state architecture.
+% 23 state architecture.
 % IMU data is assumed to arrive at a constant rate with a time step of dt
 % IMU delta angle and velocity data are used as time varying parameters,
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 3 Dec 2013
+% Last Modified: 6 Jan 201
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
 % Velocity - m/sec (North, East, Down)
 % Position - m (North, East, Down)
 % Delta Angle bias - rad (X,Y,Z)
+% True Airspeed Rate - m/s^2
+% True Airspeed - m/s
 % Wind Vector  - m/sec (North,East)
-% Earth Magnetic Field Vector - milligauss (North, East, Down)
-% Body Magnetic Field Vector - milligauss (X,Y,Z)
+% Earth Magnetic Field Vector - North, East, Down
+% Body Magnetic Field Vector - X,Y,Z
 
 % Observations:
 % NED velocity - m/s
@@ -42,12 +44,11 @@ syms q0 q1 q2 q3 real % quaternions defining attitude of body axes relative to l
 syms vn ve vd real % NED velocity - m/sec
 syms pn pe pd real % NED position - m
 syms dax_b day_b daz_b real % delta angle bias - rad
-syms dvx_b dvy_b dvz_b real % delta velocity bias - m/sec
 syms dt real % IMU time step - sec
 syms gn ge gd real % NED gravity vector - m/sec^2
 syms omn ome omd real; % Earth rotation vector in local NED axes rad/sec - rad/sec
 syms daxCov dayCov dazCov dvxCov dvyCov dvzCov real; % IMU delta angle and delta velocity measurement variances
-syms vwn vwe real; % NE wind velocity - m/sec
+syms vtdot vt vwn vwe real; % true airspeed, NE wind velocity - m/sec
 syms magX magY magZ real; % XYZ body fixed magnetic field measurements - milligauss
 syms magN magE magD real; % NED earth fixed magnetic field components - milligauss
 syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
@@ -58,7 +59,7 @@ syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 %% define the process equations
 
 % Define the state vector & number of states
-stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
+stateVector = [q0;q1;q2;q3;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;vtdot;vt;vwn;vwe;magN;magE;magD;magX;magY;magZ];
 nStates=numel(stateVector);
 
 % define the measured Delta angle and delta velocity vectors
@@ -101,6 +102,10 @@ pNew = [pn;pe;pd] + [vn;ve;vd]*dt;
 % define the IMU bias error update equations
 dabNew = [dax_b; day_b; daz_b];
 
+% define the true airspeed update equations
+vtdotNew = dot([gn;ge;gd]+Tbn*dv/dt,[(vn-vwn);(ve-vwe);vd])/sqrt((vn-vwn)^2 + (ve-vwe)^2 + vd^2);
+vtNew = sqrt((vn-vwn)^2 + (ve-vwe)^2 + vd^2) + vtdot*dt;
+
 % define the wind velocity update equations
 vwnNew = vwn;
 vweNew = vwe;
@@ -116,7 +121,7 @@ magYnew = magY;
 magZnew = magZ;
 
 % Define the process equations output vector
-processEqns = [qNew;vNew;pNew;dabNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew];
+processEqns = [qNew;vNew;pNew;dabNew;vtdotNew;vtNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew];
 
 %% derive the state transition matrix
 
@@ -190,10 +195,9 @@ clear   K_VN K_VE K_VD K_PN K_PE K_PD
 [K_VP,SK_VP]=OptimiseAlgebra(K_VP,'SK_VP');
 
 %% derive equations for fusion of true airspeed measurements
-VtasPred = sqrt((vn-vwn)^2 + (ve-vwe)^2 + vd^2); % predicted measurement
+VtasPred = vt; % predicted measurement
 H_TAS = jacobian(VtasPred,stateVector); % measurement Jacobian
-[H_TAS,SH_TAS]=OptimiseAlgebra(H_TAS,'SH_TAS'); % optimise processing
-K_TAS = (P*transpose(H_TAS))/(H_TAS*P*transpose(H_TAS) + R_TAS);[K_TAS,SK_TAS]=OptimiseAlgebra(K_TAS,'SK_TAS'); % Kalman gain vector
+K_TAS = (P*transpose(H_TAS))/(H_TAS*P*transpose(H_TAS) + R_TAS);
 
 %% derive equations for fusion of magnetic field measurement
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magX;magY;magZ]; % predicted measurement
@@ -208,7 +212,7 @@ K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); %
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
 
 %% Save output and convert to m and c code fragments
-nStates = length(PP);
+nStates = length(P);
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
 save(fileName);
 SaveScriptCode(nStates);
