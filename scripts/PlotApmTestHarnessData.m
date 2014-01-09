@@ -8,7 +8,7 @@ if (exist('AHR2','var'))
     plot(AHR2.data(:,1)-t0,AHR2.data(:,3),'g');
     hold on;
 end
-plot(EKF1.data(:,1)-t0,EKF1.data(:,3),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,3),'b');
 hold off;
 grid on;
 ylim([-180 180]);
@@ -19,7 +19,7 @@ if (exist('AHR2','var'))
     plot(AHR2.data(:,1)-t0,AHR2.data(:,4),'g');
     hold on;
 end
-plot(EKF1.data(:,1)-t0,EKF1.data(:,4),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,4),'b');
 hold off;
 grid on;
 ylim([-180 180]);
@@ -29,7 +29,7 @@ if (exist('AHR2','var'))
     plot(AHR2.data(:,1)-t0,AHR2.data(:,5),'g');
     hold on;
 end
-plot(EKF1.data(:,1)-t0,EKF1.data(:,5),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,5),'b');
 hold off;
 grid on;
 ylim([0 360]);
@@ -115,16 +115,16 @@ print(gcf, '-djpeg', strcat(dirName,fileName,'.jpg'), '-r200');
 fileName = 'GyroBiasEstimates';
 figure;
 subplot(3,1,1);
-plot(EKF1.data(:,1)-t0,EKF1.data(:,12),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,12),'b');
 grid on;
 xlabel('time (sec)');ylabel('X bias (deg/min)');
 title('Gyro Bias Error Estimates');
 subplot(3,1,2);
-plot(EKF1.data(:,1)-t0,EKF1.data(:,13),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,13),'b');
 grid on;
 xlabel('time (sec)');ylabel('Y bias (deg/min)');
 subplot(3,1,3);
-plot(EKF1.data(:,1)-t0,EKF1.data(:,14),'b');
+plot(EKF1.data(:,1)-t0,0.01*EKF1.data(:,14),'b');
 grid on;
 xlabel('time (sec)');ylabel('Z bias (deg/min)');
 saveas(gcf,strcat(dirName,fileName,'.fig'));
