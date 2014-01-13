@@ -315,7 +315,7 @@ void CovariancePrediction()
     float daz_b;
     
     // arrays
-    float processNoise[21];
+    float processNoise[n_states];
     float SF[14];
     float SG[8];
     float SQ[11];
@@ -885,8 +885,8 @@ void CovariancePrediction()
     
     // Force symmetry on the covariance matrix to prevent ill-conditioning
     // of the matrix which would cause the filter to blow-up
-    for (uint8_t i=0; i<=20; i++) P[i][i] = nextP[i][i];
-    for (uint8_t i=1; i<=20; i++)
+    for (uint8_t i=0; i< n_states; i++) P[i][i] = nextP[i][i];
+    for (uint8_t i=1; i< n_states; i++)
     {
         for (uint8_t j=0; j<=i-1; j++)
         {
@@ -1148,7 +1148,7 @@ void FuseMagnetometer()
     static float MagPred[3] = {0.0,0.0,0.0};
     static float R_MAG;
     static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-    float H_MAG[21];
+    float H_MAG[n_states];
     float SK_MX[6];
     float SK_MY[5];
     float SK_MZ[6];
@@ -1434,8 +1434,8 @@ void FuseAirspeed()
     const float R_TAS = 2.0f;
     float SH_TAS[3];
     float SK_TAS;
-    float H_TAS[21];
-    float Kfusion[21];
+    float H_TAS[n_states];
+    float Kfusion[n_states];
     float VtasPred;
     float quatMag;
     

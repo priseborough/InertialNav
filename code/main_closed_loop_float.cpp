@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 void readIMUData();
 
@@ -92,25 +93,65 @@ FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
 
+FILE * open_with_exit(const char* filename, const char* flags)
+{
+    FILE *f = fopen(filename, flags);
+
+    if (!f) {
+        printf("FAILED TO OPEN FILE: %s\n", filename);
+        exit(1);
+    }
+
+    return f;
+}
+
+int printstates() {
+    printf("States:\n");
+    unsigned i = 0;
+    printf("Quaternion:\n");
+    for (; i<4; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<4+6; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<4+6+6; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<n_states; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+}
+
 int main()
 {
 
     // open data files
-    pImuFile = fopen ("IMU.txt","r");
-    pMagFile = fopen ("MAG.txt","r");
-    pGpsFile = fopen ("GPS.txt","r");
-    pAhrsFile = fopen ("ATT.txt","r");
-    pAdsFile = fopen ("NTUN.txt","r");
-    pTimeFile = fopen ("timing.txt","r");
-    pStateOutFile = fopen ("StateDataOut.txt","w");
-    pEulOutFile = fopen ("EulDataOut.txt","w");
-    pCovOutFile = fopen ("CovDataOut.txt","w");
-    pRefPosVelOutFile = fopen ("RefVelPosDataOut.txt","w");
-    pVelPosFuseFile = fopen ("VelPosFuse.txt","w");
-    pMagFuseFile = fopen ("MagFuse.txt","w");
-    pTasFuseFile = fopen ("TasFuse.txt","w");
-    pGpsRawINFile = fopen ("GPSraw.txt","r");
-    pGpsRawOUTFile = fopen ("GPSrawOut.txt","w");
+    pImuFile = open_with_exit ("IMU.txt","r");
+    pMagFile = open_with_exit ("MAG.txt","r");
+    pGpsFile = open_with_exit ("GPS.txt","r");
+    pAhrsFile = open_with_exit ("ATT.txt","r");
+    pAdsFile = open_with_exit ("NTUN.txt","r");
+    pTimeFile = open_with_exit ("timing.txt","r");
+    pStateOutFile = open_with_exit ("StateDataOut.txt","w");
+    pEulOutFile = open_with_exit ("EulDataOut.txt","w");
+    pCovOutFile = open_with_exit ("CovDataOut.txt","w");
+    pRefPosVelOutFile = open_with_exit ("RefVelPosDataOut.txt","w");
+    pVelPosFuseFile = open_with_exit ("VelPosFuse.txt","w");
+    pMagFuseFile = open_with_exit ("MagFuse.txt","w");
+    pTasFuseFile = open_with_exit ("TasFuse.txt","w");
+    pGpsRawINFile = open_with_exit ("GPSraw.txt","r");
+    pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
+
+    printf("Filter start\n");
 
     memset(gpsRaw, 0, sizeof(gpsRaw));
 
@@ -122,6 +163,10 @@ int main()
     readAhrsData();
     readTimingData();
 
+    printf("First data instances loaded\n");
+
+    unsigned loopcounter = 0;
+
     while (!endOfData)
     {
         if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
@@ -129,7 +174,9 @@ int main()
             // Initialise states, covariance and other data
             if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
+                printf("Initializing filter\n");
                 InitialiseFilter();
+                printstates();
             }
 
             // If valid IMU data and states initialised, predict states and covariances
@@ -216,7 +263,15 @@ int main()
 
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-            WriteFilterOutput();
+            if (statesInitialised) {
+                WriteFilterOutput();
+
+                if (loopcounter % 1000 == 0) {
+                    printstates();
+                }
+
+                loopcounter++;
+            }
         }
         // read test data from files for next timestamp
         readIMUData();
@@ -426,7 +481,7 @@ void WriteFilterOutput()
 {
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
+    for (uint8_t i=0; i<n_states; i++)
     {
         fprintf(pStateOutFile," %e", states[i]);
     }
@@ -441,7 +496,7 @@ void WriteFilterOutput()
     fprintf(pEulOutFile,"\n");
     // covariance matrix diagonals
     fprintf(pCovOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
+    for (uint8_t i=0; i<n_states; i++)
     {
         fprintf(pCovOutFile," %e", P[i][i]);
     }
