@@ -28,9 +28,9 @@ clearvars filename delimiter formatSpec fileID dataArray ans;
 
 %% replace brackets and commas
 for lineIndex = 1:length(SymbolicOutput)
-    SymbolicOutput(lineIndex) = regexprep(SymbolicOutput(lineIndex), '_lp_', '(');
+    SymbolicOutput(lineIndex) = regexprep(SymbolicOutput(lineIndex), '_l_', '(');
     SymbolicOutput(lineIndex) = regexprep(SymbolicOutput(lineIndex), '_c_', ',');
-    SymbolicOutput(lineIndex) = regexprep(SymbolicOutput(lineIndex), '_rp_', ')');
+    SymbolicOutput(lineIndex) = regexprep(SymbolicOutput(lineIndex), '_r_', ')');
 end
 
 %% Write to file

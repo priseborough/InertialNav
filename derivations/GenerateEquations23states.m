@@ -5,14 +5,16 @@
 % Sequential fusion of velocity and position measurements
 % Fusion of true airspeed
 % Sequential fusion of magnetic flux measurements
-% sequential fusion of angular LOS rate measurement from optical flow sensor
+% sequential fusion of angular LOS rate measurements from optical flow
+% sensor assumed to be aligned witht eh Z body axis plus a small
+% misalingment
 % 23 state architecture.
 % IMU data is assumed to arrive at a constant rate with a time step of dt
 % IMU delta angle and velocity data are used as time varying parameters,
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 13 Jan 2013
+% Last Modified: 7 Jan 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -30,7 +32,7 @@
 % NED position - m
 % True airspeed - m/s
 % XYZ magnetic flux - milligauss
-% XY line of sight angular rate measurements from the optical flow sensor about sensor axes
+% XY line of sight angular rate measurements from the optical flow sensor
 
 % Time varying parameters:
 % XYZ delta angle measurements in body axes - rad
@@ -58,8 +60,7 @@ syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 syms R_LOS real % variation of LOS angular rate mesurements (rad/sec)^2
 syms ptd real % location of terrain in D axis
-syms srOFS spOFS syOFS real % sine of roll, pitch yaw alignment of the optical flow sensor relative to body axes in a yaw, pitch, roll sequence
-syms crOFS cpOFS cyOFS real % cosine of roll, pitch yaw alignment of the optical flow sensor relative to body axes in a yaw, pitch, roll sequence
+syms a1 a2 a3 real % misalignment of the optical flow sensor (rad)
 %% define the process equations
 
 % Define the state vector & number of states
@@ -148,14 +149,14 @@ Q = G*imuNoise*transpose(G);
 [Q,SQ]=OptimiseAlgebra(Q,'SQ');
 
 % define a symbolic covariance matrix using strings to represent 
-% '_lp_' to represent '( '
+% '_l_' to represent '( '
 % '_c_' to represent ,
-% '_rp_' to represent ')' 
+% '_r_' to represent ')' 
 % these can be substituted later to create executable code
 for rowIndex = 1:nStates
     for colIndex = 1:nStates
-        eval(['syms OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex), '_rp_ real']);
-        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex),'_rp_;']);
+        eval(['syms OP_l_',num2str(rowIndex),'_c_',num2str(colIndex), '_r_ real']);
+        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_l_',num2str(rowIndex),'_c_',num2str(colIndex),'_r_;']);
     end
 end
 
@@ -212,27 +213,32 @@ K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); %
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
 
 %% derive equations for sequential fusion of optical flow measurements
-% define rotation vector from body to sensor axes
-Tbs = [  cpOFS*cyOFS                     ,  cpOFS*syOFS                     , -spOFS ; ...
-        -crOFS*syOFS + srOFS*spOFS*cyOFS ,  crOFS*cyOFS + srOFS*spOFS*syOFS ,  srOFS*cpOFS ; ...
-         srOFS*syOFS + crOFS*spOFS*cyOFS , -srOFS*cyOFS + crOFS*spOFS*syOFS ,  crOFS*cpOFS ];
-Tsn = Tbn*transpose(Tbs); % Tbs is rotation from body to sensor
+
+% assume camera is aligned with Z body axis plus a misalignment
+% defined by 3 small angles about X, Y and Z body axis
+% Tsb is rotation from sensor to body
+Tsb = [ 1  , -a3  ,  a2 ; ...
+        a3 ,  1   , -a1 ; ...
+       -a2 ,  a1  ,  1 ];
+Tsn = Tbn*Tsb; 
 % calculate range from plane to centre of sensor fov assuming flat earth
 range = ((ptd - pd)/Tsn(3,3));
-% calculate relative velocity in sensor frame
+% calculate relative velocity in body frame
 relVelBody = transpose(Tsn)*[vn;ve;vd];
 % divide by range to get predicted angular LOS rates relative to X and Y
-% sensor axes
+% axes
 losRateX =  relVelBody(2)/range;
 losRateY = -relVelBody(1)/range;
 
 H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
 [H_LOS,SH_LOS]=OptimiseAlgebra(H_LOS,'SH_LOS');
 
+% combine into a single K matrix to enable common expressions to be found
+% note this matrix cannot be used in a single step fusion
 K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS); % Kalman gain vector
-[K_LOSX,SK_LOSX]=OptimiseAlgebra(K_LOSX,'SK_LOSX');
 K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
-[K_LOSY,SK_LOSY]=OptimiseAlgebra(K_LOSY,'SK_LOSY');
+K_LOS = [K_LOSX,K_LOSY];
+[K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
 
 %% Save output and convert to m and c code fragments
 nStates = length(PP);
