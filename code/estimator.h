@@ -43,7 +43,10 @@ Vector3f operator*(Vector3f vecIn1, float sclIn1);
 
 void swap_var(float &d1, float &d2);
 
-extern uint32_t statetimeStamp[50]; // time stamp for each state vector stored
+const unsigned int n_states = 21;
+const unsigned int data_buffer_size = 50;
+
+extern uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
 extern Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
 extern Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
 extern Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
@@ -55,10 +58,10 @@ extern Vector3f accel; // acceleration vector in XYZ body axes measured by the I
 extern Vector3f dVelIMU;
 extern Vector3f dAngIMU;
 
-extern float P[24][24]; // covariance matrix
-extern float Kfusion[24]; // Kalman gains
-extern float states[24]; // state matrix
-extern float storedStates[24][50]; // state vectors stored for the last 50 time steps
+extern float P[n_states][n_states]; // covariance matrix
+extern float Kfusion[n_states]; // Kalman gains
+extern float states[n_states]; // state matrix
+extern float storedStates[n_states][data_buffer_size]; // state vectors stored for the last 50 time steps
 
 extern Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
 extern Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
@@ -85,19 +88,19 @@ extern float posNE[2]; // North, East position obs (m)
 extern float hgtMea; //  measured height (m)
 extern float posNED[3]; // North, East Down position (m)
 
-extern float statesAtVelTime[24]; // States at the effective measurement time for posNE and velNED measurements
-extern float statesAtPosTime[24]; // States at the effective measurement time for posNE and velNED measurements
-extern float statesAtHgtTime[24]; // States at the effective measurement time for the hgtMea measurement
+extern float statesAtVelTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
+extern float statesAtPosTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
+extern float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
 
 extern float innovMag[3]; // innovation output
 extern float varInnovMag[3]; // innovation variance output
 extern Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
-extern float statesAtMagMeasTime[24]; // filter satates at the effective measurement time
+extern float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
 extern float innovVtas; // innovation output
 extern float varInnovVtas; // innovation variance output
 extern bool fuseVtasData; // boolean true when airspeed data is to be fused
 extern float VtasMeas; // true airspeed measurement (m/s)
-extern float statesAtVtasMeasTime[24]; // filter states at the effective measurement time
+extern float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
 extern float latRef; // WGS-84 latitude of reference point (rad)
 extern float lonRef; // WGS-84 longitude of reference point (rad)
 extern float hgtRef; // WGS-84 height of reference point (m)
@@ -129,9 +132,9 @@ void FuseMagnetometer();
 
 void FuseAirspeed();
 
-void zeroRows(float covMat[24][24], uint8_t first, uint8_t last);
+void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last);
 
-void zeroCols(float covMat[24][24], uint8_t first, uint8_t last);
+void zeroCols(float covMat[n_states][n_states], uint8_t first, uint8_t last);
 
 float sq(float valIn);
 
@@ -141,7 +144,7 @@ void quatNorm(float quatOut[4], float quatIn[4]);
 void StoreStates();
 
 // recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float statesForFusion[24], uint32_t msec);
+void RecallStates(float statesForFusion[n_states], uint32_t msec);
 
 void quat2Tnb(Mat3f &Tnb, float quat[4]);
 
