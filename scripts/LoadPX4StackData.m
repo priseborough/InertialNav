@@ -168,7 +168,7 @@ gps_zeros = zeros(size(Hgt, 1), 1);
 GPS = [GPStimestamp GPSstatus GPStimestamp gps_zeros gps_zeros gps_zeros LatDeg LngDeg Hgt Hgt GndSpd CourseDeg VelD gps_zeros];
 GPSraw = [GPStimestamp LatDeg LngDeg Hgt VelN VelE VelD];
 % {'timestamp' 'TimeMS' 'MagX' 'MagY' 'MagZ' 'OfsX' 'OfsY' 'OfsZ'}
-MAG = [MAGtimestamp MAGtimestamp MagX MagY MagZ MagBiasX MagBiasY MagBiasZ];
+MAG = [MAGtimestamp MAGtimestamp MagX*1e3 MagY*1e3 MagZ*1e3 MagBiasX*1e3 MagBiasY*1e3 MagBiasZ*1e3];
 % {'timestamp' 'TimeMS' 'Roll' 'Pitch' 'Yaw' 'ErrorRP' 'ErrorYaw'}
 ATT = [ATTtimestamp ATTtimestamp Roll Pitch Yaw zeros(size(Yaw, 1), 1) zeros(size(Yaw, 1), 1)];
 % {'timestamp' 'TimeMS' 'Yaw' 'WpDist' 'TargBrg' 'NavBrg' 'AltErr' 'Arspd' 'Alt' 'GSpdCM'}
