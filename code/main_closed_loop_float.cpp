@@ -12,7 +12,7 @@ void readGpsData();
 
 void readMagData();
 
-void readAirSpdData();
+void readAirData();
 
 void readAhrsData();
 
@@ -159,7 +159,7 @@ int main()
     readIMUData();
     readGpsData();
     readMagData();
-    readAirSpdData();
+    readAirData();
     readAhrsData();
     readTimingData();
 
@@ -174,9 +174,7 @@ int main()
             // Initialise states, covariance and other data
             if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
-                printf("Initializing filter\n");
                 InitialiseFilter();
-                printstates();
             }
 
             // If valid IMU data and states initialised, predict states and covariances
@@ -197,7 +195,7 @@ int main()
                 OnGroundCheck();
                 // sum delta angles and time used by covariance prediction
                 summedDelAng = summedDelAng + correctedDelAng;
-                summedDelVel = summedDelVel + correctedDelVel;
+                summedDelVel = summedDelVel + dVelIMU;
                 dt += dtIMU;
                 // perform a covariance prediction if the total delta angle has exceeded the limit
                 // or the time limit will be exceeded at the next IMU update
@@ -218,15 +216,12 @@ int main()
                 calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
                 posNE[0] = posNED[0];
                 posNE[1] = posNED[1];
-                hgtMea =  -posNED[2];
-                // set fusion flags
+                 // set fusion flags
                 fuseVelData = true;
                 fusePosData = true;
-                fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
                 RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
                 RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
-                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 FuseVelposNED();
             }
@@ -234,6 +229,20 @@ int main()
             {
                 fuseVelData = false;
                 fusePosData = false;
+            }
+
+            if (newAdsData && statesInitialised)
+            {
+                // Could use a blend of GPS and baro alt data if desired
+                hgtMea = 1.0f*baroHgt + 0.0f*gpsHgt;
+                fuseHgtData = true;
+                // recall states stored at time of measurement after adjusting for delays
+                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                // run the fusion step
+                FuseVelposNED();
+            }
+            else
+            {
                 fuseHgtData = false;
             }
 
@@ -263,21 +272,13 @@ int main()
 
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-            if (statesInitialised) {
-                WriteFilterOutput();
-
-                if (loopcounter % 1000 == 0) {
-                    printstates();
-                }
-
-                loopcounter++;
-            }
+            WriteFilterOutput();
         }
         // read test data from files for next timestamp
         readIMUData();
         readGpsData();
         readMagData();
-        readAirSpdData();
+        readAirData();
         readAhrsData();
         if (IMUmsec > msecEndTime)
         {
@@ -421,7 +422,7 @@ void readMagData()
     }
 }
 
-void readAirSpdData()
+void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
@@ -438,6 +439,7 @@ void readAirSpdData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
+            baroHgt = tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
