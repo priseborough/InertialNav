@@ -273,6 +273,26 @@ int main()
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
+
+
+            // State vector:
+            // 0-3: quaternions (q0, q1, q2, q3)
+            // 4-6: Velocity - m/sec (North, East, Down)
+            // 7-9: Position - m (North, East, Down)
+            // 10-12: Delta Angle bias - rad (X,Y,Z)
+            // 13-14: Wind Vector  - m/sec (North,East)
+            // 15-17: Earth Magnetic Field Vector - milligauss (North, East, Down)
+            // 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
+            printf("\n");
+            printf("dt: %8.6f\n", dtIMU);
+            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)states[0], (double)states[1], (double)states[2], (double)states[3]);
+            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)states[4], (double)states[5], (double)states[6]);
+            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)states[7], (double)states[8], (double)states[9]);
+            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)states[10], (double)states[11], (double)states[12]);
+            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)states[13], (double)states[14]);
+            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)states[15], (double)states[16], (double)states[17]);
+            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)states[18], (double)states[19], (double)states[20]);
+
         }
         // read test data from files for next timestamp
         readIMUData();
