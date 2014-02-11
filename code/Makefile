@@ -20,7 +20,7 @@ $(ODIR)/%.o: %.cpp
 
 #
 estimator_closed_loop_test: $(OBJ)
-	g++ -o $@ $^ $(CFLAGS) $(LIBS)
+	g++ -O3 -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean
 
