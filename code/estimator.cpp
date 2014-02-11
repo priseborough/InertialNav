@@ -1,5 +1,8 @@
 #include "estimator.h"
 
+// For debugging only
+#include <stdio.h>
+
 // Global variables
 float KH[n_states][n_states]; //  intermediate result used for covariance updates
 float KHP[n_states][n_states]; // intermediate result used for covariance updates
@@ -19,7 +22,6 @@ Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s
 Vector3f dVelIMU;
 Vector3f dAngIMU;
 float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
-float dt; // time lapsed since last covariance prediction
 uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
 float innovVelPos[6]; // innovation output
 float varInnovVelPos[6]; // innovation variance output
@@ -32,14 +34,15 @@ float posNED[3]; // North, East Down position (m)
 float statesAtVelTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
 float statesAtPosTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
 float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
+float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
+float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
+
 float innovMag[3]; // innovation output
 float varInnovMag[3]; // innovation variance output
 Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
-float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
 float innovVtas; // innovation output
 float varInnovVtas; // innovation variance output
 float VtasMeas; // true airspeed measurement (m/s)
-float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
 float latRef; // WGS-84 latitude of reference point (rad)
 float lonRef; // WGS-84 longitude of reference point (rad)
 float hgtRef; // WGS-84 height of reference point (m)
@@ -49,7 +52,6 @@ float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
 
 // GPS input data variables
 float gpsCourse;
-float gpsGndSpd;
 float gpsVelD;
 float gpsLat;
 float gpsLon;
@@ -289,7 +291,7 @@ void  UpdateStrapdownEquationsNED()
 
 }
 
-void CovariancePrediction()
+void CovariancePrediction(float dt)
 {
     // scalars
     float windVelSigma;
@@ -322,7 +324,7 @@ void CovariancePrediction()
     float SF[14];
     float SG[8];
     float SQ[11];
-    float SPP[13];
+    float SPP[13] = {0};
     float nextP[21][21];
 
     // calculate covariance prediction process noise
@@ -1125,6 +1127,8 @@ void FuseVelposNED()
             }
         }
     }
+
+    //printf("velh: %s, posh: %s, hgth: %s\n", ((velHealth) ? "OK" : "FAIL"), ((posHealth) ? "OK" : "FAIL"), ((hgtHealth) ? "OK" : "FAIL"));
 }
 
 void FuseMagnetometer()
@@ -1554,7 +1558,7 @@ void FuseAirspeed()
     }
 }
 
-void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last)
+void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
     uint8_t col;
@@ -1567,7 +1571,7 @@ void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last)
     }
 }
 
-void zeroCols(float covMat[n_states][n_states], uint8_t first, uint8_t last)
+void zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
     uint8_t col;
@@ -1586,17 +1590,19 @@ float sq(float valIn)
 }
 
 // Store states in a history array along with time stamp
-void StoreStates()
+void StoreStates(uint64_t timestamp_ms)
 {
     static uint8_t storeIndex = 0;
-    if (storeIndex == data_buffer_size) storeIndex = 0;
-    for (uint8_t i=0; i<=n_states; i++) storedStates[i][storeIndex] = states[i];
-    statetimeStamp[storeIndex] = millis();
-    storeIndex = storeIndex + 1;
+    for (unsigned i=0; i<n_states; i++)
+        storedStates[i][storeIndex] = states[i];
+    statetimeStamp[storeIndex] = timestamp_ms;
+    storeIndex++;
+    if (storeIndex == data_buffer_size)
+        storeIndex = 0;
 }
 
 // Output the state vector stored at the time that best matches that specified by msec
-void RecallStates(float statesForFusion[n_states], uint32_t msec)
+void RecallStates(float (&statesForFusion)[n_states], uint32_t msec)
 {
     long int timeDelta;
     long int bestTimeDelta = 200;
@@ -1622,7 +1628,7 @@ void RecallStates(float statesForFusion[n_states], uint32_t msec)
     }
 }
 
-void quat2Tnb(Mat3f &Tnb, float quat[4])
+void quat2Tnb(Mat3f &Tnb, const float (&quat)[4])
 {
     // Calculate the nav to body cosine matrix
     float q00 = sq(quat[0]);
@@ -1647,7 +1653,7 @@ void quat2Tnb(Mat3f &Tnb, float quat[4])
     Tnb.y.z = 2*(q23 + q01);
 }
 
-void quat2Tbn(Mat3f &Tbn, float quat[4])
+void quat2Tbn(Mat3f &Tbn, const float (&quat)[4])
 {
     // Calculate the body to nav cosine matrix
     float q00 = sq(quat[0]);
@@ -1672,7 +1678,7 @@ void quat2Tbn(Mat3f &Tbn, float quat[4])
     Tbn.z.y = 2*(q23 + q01);
 }
 
-void eul2quat(float quat[4], float eul[3])
+void eul2quat(float (&quat)[4], const float (&eul)[3])
 {
     float u1 = cos(0.5f*eul[0]);
     float u2 = cos(0.5f*eul[1]);
@@ -1686,28 +1692,28 @@ void eul2quat(float quat[4], float eul[3])
     quat[3] = u1*u2*u6-u4*u5*u3;
 }
 
-void quat2eul(float y[3], float u[4])
+void quat2eul(float (&y)[3], const float (&u)[4])
 {
     y[0] = atan2((2.0*(u[2]*u[3]+u[0]*u[1])) , (u[0]*u[0]-u[1]*u[1]-u[2]*u[2]+u[3]*u[3]));
     y[1] = -asin(2.0*(u[1]*u[3]-u[0]*u[2]));
     y[2] = atan2((2.0*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
 }
 
-void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
 {
     velNED[0] = gpsGndSpd*cos(gpsCourse);
     velNED[1] = gpsGndSpd*sin(gpsCourse);
     velNED[2] = gpsVelD;
 }
 
-void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
+void calcposNED(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
 {
     posNED[0] = earthRadius * (lat - latRef);
     posNED[1] = earthRadius * cos(latRef) * (lon - lonRef);
     posNED[2] = -(hgt - hgtRef);
 }
 
-void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
+void calcLLH(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
 {
     lat = latRef + posNED[0] * earthRadiusInv;
     lon = lonRef + posNED[1] * earthRadiusInv / cos(latRef);
@@ -1730,6 +1736,7 @@ void calcEarthRateNED(Vector3f &omega, float latitude)
 void CovarianceInit()
 {
     // Calculate the initial covariance matrix P
+    P[0][0]   = 0.25f*sq(1.0f*deg2rad);
     P[1][1]   = 0.25f*sq(1.0f*deg2rad);
     P[2][2]   = 0.25f*sq(1.0f*deg2rad);
     P[3][3]   = 0.25f*sq(10.0f*deg2rad);
@@ -1790,8 +1797,29 @@ void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, fl
     initQuat[3] = cosRoll * cosPitch * sinHeading - sinRoll * sinPitch * cosHeading;
 }
 
-void InitialiseFilter()
+void InitialiseFilter(float (&initvelNED)[3])
 {
+    // Do the data structure init
+    for (unsigned i = 0; i < n_states; i++) {
+        for (unsigned j = 0; j < n_states; j++) {
+            KH[i][j] = 0.0f; //  intermediate result used for covariance updates
+            KHP[i][j] = 0.0f; // intermediate result used for covariance updates
+            P[i][j] = 0.0f; // covariance matrix
+        }
+
+        Kfusion[i] = 0.0f; // Kalman gains
+        states[i] = 0.0f; // state matrix
+    }
+
+    for (unsigned i = 0; i < data_buffer_size; i++) {
+
+        for (unsigned j = 0; j < n_states; j++) {
+
+        }
+
+        statetimeStamp[i] = 0;
+    }
+
     // Calculate initial filter quaternion states from raw measurements
     float initQuat[4];
     Vector3f initMagXYZ;
@@ -1807,10 +1835,6 @@ void InitialiseFilter()
     initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
     initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
     initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
-
-    // calculate initial velocities
-    float initvelNED[3];
-    calcvelNED(initvelNED, gpsCourse, gpsGndSpd, gpsVelD);
 
     //store initial lat,long and height
     latRef = gpsLat;
@@ -1843,5 +1867,4 @@ void InitialiseFilter()
     summedDelVel.x = 0.0f;
     summedDelVel.y = 0.0f;
     summedDelVel.z = 0.0f;
-    dt = 0.0f;
 }

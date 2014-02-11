@@ -68,7 +68,6 @@ extern Vector3f correctedDelVel; // delta velocities along the XYZ body axes cor
 extern Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
 extern Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
 
-extern float dt; // time lapsed since last covariance prediction
 extern float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
 
 extern bool onGround; // boolean true when the flight vehicle is on the ground (not flying)
@@ -110,7 +109,6 @@ extern float EAS2TAS; // ratio f true to equivalent airspeed
 
 // GPS input data variables
 extern float gpsCourse;
-extern float gpsGndSpd;
 extern float gpsVelD;
 extern float gpsLat;
 extern float gpsLon;
@@ -122,12 +120,12 @@ extern float baroHgt;
 
 extern bool statesInitialised;
 
-const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
+const float covTimeStepMax = 0.2f; // maximum time allowed between covariance predictions
 const float covDelAngMax = 0.05f; // maximum delta angle between covariance predictions
 
 void  UpdateStrapdownEquationsNED();
 
-void CovariancePrediction();
+void CovariancePrediction(float dt);
 
 void FuseVelposNED();
 
@@ -135,41 +133,39 @@ void FuseMagnetometer();
 
 void FuseAirspeed();
 
-void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last);
+void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 
-void zeroCols(float covMat[n_states][n_states], uint8_t first, uint8_t last);
+void zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 
 float sq(float valIn);
 
-void quatNorm(float quatOut[4], float quatIn[4]);
+void quatNorm(float (&quatOut)[4], const float quatIn[4]);
 
 // store staes along with system time stamp in msces
-void StoreStates();
+void StoreStates(uint64_t timestamp_ms);
 
 // recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float statesForFusion[n_states], uint32_t msec);
+void RecallStates(float (&statesForFusion)[n_states], uint32_t msec);
 
-void quat2Tnb(Mat3f &Tnb, float quat[4]);
-
-void quat2Tbn(Mat3f &Tbn, float quat[4]);
+void quat2Tbn(Mat3f &Tbn, const float (&quat)[4]);
 
 void calcEarthRateNED(Vector3f &omega, float latitude);
 
-void eul2quat(float quat[4], float eul[3]);
+void eul2quat(float (&quat)[4], const float (&eul)[3]);
 
-void quat2eul(float eul[3],float quat[4]);
+void quat2eul(float (&eul)[3], const float (&quat)[4]);
 
-void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
+void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
 
-void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
+void calcposNED(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
 
-void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
+void calcLLH(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
 
 void OnGroundCheck();
 
 void CovarianceInit();
 
-void InitialiseFilter();
+void InitialiseFilter(float (&initvelNED)[3]);
 
 uint32_t millis();
 
