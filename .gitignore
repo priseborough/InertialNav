@@ -3,3 +3,4 @@
 /plots/*.pdf
 /scripts/*.mexw64
 slprj
+.DS_Store
