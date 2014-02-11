@@ -1,10 +1,12 @@
 clear all;
 close all;
-%load('NEO.mat')
-load('search_pattern_log002.mat');
 
-mintime = 10;
-maxtime = 100;
+% load('search_pattern_log002.mat');
+%load('quad_flight_log003.mat');
+load('attitude_log001.mat');
+
+mintime = 0;
+maxtime = 150;
 
 i = 1;
 prune_start_time = IMU.data(1,1);
@@ -25,11 +27,13 @@ GPS.data = GPS.data(1:i,:);
 
 i = 1;
 
-while (i < size(AIRS.data, 1) && (AIRS.data(i,1) - prune_start_time) < maxtime)
-    i = i+1;
-end
+if (exist('AIRS', 'var') == 1)
+    while (i < size(AIRS.data, 1) && (AIRS.data(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
 
-AIRS.data = AIRS.data(1:i,:);
+    AIRS.data = AIRS.data(1:i,:);
+end
 
 i = 1;
 
@@ -38,6 +42,15 @@ while (i < size(ATT.data, 1) && (ATT.data(i,1) - prune_start_time) < maxtime)
 end
 
 ATT.data = ATT.data(1:i,:);
+
+if (exist('GPOS', 'var') == 1)
+i = 1;
+while (i < size(GPOS.data, 1) && (GPOS.data(i,1) - prune_start_time) < maxtime)
+    i = i+1;
+end
+
+GPOS.data = GPOS.data(1:i,:);
+end
 
 %% Prune data according to time
 
@@ -83,6 +96,31 @@ if ~isempty(GPS)
     end
 end
 
+%% Onboard position data
+
+if (exist('GPOS', 'var') == 1) && ~isempty(GPOS)
+    GPOS.data(:,1) = (GPOS.data(:,1) - zerotimestamp) * 1e3;
+    GPOStimestamp = GPOS.data(:,1);
+    GPOSStime = GPOS.data(:,1) * 1e-3;
+    GPOSLatDeg = GPOS.data(:,2);
+    GPOSLngDeg = GPOS.data(:,3);
+    GPOSHgt = GPOS.data(:,4);
+    GPOSdeg2rad = pi/180;
+    GPOSVelN = GPOS.data(:,5);
+    GPOSVelE = GPOS.data(:,6);
+    GPOSVelD = GPOS.data(:,7);
+else
+    GPOStimestamp = IMUtimestamp;
+    GPOSStime = IMUtime;
+    GPOSLatDeg = zeros(size(IMUtime));
+    GPOSLngDeg = zeros(size(IMUtime));
+    GPOSHgt = zeros(size(IMUtime));
+    GPOSdeg2rad = pi/180;
+    GPOSVelN = zeros(size(IMUtime));
+    GPOSVelE = zeros(size(IMUtime));
+    GPOSVelD = zeros(size(IMUtime));
+end
+
 %% Magnetometer Data
 
 % if ~isempty(MAG)
@@ -99,7 +137,7 @@ end
 
 %% Airspeed Data
 
-if ~isempty(AIRS)
+if (exist('AIRS', 'var') && ~isempty(AIRS))
     AIRS.data(:,1) = (AIRS.data(:,1) - zerotimestamp) * 1e3;
     ADStimestamp = AIRS.data(:,1);
     ADStime  = AIRS.data(:,1) * 1e-3;
@@ -115,6 +153,27 @@ if ~isempty(AIRS)
         for i=1:size(AIRS.data,1)
             j = i;
             while ((SENS.data(j,1) - zerotimestamp) < ADStime(i, 1) && (j < size(SENS.data, 1)))
+                j = j+1;
+            end
+            
+            % we got a close measurement
+            HgtBaro(i,1) = SENS.data(j,3);
+        end
+        
+    end
+else
+    ADStimestamp = IMUtimestamp;
+    ADStime = IMUtime;
+    Veas = zeros(size(IMUtime));
+    
+        % Find closest baro reading
+    if ~isempty(SENS)
+        
+        % SENS is shorter / equal to IMU
+        % so we know i is an upper bound for j
+        for i=1:size(IMU.data,1)
+            j = ceil(i/2);
+            while ((j < size(SENS.data, 1) - 1) && (SENS.data(j,1) - zerotimestamp) < ADStime(i, 1) && (j < size(IMU.data, 1) - 1))
                 j = j+1;
             end
             
@@ -167,6 +226,7 @@ IMU = [IMUtimestamp IMUtimestamp angRate accel];
 gps_zeros = zeros(size(Hgt, 1), 1);
 GPS = [GPStimestamp GPSstatus GPStimestamp gps_zeros gps_zeros gps_zeros LatDeg LngDeg Hgt Hgt GndSpd CourseDeg VelD gps_zeros];
 GPSraw = [GPStimestamp LatDeg LngDeg Hgt VelN VelE VelD];
+GPOSonboard = [GPOStimestamp GPOSLatDeg GPOSLngDeg GPOSHgt GPOSVelN GPOSVelE GPOSVelD];
 % {'timestamp' 'TimeMS' 'MagX' 'MagY' 'MagZ' 'OfsX' 'OfsY' 'OfsZ'}
 MAG = [MAGtimestamp MAGtimestamp MagX*1e3 MagY*1e3 MagZ*1e3 MagBiasX*1e3 MagBiasY*1e3 MagBiasZ*1e3];
 % {'timestamp' 'TimeMS' 'Roll' 'Pitch' 'Yaw' 'ErrorRP' 'ErrorYaw'}
@@ -176,6 +236,7 @@ NTUN = [ADStimestamp ADStimestamp zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1
 save('IMU.txt','IMU','-ascii');
 save('GPS.txt','GPS','-ascii');
 save('GPSraw.txt','GPSraw','-ascii');
+save('GPOSonboard.txt','GPOSonboard','-ascii');
 save('MAG.txt','MAG','-ascii')
 save('ATT.txt','ATT','-ascii');
 save('NTUN.txt','NTUN','-ascii');
