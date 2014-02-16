@@ -178,8 +178,6 @@ int main()
 
     printf("First data instances loaded\n");
 
-    unsigned loopcounter = 0;
-
     float dt = 0.0f; // time lapsed since last covariance prediction
 
     while (true) {
@@ -197,10 +195,10 @@ int main()
             break;
         }
 
-        // if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
-        // {
+        if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
+        {
             // Initialise states, covariance and other data
-            if (/*(IMUmsec > msecAlignTime) &&*/ !statesInitialised && (GPSstatus == 3))
+            if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
                 if (pGpsRawINFile > 0)
                 {
@@ -220,10 +218,10 @@ int main()
             {
                 // Run the strapdown INS equations every IMU update
                 UpdateStrapdownEquationsNED();
-                #if 0
-                // debug code - could be tunred into a filter mnitoring/watchdog function
+                #if 1
+                // debug code - could be turned into a filter mnitoring/watchdog function
                 float tempQuat[4];
-                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+                for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
                 quat2eul(eulerEst, tempQuat);
                 for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
                 if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
@@ -329,6 +327,8 @@ int main()
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
 
+            onGround = false;
+
 
             // State vector:
             // 0-3: quaternions (q0, q1, q2, q3)
@@ -362,7 +362,7 @@ int main()
                 (useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
                 (useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
 
-        // }
+        }
     }
 }
 
@@ -517,7 +517,7 @@ void readAirData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
-            baroHgt = tempAdsPrev[8];
+            baroHgt = 0;//tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -598,6 +598,11 @@ void readAhrsData()
 
 void WriteFilterOutput()
 {
+
+    float tempQuat[4];
+    for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
+    quat2eul(eulerEst, tempQuat);
+
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<n_states; i++)
