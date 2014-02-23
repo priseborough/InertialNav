@@ -607,6 +607,9 @@ void WriteFilterOutput()
     fprintf(pStateOutFile,"\n");
     // Euler angles from filter states, AHRS euler angles and AHRS error RP and error Yaw
     fprintf(pEulOutFile," %e", float(IMUmsec*0.001f));
+    float tempQuat[4];
+    for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+    quat2eul(eulerEst, tempQuat);
     for (uint8_t i=0; i<=2; i++)
     {
         fprintf(pEulOutFile," %e %e", eulerEst[i], ahrsEul[i]);

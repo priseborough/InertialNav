@@ -6,7 +6,7 @@ import matplotlib.cbook as cbook
 import numpy as np
 import math
 data = np.genfromtxt('EulDataOut.txt', delimiter=' ', skip_header=1,
-	skip_footer=1, names=['time', 'time2', 'roll', 'rolloffs', 'pitch', 'pitchoffs', 'yaw', 'yawoffs', 'empty1'])
+	skip_footer=1, names=['time', 'roll', 'roll_onboard', 'pitch', 'pitch_onboard', 'yaw', 'yaw_onboard', 'empty1', 'empty2'])
 
 fig = plt.figure()
 
