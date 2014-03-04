@@ -1,17 +1,11 @@
 #include "estimator.h"
 
-// For debugging only
-#include <cstdlib>
-#include <stdio.h>
-
 // Global variables
 float KH[n_states][n_states]; //  intermediate result used for covariance updates
 float KHP[n_states][n_states]; // intermediate result used for covariance updates
 float P[n_states][n_states]; // covariance matrix
 float Kfusion[n_states]; // Kalman gains
 float states[n_states]; // state matrix
-float storedStates[n_states][data_buffer_size]; // state vectors stored for the last 50 time steps
-uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
 Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
 Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
 Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
@@ -58,6 +52,9 @@ float gpsLat;
 float gpsLon;
 float gpsHgt;
 uint8_t GPSstatus;
+
+float storedStates[n_states][data_buffer_size]; // state vectors stored for the last 50 time steps
+uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
 
 // Baro input
 float baroHgt;
@@ -1618,14 +1615,13 @@ void StoreStates(uint64_t timestamp_ms)
 }
 
 // Output the state vector stored at the time that best matches that specified by msec
-void RecallStates(float (&statesForFusion)[n_states], uint32_t msec)
+void RecallStates(float (&statesForFusion)[n_states], uint64_t msec)
 {
-    long int bestTimeDelta = 200;
-    uint8_t storeIndex;
-    uint8_t bestStoreIndex = 0;
-    for (storeIndex=0; storeIndex < data_buffer_size; storeIndex++)
+    int64_t bestTimeDelta = 200;
+    unsigned bestStoreIndex = 0;
+    for (unsigned storeIndex = 0; storeIndex < data_buffer_size; storeIndex++)
     {
-        long int timeDelta = msec - statetimeStamp[storeIndex];
+        int64_t timeDelta = (int)msec - statetimeStamp[storeIndex];
         if (timeDelta < 0) timeDelta = -timeDelta;
         if (timeDelta < bestTimeDelta)
         {
@@ -1829,7 +1825,7 @@ void InitialiseFilter(float (&initvelNED)[3])
     for (unsigned i = 0; i < data_buffer_size; i++) {
 
         for (unsigned j = 0; j < n_states; j++) {
-
+            storedStates[j][i] = 0.0f;
         }
 
         statetimeStamp[i] = 0;
@@ -1840,8 +1836,6 @@ void InitialiseFilter(float (&initvelNED)[3])
     Vector3f initMagXYZ;
     initMagXYZ   = magData - magBias;
     AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, initQuat);
-        printf("initializing: accel: %8.4f %8.4f %8.4f, mag: %8.4f %8.4f %8.4f q: %8.4f %8.4f %8.4f %8.4f\n",
-        accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, initQuat[0], initQuat[1], initQuat[2], initQuat[3]);
 
     // Calculate initial Tbn matrix and rotate Mag measurements into NED
     // to set initial NED magnetic field states

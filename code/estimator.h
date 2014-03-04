@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define GRAVITY_MSS 9.76f//9.80665f
+#define GRAVITY_MSS 9.80665f
 #define deg2rad 0.017453292f
 #define rad2deg 57.295780f
 #define pi 3.141592657f
@@ -122,8 +122,8 @@ extern float baroHgt;
 
 extern bool statesInitialised;
 
-const float covTimeStepMax = 0.2f; // maximum time allowed between covariance predictions
-const float covDelAngMax = 0.05f; // maximum delta angle between covariance predictions
+const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
+const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
 
 void  UpdateStrapdownEquationsNED();
 
@@ -147,7 +147,7 @@ void quatNorm(float (&quatOut)[4], const float quatIn[4]);
 void StoreStates(uint64_t timestamp_ms);
 
 // recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float (&statesForFusion)[n_states], uint32_t msec);
+void RecallStates(float (&statesForFusion)[n_states], uint64_t msec);
 
 void quat2Tbn(Mat3f &Tbn, const float (&quat)[4]);
 
