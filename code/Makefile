@@ -20,9 +20,13 @@ $(ODIR)/%.o: %.cpp
 
 #
 estimator_closed_loop_test: $(OBJ)
-	g++ -o $@ $^ $(CFLAGS) $(LIBS)
+	g++ -O3 -o $@ $^ $(CFLAGS) $(LIBS)
 
-.PHONY: clean
+.PHONY: clean plots
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+
+plots:
+	python plot_attitude.py &
+	python plot_position.py &

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 void readIMUData();
 
@@ -11,11 +12,13 @@ void readGpsData();
 
 void readMagData();
 
-void readAirSpdData();
+void readAirData();
 
 void readAhrsData();
 
 void readTimingData();
+
+void readOnboardData();
 
 void WriteFilterOutput();
 
@@ -70,10 +73,23 @@ float Veas;
 bool newAdsData = false;
 bool newDataGps = false;
 
+float onboardTimestamp = 0;
+uint32_t onboardMsec = 0;
+uint32_t lastOnboardMsec = 0;
+bool newOnboardData = false;
+
+float onboardPosNED[3];
+float onboardVelNED[3];
+float onboardLat;
+float onboardLon;
+float onboardHgt;
+
 // input data timing
 uint32_t msecAlignTime;
 uint32_t msecStartTime;
 uint32_t msecEndTime;
+
+float gpsGndSpd;
 
 // Data file identifiers
 FILE * pImuFile;
@@ -91,45 +107,110 @@ FILE * pTasFuseFile;
 FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
+FILE * pOnboardPosVelOutFile;
+FILE * pOnboardFile;
+
+FILE * open_with_exit(const char* filename, const char* flags)
+{
+    FILE *f = fopen(filename, flags);
+
+    if (!f) {
+        printf("FAILED TO OPEN FILE: %s\n", filename);
+        exit(1);
+    }
+
+    return f;
+}
+
+int printstates() {
+    printf("States:\n");
+    unsigned i = 0;
+    printf("Quaternion:\n");
+    for (; i<4; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<4+6; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<4+6+6; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+    for (; i<n_states; i++)
+    {
+        printf(" %e", states[i]);
+    }
+    printf("\n");
+}
 
 int main()
 {
 
     // open data files
-    pImuFile = fopen ("IMU.txt","r");
-    pMagFile = fopen ("MAG.txt","r");
-    pGpsFile = fopen ("GPS.txt","r");
-    pAhrsFile = fopen ("ATT.txt","r");
-    pAdsFile = fopen ("NTUN.txt","r");
-    pTimeFile = fopen ("timing.txt","r");
-    pStateOutFile = fopen ("StateDataOut.txt","w");
-    pEulOutFile = fopen ("EulDataOut.txt","w");
-    pCovOutFile = fopen ("CovDataOut.txt","w");
-    pRefPosVelOutFile = fopen ("RefVelPosDataOut.txt","w");
-    pVelPosFuseFile = fopen ("VelPosFuse.txt","w");
-    pMagFuseFile = fopen ("MagFuse.txt","w");
-    pTasFuseFile = fopen ("TasFuse.txt","w");
+    pImuFile = open_with_exit ("IMU.txt","r");
+    pMagFile = open_with_exit ("MAG.txt","r");
+    pGpsFile = open_with_exit ("GPS.txt","r");
+    pAhrsFile = open_with_exit ("ATT.txt","r");
+    pAdsFile = open_with_exit ("NTUN.txt","r");
+    pTimeFile = open_with_exit ("timing.txt","r");
+    pStateOutFile = open_with_exit ("StateDataOut.txt","w");
+    pEulOutFile = open_with_exit ("EulDataOut.txt","w");
+    pCovOutFile = open_with_exit ("CovDataOut.txt","w");
+    pRefPosVelOutFile = open_with_exit ("RefVelPosDataOut.txt","w");
+    pVelPosFuseFile = open_with_exit ("VelPosFuse.txt","w");
+    pMagFuseFile = open_with_exit ("MagFuse.txt","w");
+    pTasFuseFile = open_with_exit ("TasFuse.txt","w");
     pGpsRawINFile = fopen ("GPSraw.txt","r");
-    pGpsRawOUTFile = fopen ("GPSrawOut.txt","w");
+    pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
+    pOnboardFile = fopen ("GPOSonboard.txt","r");
+    pOnboardPosVelOutFile = open_with_exit ("OnboardVelPosDataOut.txt","w");
+
+    printf("Filter start\n");
 
     memset(gpsRaw, 0, sizeof(gpsRaw));
 
-    // read test data from files for first timestamp
-    readIMUData();
-    readGpsData();
-    readMagData();
-    readAirSpdData();
-    readAhrsData();
     readTimingData();
 
-    while (!endOfData)
-    {
+    printf("First data instances loaded\n");
+
+    float dt = 0.0f; // time lapsed since last covariance prediction
+
+    while (true) {
+
+        // read test data from files for next timestamp
+        readIMUData();
+        readGpsData();
+        readMagData();
+        readAirData();
+        readAhrsData();
+        readOnboardData();
+        if (IMUmsec > msecEndTime)
+        {
+            CloseFiles();
+            break;
+        }
+
         if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
         {
             // Initialise states, covariance and other data
             if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
             {
-                InitialiseFilter();
+                if (pGpsRawINFile > 0)
+                {
+                    velNED[0] = gpsRaw[4];
+                    velNED[1] = gpsRaw[5];
+                    velNED[2] = gpsRaw[6];
+                }
+                else
+                {
+                    calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                }
+                InitialiseFilter(velNED);
             }
 
             // If valid IMU data and states initialised, predict states and covariances
@@ -137,26 +218,28 @@ int main()
             {
                 // Run the strapdown INS equations every IMU update
                 UpdateStrapdownEquationsNED();
-                // debug code - could be tunred into a filter mnitoring/watchdog function
+                #if 1
+                // debug code - could be turned into a filter mnitoring/watchdog function
                 float tempQuat[4];
-                for (uint8_t j=0; j<=3; j++) tempQuat[j] = states[j];
+                for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
                 quat2eul(eulerEst, tempQuat);
                 for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
                 if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
                 if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+                #endif
                 // store the predicted states for subsequent use by measurement fusion
-                StoreStates();
+                StoreStates(IMUmsec);
                 // Check if on ground - status is used by covariance prediction
                 OnGroundCheck();
                 // sum delta angles and time used by covariance prediction
                 summedDelAng = summedDelAng + correctedDelAng;
-                summedDelVel = summedDelVel + correctedDelVel;
+                summedDelVel = summedDelVel + dVelIMU;
                 dt += dtIMU;
                 // perform a covariance prediction if the total delta angle has exceeded the limit
                 // or the time limit will be exceeded at the next IMU update
                 if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
                 {
-                    CovariancePrediction();
+                    CovariancePrediction(dt);
                     summedDelAng = summedDelAng.zero();
                     summedDelVel = summedDelVel.zero();
                     dt = 0.0f;
@@ -167,19 +250,31 @@ int main()
             if (newDataGps && statesInitialised)
             {
                 // Convert GPS measurements to Pos NE, hgt and Vel NED
-                calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                if (pGpsRawINFile > 0)
+                {
+                    velNED[0] = gpsRaw[4];
+                    velNED[1] = gpsRaw[5];
+                    velNED[2] = gpsRaw[6];
+                }
+                else
+                {
+                    calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                }
                 calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
+
+                if (pOnboardFile > 0) {
+                    calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, latRef, lonRef, hgtRef);
+                    printf("in: %e %e %e posned 1: %e\n", onboardLat, onboardLon, onboardHgt, onboardPosNED[1]);
+                }
+
                 posNE[0] = posNED[0];
                 posNE[1] = posNED[1];
-                hgtMea =  -posNED[2];
-                // set fusion flags
+                 // set fusion flags
                 fuseVelData = true;
                 fusePosData = true;
-                fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
                 RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
                 RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
-                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 FuseVelposNED();
             }
@@ -187,6 +282,20 @@ int main()
             {
                 fuseVelData = false;
                 fusePosData = false;
+            }
+
+            if (newAdsData && statesInitialised)
+            {
+                // Could use a blend of GPS and baro alt data if desired
+                hgtMea = 1.0f*baroHgt + 0.0f*gpsHgt;
+                fuseHgtData = true;
+                // recall states stored at time of measurement after adjusting for delays
+                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                // run the fusion step
+                FuseVelposNED();
+            }
+            else
+            {
                 fuseHgtData = false;
             }
 
@@ -217,17 +326,42 @@ int main()
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
-        }
-        // read test data from files for next timestamp
-        readIMUData();
-        readGpsData();
-        readMagData();
-        readAirSpdData();
-        readAhrsData();
-        if (IMUmsec > msecEndTime)
-        {
-            CloseFiles();
-            endOfData = true;
+
+            onGround = false;
+
+
+            // State vector:
+            // 0-3: quaternions (q0, q1, q2, q3)
+            // 4-6: Velocity - m/sec (North, East, Down)
+            // 7-9: Position - m (North, East, Down)
+            // 10-12: Delta Angle bias - rad (X,Y,Z)
+            // 13-14: Wind Vector  - m/sec (North,East)
+            // 15-17: Earth Magnetic Field Vector - milligauss (North, East, Down)
+            // 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
+            printf("\n");
+            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", dtIMU, dt, IMUmsec);
+            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)posNED[0], (double)posNED[1], (double)posNED[2],
+                (double)velNED[0], (double)velNED[1], (double)velNED[2]);
+            printf("vTAS: %8.4f baro alt: %8.4f\n", VtasMeas, hgtMea);
+            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)magData.x, (double)magData.y, (double)magData.z);
+            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)states[0], (double)states[1], (double)states[2], (double)states[3]);
+            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)states[4], (double)states[5], (double)states[6]);
+            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)states[7], (double)states[8], (double)states[9]);
+            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)states[10], (double)states[11], (double)states[12]);
+            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)states[13], (double)states[14]);
+            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)states[15], (double)states[16], (double)states[17]);
+            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)states[18], (double)states[19], (double)states[20]);
+            printf("states: %s %s %s %s %s %s %s %s %s\n",
+                (statesInitialised) ? "INITIALIZED" : "NON_INIT",
+                (onGround) ? "ON_GROUND" : "AIRBORNE",
+                (fuseVelData) ? "FUSE_VEL" : "INH_VEL",
+                (fusePosData) ? "FUSE_POS" : "INH_POS",
+                (fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
+                (fuseMagData) ? "FUSE_MAG" : "INH_MAG",
+                (fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
+                (useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
+                (useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
+
         }
     }
 }
@@ -366,7 +500,7 @@ void readMagData()
     }
 }
 
-void readAirSpdData()
+void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
@@ -383,6 +517,7 @@ void readAirSpdData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
+            baroHgt = 0;//tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -393,6 +528,45 @@ void readAirSpdData()
     else
     {
         newAdsData = false;
+    }
+}
+
+
+
+void readOnboardData()
+{
+    float tempOnboard[7];
+
+    // wind data forward to one update past current IMU data time
+    // and then take data from previous update
+    while (onboardTimestamp <= IMUtimestamp)
+    {
+        for (uint8_t j = 0; j < 7; j++)
+        {
+            float onboardIn;
+            if (fscanf(pOnboardFile, "%f", &onboardIn) != EOF) tempOnboard[j] = onboardIn;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            onboardTimestamp  = tempOnboard[0];
+            onboardLat = deg2rad*tempOnboard[1];
+            onboardLon = deg2rad*tempOnboard[2] - pi;
+            onboardHgt = tempOnboard[3];
+            onboardVelNED[0] = tempOnboard[4];
+            onboardVelNED[1] = tempOnboard[5];
+            onboardVelNED[2] = tempOnboard[6];
+            printf("velned onboard: %e %e %e %e %e %e\n", onboardLat, onboardLon, onboardHgt, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+        }
+    }
+    if (onboardMsec > lastOnboardMsec)
+    {
+        lastOnboardMsec = onboardMsec;
+        newOnboardData = true;
+    }
+    else
+    {
+        newOnboardData = false;
     }
 }
 
@@ -424,9 +598,14 @@ void readAhrsData()
 
 void WriteFilterOutput()
 {
+
+    float tempQuat[4];
+    for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
+    quat2eul(eulerEst, tempQuat);
+
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
+    for (uint8_t i=0; i<n_states; i++)
     {
         fprintf(pStateOutFile," %e", states[i]);
     }
@@ -441,7 +620,7 @@ void WriteFilterOutput()
     fprintf(pEulOutFile,"\n");
     // covariance matrix diagonals
     fprintf(pCovOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<=23; i++)
+    for (uint8_t i=0; i<n_states; i++)
     {
         fprintf(pCovOutFile," %e", P[i][i]);
     }
@@ -450,6 +629,11 @@ void WriteFilterOutput()
     fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
     fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
+
+    fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
+    fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+    fprintf(pOnboardPosVelOutFile,"\n");
 
     // raw GPS outputs
     fprintf(pGpsRawOUTFile," %e", float(IMUmsec*0.001f));
@@ -516,4 +700,6 @@ void CloseFiles()
     fclose (pTimeFile);
     fclose (pGpsRawINFile);
     fclose (pGpsRawOUTFile);
+    fclose (pOnboardPosVelOutFile);
+    fclose (pOnboardFile);
 }
