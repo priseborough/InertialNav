@@ -11,7 +11,7 @@
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 7 Jan 2013
+% Last Modified: 7 Mar 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -20,14 +20,15 @@
 % Delta Angle bias - rad (X,Y,Z)
 % Delta Velocity bias - m/s (Z)
 % Wind Vector  - m/sec (North,East)
-% Earth Magnetic Field Vector - milligauss (North, East, Down)
-% Body Magnetic Field Vector - milligauss (X,Y,Z)
+% Earth Magnetic Field Vector - (North, East, Down)
+% Body Magnetic Field Vector - (X,Y,Z)
 
 % Observations:
 % NED velocity - m/s
 % NED position - m
 % True airspeed - m/s
-% XYZ magnetic flux - milligauss
+% angle of sideslip - rad
+% XYZ magnetic flux
 
 % Time varying parameters:
 % XYZ delta angle measurements in body axes - rad
@@ -54,6 +55,7 @@ syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
 syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
 syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
+syms R_BETA real % variance of sidelsip measurements rad^2
 
 %% define the process equations
 
@@ -146,8 +148,8 @@ Q = G*imuNoise*transpose(G);
 % these can be substituted later to create executable code
 for rowIndex = 1:nStates
     for colIndex = 1:nStates
-        eval(['syms OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex), '_rp_ real']);
-        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_lp_',num2str(rowIndex),'_c_',num2str(colIndex),'_rp_;']);
+        eval(['syms OP_l_',num2str(rowIndex),'_c_',num2str(colIndex), '_r_ real']);
+        eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_l_',num2str(rowIndex),'_c_',num2str(colIndex),'_r_;']);
     end
 end
 
@@ -190,6 +192,15 @@ VtasPred = sqrt((vn-vwn)^2 + (ve-vwe)^2 + vd^2); % predicted measurement
 H_TAS = jacobian(VtasPred,stateVector); % measurement Jacobian
 [H_TAS,SH_TAS]=OptimiseAlgebra(H_TAS,'SH_TAS'); % optimise processing
 K_TAS = (P*transpose(H_TAS))/(H_TAS*P*transpose(H_TAS) + R_TAS);[K_TAS,SK_TAS]=OptimiseAlgebra(K_TAS,'SK_TAS'); % Kalman gain vector
+
+%% derive equations for fusion of angle of sideslip measurements
+% calculate wind relative velocities in nav frame and rotate into body frame
+Vbw = Tbn'*[(vn-vwn);(ve-vwe);vd];
+% calculate predicted angle of sideslip using small angle assumption
+BetaPred = Vbw(2)/Vbw(1);
+H_BETA = jacobian(BetaPred,stateVector); % measurement Jacobian
+[H_BETA,SH_BETA]=OptimiseAlgebra(H_BETA,'SH_BETA'); % optimise processing
+K_BETA = (P*transpose(H_BETA))/(H_BETA*P*transpose(H_BETA) + R_BETA);[K_BETA,SK_BETA]=OptimiseAlgebra(K_BETA,'SK_BETA'); % Kalman gain vector
 
 %% derive equations for fusion of magnetic field measurement
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magX;magY;magZ]; % predicted measurement
