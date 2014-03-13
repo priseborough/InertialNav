@@ -11,7 +11,7 @@
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 7 Mar 2013
+% Last Modified: 14 Mar 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -142,9 +142,9 @@ Q = G*imuNoise*transpose(G);
 [Q,SQ]=OptimiseAlgebra(Q,'SQ');
 
 % define a symbolic covariance matrix using strings to represent 
-% '_lp_' to represent '( '
+% '_l_' to represent '( '
 % '_c_' to represent ,
-% '_rp_' to represent ')' 
+% '_r_' to represent ')' 
 % these can be substituted later to create executable code
 for rowIndex = 1:nStates
     for colIndex = 1:nStates
