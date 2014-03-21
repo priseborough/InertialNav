@@ -535,6 +535,9 @@ void readAirData()
 
 void readOnboardData()
 {
+    if (pOnboardFile <= 0)
+        return;
+
     float tempOnboard[7];
 
     // wind data forward to one update past current IMU data time
