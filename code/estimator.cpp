@@ -876,7 +876,7 @@ void CovariancePrediction(float dt)
     nextP[20][19] = P[20][19];
     nextP[20][20] = P[20][20];
 
-    for (uint8_t i=0; i<= 20; i++)
+    for (unsigned i = 0; i < n_states; i++)
     {
         nextP[i][i] = nextP[i][i] + processNoise[i];
     }
@@ -913,19 +913,48 @@ void CovariancePrediction(float dt)
         }
     }
 
-    // Force symmetry on the covariance matrix to prevent ill-conditioning
-    // of the matrix which would cause the filter to blow-up
-    for (uint8_t i=0; i<=20; i++) P[i][i] = nextP[i][i];
-    for (uint8_t i=1; i<=20; i++)
-    {
-        for (uint8_t j=0; j<=i-1; j++)
-        {
-            P[i][j] = 0.5f*(nextP[i][j] + nextP[j][i]);
-            P[j][i] = P[i][j];
+    if (onGround || staticMode) {
+        // copy the portion of the variances we want to
+        // propagate
+        for (unsigned i = 0; i < 14; i++) {
+            P[i][i] = nextP[i][i];
+
+            // force symmetry for observable states
+            // force zero for non-observable states
+            for (unsigned i = 1; i < n_states; i++)
+            {
+                for (uint8_t j = 0; j < i; j++)
+                {
+                    if ((i > 12) || (j > 12)) {
+                        P[i][j] = 0.0f;
+                    } else {
+                        P[i][j] = 0.5f * (nextP[i][j] + nextP[j][i]);
+                    }
+                    P[j][i] = P[i][j];
+                }
+            }
         }
+
+    } else {
+
+        // Copy covariance
+        for (unsigned i = 0; i < n_states; i++) {
+            P[i][i] = nextP[i][i];
+        }
+
+        // force symmetry for observable states
+        for (unsigned i = 1; i < n_states; i++)
+        {
+            for (uint8_t j = 0; j < i; j++)
+            {
+                P[i][j] = 0.5f * (nextP[i][j] + nextP[j][i]);
+                P[j][i] = P[i][j];
+            }
+        }
+
     }
 
-    //
+    ConstrainVariances();
 }
 
 void FuseVelposNED()
