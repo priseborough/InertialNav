@@ -121,9 +121,18 @@ extern uint8_t GPSstatus;
 extern float baroHgt;
 
 extern bool statesInitialised;
+extern bool numericalProtection;
 
 const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
 const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
+
+extern bool staticMode;
+
+enum GPS_FIX {
+    GPS_FIX_NOFIX = 0,
+    GPS_FIX_2D = 2,
+    GPS_FIX_3D = 3
+};
 
 void  UpdateStrapdownEquationsNED();
 
@@ -147,7 +156,9 @@ void quatNorm(float (&quatOut)[4], const float quatIn[4]);
 void StoreStates(uint64_t timestamp_ms);
 
 // recall stste vector stored at closest time to the one specified by msec
-void RecallStates(float (&statesForFusion)[n_states], uint64_t msec);
+void RecallStates(float statesForFusion[n_states], uint64_t msec);
+
+void ResetStoredStates();
 
 void quat2Tbn(Mat3f &Tbn, const float (&quat)[4]);
 
@@ -168,6 +179,20 @@ void OnGroundCheck();
 void CovarianceInit();
 
 void InitialiseFilter(float (&initvelNED)[3]);
+
+float ConstrainFloat(float val, float min, float max);
+
+void ConstrainVariances();
+
+void ConstrainStates();
+
+void ForceSymmetry();
+
+void CheckAndBound();
+
+void ResetPosition();
+
+void ResetVelocity();
 
 uint32_t millis();
 

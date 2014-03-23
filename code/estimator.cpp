@@ -1,5 +1,7 @@
 #include "estimator.h"
 
+#include <string.h>
+
 // Global variables
 float KH[n_states][n_states]; //  intermediate result used for covariance updates
 float KHP[n_states][n_states]; // intermediate result used for covariance updates
@@ -67,9 +69,21 @@ bool fuseHgtData = false; // this boolean causes the hgtMea obs to be fused
 bool fuseMagData = false; // boolean true when magnetometer data is to be fused
 bool fuseVtasData = false; // boolean true when airspeed data is to be fused
 
-bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
-bool useAirspeed = true; // boolean true if airspeed data is being used
-bool useCompass = true; // boolean true if magnetometer data is being used
+bool onGround    = true;    ///< boolean true when the flight vehicle is on the ground (not flying)
+bool staticMode  = true;    ///< boolean true if no position feedback is fused
+bool useAirspeed = true;    ///< boolean true if airspeed data is being used
+bool useCompass  = true;    ///< boolean true if magnetometer data is being used
+
+bool velHealth;
+bool posHealth;
+bool hgtHealth;
+bool velTimeout;
+bool posTimeout;
+bool hgtTimeout;
+
+bool numericalProtection = true;
+
+static unsigned storeIndex = 0;
 
 float Vector3f::length(void) const
 {
@@ -298,6 +312,8 @@ void  UpdateStrapdownEquationsNED()
     states[8] = states[8] + 0.5f*(states[5] + lastVelocity[1])*dtIMU;
     states[9] = states[9] + 0.5f*(states[6] + lastVelocity[2])*dtIMU;
 
+    // Constrain states (to protect against filter divergence)
+    ConstrainStates();
 }
 
 void CovariancePrediction(float dt)
@@ -889,7 +905,7 @@ void CovariancePrediction(float dt)
     {
         for (uint8_t i=7; i<=8; i++)
         {
-            for (uint8_t j=0; j<=20; j++)
+            for (unsigned j = 0; j < n_states; j++)
             {
                 nextP[i][j] = P[i][j];
                 nextP[j][i] = P[j][i];
@@ -923,12 +939,6 @@ void FuseVelposNED()
     static uint32_t velFailTime = 0;
     static uint32_t posFailTime = 0;
     static uint32_t hgtFailTime = 0;
-    bool velHealth;
-    bool posHealth;
-    bool hgtHealth;
-    bool velTimeout;
-    bool posTimeout;
-    bool hgtTimeout;
 
 // declare variables used to check measurement errors
     float velInnov[3] = {0.0f,0.0f,0.0f};
@@ -1136,6 +1146,9 @@ void FuseVelposNED()
             }
         }
     }
+
+    ForceSymmetry();
+    ConstrainVariances();
 
     //printf("velh: %s, posh: %s, hgth: %s\n", ((velHealth) ? "OK" : "FAIL"), ((posHealth) ? "OK" : "FAIL"), ((hgtHealth) ? "OK" : "FAIL"));
 }
@@ -1442,6 +1455,9 @@ void FuseMagnetometer()
         }
     }
     obsIndex = obsIndex + 1;
+
+    ForceSymmetry();
+    ConstrainVariances();
 }
 
 void FuseAirspeed()
@@ -1568,6 +1584,9 @@ void FuseAirspeed()
             }
         }
     }
+
+    ForceSymmetry();
+    ConstrainVariances();
 }
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
@@ -1604,8 +1623,6 @@ float sq(float valIn)
 // Store states in a history array along with time stamp
 void StoreStates(uint64_t timestamp_ms)
 {
-    /* static to keep the store index */
-    static uint8_t storeIndex = 0;
     for (unsigned i=0; i<n_states; i++)
         storedStates[i][storeIndex] = states[i];
     statetimeStamp[storeIndex] = timestamp_ms;
@@ -1614,15 +1631,41 @@ void StoreStates(uint64_t timestamp_ms)
         storeIndex = 0;
 }
 
+void ResetStoredStates()
+{
+    // reset all stored states
+    memset(&storedStates[0][0], 0, sizeof(storedStates));
+    memset(&statetimeStamp[0], 0, sizeof(statetimeStamp));
+
+    // reset store index to first
+    storeIndex = 0;
+
+    // overwrite all existing states
+    for (unsigned i = 0; i < n_states; i++) {
+        storedStates[i][storeIndex] = states[i];
+    }
+
+    statetimeStamp[storeIndex] = millis();
+
+    // increment to next storage index
+    storeIndex++;
+}
+
 // Output the state vector stored at the time that best matches that specified by msec
-void RecallStates(float (&statesForFusion)[n_states], uint64_t msec)
+void RecallStates(float statesForFusion[n_states], uint64_t msec)
 {
     int64_t bestTimeDelta = 200;
     unsigned bestStoreIndex = 0;
     for (unsigned storeIndex = 0; storeIndex < data_buffer_size; storeIndex++)
     {
-        int64_t timeDelta = (int)msec - statetimeStamp[storeIndex];
-        if (timeDelta < 0) timeDelta = -timeDelta;
+        // The time delta can also end up as negative number,
+        // since we might compare future to past or past to future
+        // therefore cast to int64.
+        int64_t timeDelta = (int64_t)msec - (int64_t)statetimeStamp[storeIndex];
+        if (timeDelta < 0) {
+            timeDelta = -timeDelta;
+        }
+
         if (timeDelta < bestTimeDelta)
         {
             bestStoreIndex = storeIndex;
@@ -1734,14 +1777,17 @@ void calcLLH(float (&posNED)[3], float lat, float lon, float hgt, float latRef, 
 void OnGroundCheck()
 {
     onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0f) && (VtasMeas < 8.0f));
+    if (staticMode) {
+        staticMode = !(GPSstatus > GPS_FIX_2D);
+    }
 }
 
 void calcEarthRateNED(Vector3f &omega, float latitude)
 {
     //Define Earth rotation vector in the NED navigation frame
-    omega.x  = earthRate*cos(latitude);
-    omega.y  = 0.0;
-    omega.z  = -earthRate*sin(latitude);
+    omega.x  = earthRate*cosf(latitude);
+    omega.y  = 0.0f;
+    omega.z  = -earthRate*sinf(latitude);
 }
 
 void CovarianceInit()
@@ -1770,7 +1816,240 @@ void CovarianceInit()
     P[20][20] = P[18][18];
 }
 
+float ConstrainFloat(float val, float min, float max)
+{
+    return (val > max) ? max : ((val < min) ? min : val);
+}
 
+void ConstrainVariances()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // State vector:
+    // 0-3: quaternions (q0, q1, q2, q3)
+    // 4-6: Velocity - m/sec (North, East, Down)
+    // 7-9: Position - m (North, East, Down)
+    // 10-12: Delta Angle bias - rad (X,Y,Z)
+    // 13-14: Wind Vector  - m/sec (North,East)
+    // 15-17: Earth Magnetic Field Vector - gauss (North, East, Down)
+    // 18-20: Body Magnetic Field Vector - gauss (X,Y,Z)
+
+    // Constrain quaternion variances
+    for (unsigned i = 0; i < 4; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+    // Constrain velocitie variances
+    for (unsigned i = 4; i < 7; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e3f);
+    }
+
+    // Constrain position variances
+    for (unsigned i = 7; i < 10; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e6f);
+    }
+
+    // Angle bias variances
+    for (unsigned i = 10; i < 13; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, sq(0.175f * dtIMU));
+    }
+
+    // Wind velocity variances
+    for (unsigned i = 13; i < 15; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e3f);
+    }
+
+    // Earth magnetic field variances
+    for (unsigned i = 15; i < 18; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+    // Body magnetic field variances
+    for (unsigned i = 18; i < 21; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+}
+
+void ConstrainStates()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // State vector:
+    // 0-3: quaternions (q0, q1, q2, q3)
+    // 4-6: Velocity - m/sec (North, East, Down)
+    // 7-9: Position - m (North, East, Down)
+    // 10-12: Delta Angle bias - rad (X,Y,Z)
+    // 13-14: Wind Vector  - m/sec (North,East)
+    // 15-17: Earth Magnetic Field Vector - gauss (North, East, Down)
+    // 18-20: Body Magnetic Field Vector - gauss (X,Y,Z)
+
+
+    // Constrain quaternion
+    for (unsigned i = 0; i < 4; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0f, 1.0f);
+    }
+
+    // Constrain velocities to what GPS can do for us
+    for (unsigned i = 4; i < 7; i++) {
+        states[i] = ConstrainFloat(states[i], -5.0e2f, 5.0e2f);
+    }
+
+    // Constrain position to a reasonable vehicle range (in meters)
+    for (unsigned i = 7; i < 9; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0e6f, 1.0e6f);
+    }
+
+    // Constrain altitude
+    states[9] = ConstrainFloat(states[9], -4.0e4f, 1.0e4f);
+
+    // Angle bias limit - set to 8 degrees / sec
+    for (unsigned i = 10; i < 13; i++) {
+        states[i] = ConstrainFloat(states[i], -0.12f * dtIMU, 0.12f * dtIMU);
+    }
+
+    // Wind velocity limits - assume 120 m/s max velocity
+    for (unsigned i = 13; i < 15; i++) {
+        states[i] = ConstrainFloat(states[i], -120.0f, 120.0f);
+    }
+
+    // Earth magnetic field limits (in Gauss)
+    for (unsigned i = 15; i < 18; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0f, 1.0f);
+    }
+
+    // Body magnetic field variances (in Gauss).
+    // the max offset should be in this range.
+    for (unsigned i = 18; i < 21; i++) {
+        states[i] = ConstrainFloat(states[i], -0.5f, 0.5f);
+    }
+
+}
+
+void ForceSymmetry()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // Force symmetry on the covariance matrix to prevent ill-conditioning
+    // of the matrix which would cause the filter to blow-up
+    for (unsigned i = 1; i < n_states; i++)
+    {
+        for (uint8_t j = 0; j < i; j++)
+        {
+            P[i][j] = 0.5f * (P[i][j] + P[j][i]);
+            P[j][i] = P[i][j];
+        }
+    }
+}
+
+bool FilterHealthy()
+{
+    if (!statesInitialised) {
+        return false;
+    }
+
+    // XXX Check state vector for NaNs and ill-conditioning
+
+    // Check if any of the major inputs timed out
+    if (posTimeout || velTimeout || hgtTimeout) {
+        return false;
+    }
+
+    // Nothing fired, return ok.
+    return true;
+}
+
+/**
+ * Reset the filter position states
+ *
+ * This resets the position to the last GPS measurement
+ * or to zero in case of static position.
+ */
+void ResetPosition(void)
+{
+    if (staticMode) {
+        states[7] = 0;
+        states[8] = 0;
+    } else if (GPSstatus >= GPS_FIX_3D) {
+
+        // reset the states from the GPS measurements
+        states[7] = posNE[0];
+        states[8] = posNE[1];
+    }
+}
+
+/**
+ * Reset the height state.
+ *
+ * This resets the height state with the last altitude measurements
+ */
+void ResetHeight(void)
+{
+    // write to the state vector
+    states[9]   = -hgtMea;
+}
+
+/**
+ * Reset the velocity state.
+ */
+void ResetVelocity(void)
+{
+    if (staticMode) {
+        states[4] = 0.0f;
+        states[5] = 0.0f;
+        states[6] = 0.0f;
+    } else if (GPSstatus >= GPS_FIX_3D) {
+
+        states[4]  = velNED[0]; // north velocity from last reading
+        states[5]  = velNED[1]; // east velocity from last reading
+        states[6]  = velNED[2]; // down velocity from last reading
+    }
+}
+
+
+/**
+ * Check the filter inputs and bound its operational state
+ *
+ * This check will reset the filter states if required
+ * due to a failure of consistency or timeout checks.
+ * it should be run after the measurement data has been
+ * updated, but before any of the fusion steps are
+ * executed.
+ */
+void CheckAndBound()
+{
+
+    // Store the old filter state
+    bool currStaticMode = staticMode;
+
+    // Reset the filter if the IMU data is too old
+    if (dtIMU > 0.2f) {
+        ResetVelocity();
+        ResetPosition();
+        ResetHeight();
+        ResetStoredStates();
+
+        // that's all we can do here, return
+        return;
+    }
+
+    // Check if we're on ground - this also sets static mode.
+    OnGroundCheck();
+
+    // Check if we switched between states
+    if (currStaticMode != staticMode) {
+        ResetVelocity();
+        ResetPosition();
+        ResetHeight();
+        ResetStoredStates();
+    }
+}
 
 void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat)
 {
