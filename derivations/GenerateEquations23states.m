@@ -14,7 +14,7 @@
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 7 Jan 2013
+% Last Modified: 23 Mar 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -32,7 +32,8 @@
 % NED position - m
 % True airspeed - m/s
 % XYZ magnetic flux - milligauss
-% XY line of sight angular rate measurements from the optical flow sensor
+% XY line of sight angular rate measurements from a downwards looking optical flow sensor
+% range to terrain measurements
 
 % Time varying parameters:
 % XYZ delta angle measurements in body axes - rad
@@ -58,9 +59,11 @@ syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
 syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
 syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
-syms R_LOS real % variation of LOS angular rate mesurements (rad/sec)^2
+syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
+syms R_RNG real % variance of laser range finder observations
 syms ptd real % location of terrain in D axis
 syms a1 a2 a3 real % misalignment of the optical flow sensor (rad)
+syms a4 real % pitch alignment of the laser range finder (rad)
 %% define the process equations
 
 % Define the state vector & number of states
@@ -239,6 +242,27 @@ K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS);
 K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
 K_LOS = [K_LOSX,K_LOSY];
 [K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
+
+%% derive equations for fusion of laser range finder measurement
+
+% assume laser is aligned in the X-Z body plane plus an alignment
+% defined by rotation about the Y body axis. This allows the sensor to be
+% aligned to accomodate different aircraft pitch trims. We would normally
+% want the sensor to be aligned so that it was close to vertical during the
+% phases of flight where height accuracy is most important
+% Tsb is rotation from sensor to body
+Tsb = [ 1       ,  0 , sin(a4) ; ...
+        0       ,  1 , 0       ; ...
+       -sin(a4) ,  0 , 1      ];
+Tsn = Tbn*Tsb; 
+% calculate range from plane to centre of sensor fov assuming flat earth
+range = ((ptd - pd)/Tsn(3,3));
+H_RNG = jacobian(range,stateVector); % measurement Jacobian
+[H_RNG,SH_RNG]=OptimiseAlgebra(H_RNG,'SH_RNG');
+
+% calculate the Kalman gain matrix and optimise algebra
+K_RNG = (P*transpose(H_RNG))/(H_RNG*P*transpose(H_RNG) + R_RNG);
+[K_RNG,SK_RNG]=OptimiseAlgebra(K_RNG,'SK_RNG');
 
 %% Save output and convert to m and c code fragments
 nStates = length(PP);

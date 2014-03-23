@@ -4,3 +4,5 @@
 /scripts/*.mexw64
 slprj
 .DS_Store
+*.asv
+*.mat

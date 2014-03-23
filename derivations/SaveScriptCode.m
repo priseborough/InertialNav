@@ -140,7 +140,7 @@ if exist('H_VP','var')
     
 end
 %% Write equations for true airspeed data fusion
-if exist('SH_LOS','var')
+if exist('SH_TAS','var')
     
     fprintf(fid,'\n');
     fprintf(fid,'SH_TAS = zeros(%d,1);\n',numel(SH_TAS));
@@ -402,6 +402,51 @@ if exist('SH_LOS','var')
             fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
         end
     end
+    
+end
+%% Write equations for laser range finder data fusion
+if exist('SH_RNG','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_RNG = zeros(%d,1);\n',numel(SH_RNG));
+    for rowIndex = 1:numel(SH_RNG)
+        string = char(SH_RNG(rowIndex,1));
+        fprintf(fid,'SH_RNG(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(H_RNG);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_RNG = zeros(1,%d);\n',nCol);
+    for rowIndex = 1:nRow
+        for colIndex = 1:nCol
+            string = char(H_RNG(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'H_RNG(1,%d) = %s;\n',colIndex,string);
+            end
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_RNG = zeros(%d,1);\n',numel(SK_RNG));
+    for rowIndex = 1:numel(SK_RNG)
+        string = char(SK_RNG(rowIndex,1));
+        fprintf(fid,'SK_RNG(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_RNG);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_RNG(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
     
 end
 %% Close output file
