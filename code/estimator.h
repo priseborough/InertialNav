@@ -45,7 +45,7 @@ Vector3f operator*(Vector3f vecIn1, float sclIn1);
 
 void swap_var(float &d1, float &d2);
 
-const unsigned int n_states = 21;
+const unsigned int n_states = 23;
 const unsigned int data_buffer_size = 50;
 
 extern uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
