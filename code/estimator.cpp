@@ -1314,11 +1314,11 @@ void FuseMagnetometer()
         // Limit range of states modified when on ground
         if(!onGround)
         {
-            indexLimit = 20;
+            indexLimit = 22;
         }
         else
         {
-            indexLimit = 12;
+            indexLimit = 13;
         }
 
         static float q0 = 0.0f;
@@ -1331,7 +1331,7 @@ void FuseMagnetometer()
 
         static float R_MAG = 0.0025f;
 
-        float H_MAG[21] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+        float H_MAG[n_states] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
 
         // Sequential fusion of XYZ components to spread processing load across
         // three prediction time steps.
@@ -1348,12 +1348,12 @@ void FuseMagnetometer()
             q1       = statesAtMagMeasTime[1];
             q2       = statesAtMagMeasTime[2];
             q3       = statesAtMagMeasTime[3];
-            magN     = statesAtMagMeasTime[15];
-            magE     = statesAtMagMeasTime[16];
-            magD     = statesAtMagMeasTime[17];
-            magXbias = statesAtMagMeasTime[18];
-            magYbias = statesAtMagMeasTime[19];
-            magZbias = statesAtMagMeasTime[20];
+            magN     = statesAtMagMeasTime[16];
+            magE     = statesAtMagMeasTime[17];
+            magD     = statesAtMagMeasTime[18];
+            magXbias = statesAtMagMeasTime[19];
+            magYbias = statesAtMagMeasTime[20];
+            magZbias = statesAtMagMeasTime[21];
 
             // rotate predicted earth components into body axes and calculate
             // predicted measurments
@@ -1384,44 +1384,46 @@ void FuseMagnetometer()
             SH_MAG[7] = 2*magN*q0;
             SH_MAG[8] = 2*magE*q3;
 
-            for (uint8_t i=0; i<=20; i++) H_MAG[i] = 0;
+            for (uint8_t i = 0; i < n_states; i++) H_MAG[i] = 0;
             H_MAG[0] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             H_MAG[1] = SH_MAG[0];
             H_MAG[2] = 2*magE*q1 - 2*magD*q0 - 2*magN*q2;
             H_MAG[3] = SH_MAG[2];
-            H_MAG[15] = SH_MAG[5] - SH_MAG[4] - SH_MAG[3] + SH_MAG[6];
-            H_MAG[16] = 2*q0*q3 + 2*q1*q2;
-            H_MAG[17] = 2*q1*q3 - 2*q0*q2;
-            H_MAG[18] = 1.0f;
+            H_MAG[16] = SH_MAG[5] - SH_MAG[4] - SH_MAG[3] + SH_MAG[6];
+            H_MAG[17] = 2*q0*q3 + 2*q1*q2;
+            H_MAG[18] = 2*q1*q3 - 2*q0*q2;
+            H_MAG[19] = 1.0f;
 
             // Calculate Kalman gain
-            SK_MX[0] = 1/(P[18][18] + R_MAG + P[1][18]*SH_MAG[0] + P[3][18]*SH_MAG[2] - P[15][18]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P[18][2] + P[1][2]*SH_MAG[0] + P[3][2]*SH_MAG[2] - P[15][2]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][2]*(2*q0*q3 + 2*q1*q2) - P[17][2]*(2*q0*q2 - 2*q1*q3) - P[2][2]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[18][0] + P[1][0]*SH_MAG[0] + P[3][0]*SH_MAG[2] - P[15][0]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][0]*(2*q0*q3 + 2*q1*q2) - P[17][0]*(2*q0*q2 - 2*q1*q3) - P[2][0]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[18][1] + P[1][1]*SH_MAG[0] + P[3][1]*SH_MAG[2] - P[15][1]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][1]*(2*q0*q3 + 2*q1*q2) - P[17][1]*(2*q0*q2 - 2*q1*q3) - P[2][1]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[2]*(P[18][3] + P[1][3]*SH_MAG[0] + P[3][3]*SH_MAG[2] - P[15][3]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][3]*(2*q0*q3 + 2*q1*q2) - P[17][3]*(2*q0*q2 - 2*q1*q3) - P[2][3]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6])*(P[18][15] + P[1][15]*SH_MAG[0] + P[3][15]*SH_MAG[2] - P[15][15]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][15]*(2*q0*q3 + 2*q1*q2) - P[17][15]*(2*q0*q2 - 2*q1*q3) - P[2][15]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[16][18]*(2*q0*q3 + 2*q1*q2) - P[17][18]*(2*q0*q2 - 2*q1*q3) - P[2][18]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*q0*q3 + 2*q1*q2)*(P[18][16] + P[1][16]*SH_MAG[0] + P[3][16]*SH_MAG[2] - P[15][16]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][16]*(2*q0*q3 + 2*q1*q2) - P[17][16]*(2*q0*q2 - 2*q1*q3) - P[2][16]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P[18][17] + P[1][17]*SH_MAG[0] + P[3][17]*SH_MAG[2] - P[15][17]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][17]*(2*q0*q3 + 2*q1*q2) - P[17][17]*(2*q0*q2 - 2*q1*q3) - P[2][17]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[0][18]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
+            SK_MX[0] = 1/(P[19][19] + R_MAG + P[1][19]*SH_MAG[0] + P[3][19]*SH_MAG[2] - P[16][19]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P[19][2] + P[1][2]*SH_MAG[0] + P[3][2]*SH_MAG[2] - P[16][2]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][2]*(2*q0*q3 + 2*q1*q2) - P[18][2]*(2*q0*q2 - 2*q1*q3) - P[2][2]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[19][0] + P[1][0]*SH_MAG[0] + P[3][0]*SH_MAG[2] - P[16][0]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][0]*(2*q0*q3 + 2*q1*q2) - P[18][0]*(2*q0*q2 - 2*q1*q3) - P[2][0]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[19][1] + P[1][1]*SH_MAG[0] + P[3][1]*SH_MAG[2] - P[16][1]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][1]*(2*q0*q3 + 2*q1*q2) - P[18][1]*(2*q0*q2 - 2*q1*q3) - P[2][1]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[2]*(P[19][3] + P[1][3]*SH_MAG[0] + P[3][3]*SH_MAG[2] - P[16][3]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][3]*(2*q0*q3 + 2*q1*q2) - P[18][3]*(2*q0*q2 - 2*q1*q3) - P[2][3]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6])*(P[19][16] + P[1][16]*SH_MAG[0] + P[3][16]*SH_MAG[2] - P[16][16]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][16]*(2*q0*q3 + 2*q1*q2) - P[18][16]*(2*q0*q2 - 2*q1*q3) - P[2][16]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[17][19]*(2*q0*q3 + 2*q1*q2) - P[18][19]*(2*q0*q2 - 2*q1*q3) - P[2][19]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*q0*q3 + 2*q1*q2)*(P[19][17] + P[1][17]*SH_MAG[0] + P[3][17]*SH_MAG[2] - P[16][17]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][17]*(2*q0*q3 + 2*q1*q2) - P[18][17]*(2*q0*q2 - 2*q1*q3) - P[2][17]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P[19][18] + P[1][18]*SH_MAG[0] + P[3][18]*SH_MAG[2] - P[16][18]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[17][18]*(2*q0*q3 + 2*q1*q2) - P[18][18]*(2*q0*q2 - 2*q1*q3) - P[2][18]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][18]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[0][19]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MX[1] = SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6];
             SK_MX[2] = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;
             SK_MX[3] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             SK_MX[4] = 2*q0*q2 - 2*q1*q3;
             SK_MX[5] = 2*q0*q3 + 2*q1*q2;
-            Kfusion[0] = SK_MX[0]*(P[0][18] + P[0][1]*SH_MAG[0] + P[0][3]*SH_MAG[2] + P[0][0]*SK_MX[3] - P[0][2]*SK_MX[2] - P[0][15]*SK_MX[1] + P[0][16]*SK_MX[5] - P[0][17]*SK_MX[4]);
-            Kfusion[1] = SK_MX[0]*(P[1][18] + P[1][1]*SH_MAG[0] + P[1][3]*SH_MAG[2] + P[1][0]*SK_MX[3] - P[1][2]*SK_MX[2] - P[1][15]*SK_MX[1] + P[1][16]*SK_MX[5] - P[1][17]*SK_MX[4]);
-            Kfusion[2] = SK_MX[0]*(P[2][18] + P[2][1]*SH_MAG[0] + P[2][3]*SH_MAG[2] + P[2][0]*SK_MX[3] - P[2][2]*SK_MX[2] - P[2][15]*SK_MX[1] + P[2][16]*SK_MX[5] - P[2][17]*SK_MX[4]);
-            Kfusion[3] = SK_MX[0]*(P[3][18] + P[3][1]*SH_MAG[0] + P[3][3]*SH_MAG[2] + P[3][0]*SK_MX[3] - P[3][2]*SK_MX[2] - P[3][15]*SK_MX[1] + P[3][16]*SK_MX[5] - P[3][17]*SK_MX[4]);
-            Kfusion[4] = SK_MX[0]*(P[4][18] + P[4][1]*SH_MAG[0] + P[4][3]*SH_MAG[2] + P[4][0]*SK_MX[3] - P[4][2]*SK_MX[2] - P[4][15]*SK_MX[1] + P[4][16]*SK_MX[5] - P[4][17]*SK_MX[4]);
-            Kfusion[5] = SK_MX[0]*(P[5][18] + P[5][1]*SH_MAG[0] + P[5][3]*SH_MAG[2] + P[5][0]*SK_MX[3] - P[5][2]*SK_MX[2] - P[5][15]*SK_MX[1] + P[5][16]*SK_MX[5] - P[5][17]*SK_MX[4]);
-            Kfusion[6] = SK_MX[0]*(P[6][18] + P[6][1]*SH_MAG[0] + P[6][3]*SH_MAG[2] + P[6][0]*SK_MX[3] - P[6][2]*SK_MX[2] - P[6][15]*SK_MX[1] + P[6][16]*SK_MX[5] - P[6][17]*SK_MX[4]);
-            Kfusion[7] = SK_MX[0]*(P[7][18] + P[7][1]*SH_MAG[0] + P[7][3]*SH_MAG[2] + P[7][0]*SK_MX[3] - P[7][2]*SK_MX[2] - P[7][15]*SK_MX[1] + P[7][16]*SK_MX[5] - P[7][17]*SK_MX[4]);
-            Kfusion[8] = SK_MX[0]*(P[8][18] + P[8][1]*SH_MAG[0] + P[8][3]*SH_MAG[2] + P[8][0]*SK_MX[3] - P[8][2]*SK_MX[2] - P[8][15]*SK_MX[1] + P[8][16]*SK_MX[5] - P[8][17]*SK_MX[4]);
-            Kfusion[9] = SK_MX[0]*(P[9][18] + P[9][1]*SH_MAG[0] + P[9][3]*SH_MAG[2] + P[9][0]*SK_MX[3] - P[9][2]*SK_MX[2] - P[9][15]*SK_MX[1] + P[9][16]*SK_MX[5] - P[9][17]*SK_MX[4]);
-            Kfusion[10] = SK_MX[0]*(P[10][18] + P[10][1]*SH_MAG[0] + P[10][3]*SH_MAG[2] + P[10][0]*SK_MX[3] - P[10][2]*SK_MX[2] - P[10][15]*SK_MX[1] + P[10][16]*SK_MX[5] - P[10][17]*SK_MX[4]);
-            Kfusion[11] = SK_MX[0]*(P[11][18] + P[11][1]*SH_MAG[0] + P[11][3]*SH_MAG[2] + P[11][0]*SK_MX[3] - P[11][2]*SK_MX[2] - P[11][15]*SK_MX[1] + P[11][16]*SK_MX[5] - P[11][17]*SK_MX[4]);
-            Kfusion[12] = SK_MX[0]*(P[12][18] + P[12][1]*SH_MAG[0] + P[12][3]*SH_MAG[2] + P[12][0]*SK_MX[3] - P[12][2]*SK_MX[2] - P[12][15]*SK_MX[1] + P[12][16]*SK_MX[5] - P[12][17]*SK_MX[4]);
-            Kfusion[13] = SK_MX[0]*(P[13][18] + P[13][1]*SH_MAG[0] + P[13][3]*SH_MAG[2] + P[13][0]*SK_MX[3] - P[13][2]*SK_MX[2] - P[13][15]*SK_MX[1] + P[13][16]*SK_MX[5] - P[13][17]*SK_MX[4]);
-            Kfusion[14] = SK_MX[0]*(P[14][18] + P[14][1]*SH_MAG[0] + P[14][3]*SH_MAG[2] + P[14][0]*SK_MX[3] - P[14][2]*SK_MX[2] - P[14][15]*SK_MX[1] + P[14][16]*SK_MX[5] - P[14][17]*SK_MX[4]);
-            Kfusion[15] = SK_MX[0]*(P[15][18] + P[15][1]*SH_MAG[0] + P[15][3]*SH_MAG[2] + P[15][0]*SK_MX[3] - P[15][2]*SK_MX[2] - P[15][15]*SK_MX[1] + P[15][16]*SK_MX[5] - P[15][17]*SK_MX[4]);
-            Kfusion[16] = SK_MX[0]*(P[16][18] + P[16][1]*SH_MAG[0] + P[16][3]*SH_MAG[2] + P[16][0]*SK_MX[3] - P[16][2]*SK_MX[2] - P[16][15]*SK_MX[1] + P[16][16]*SK_MX[5] - P[16][17]*SK_MX[4]);
-            Kfusion[17] = SK_MX[0]*(P[17][18] + P[17][1]*SH_MAG[0] + P[17][3]*SH_MAG[2] + P[17][0]*SK_MX[3] - P[17][2]*SK_MX[2] - P[17][15]*SK_MX[1] + P[17][16]*SK_MX[5] - P[17][17]*SK_MX[4]);
-            Kfusion[18] = SK_MX[0]*(P[18][18] + P[18][1]*SH_MAG[0] + P[18][3]*SH_MAG[2] + P[18][0]*SK_MX[3] - P[18][2]*SK_MX[2] - P[18][15]*SK_MX[1] + P[18][16]*SK_MX[5] - P[18][17]*SK_MX[4]);
-            Kfusion[19] = SK_MX[0]*(P[19][18] + P[19][1]*SH_MAG[0] + P[19][3]*SH_MAG[2] + P[19][0]*SK_MX[3] - P[19][2]*SK_MX[2] - P[19][15]*SK_MX[1] + P[19][16]*SK_MX[5] - P[19][17]*SK_MX[4]);
-            Kfusion[20] = SK_MX[0]*(P[20][18] + P[20][1]*SH_MAG[0] + P[20][3]*SH_MAG[2] + P[20][0]*SK_MX[3] - P[20][2]*SK_MX[2] - P[20][15]*SK_MX[1] + P[20][16]*SK_MX[5] - P[20][17]*SK_MX[4]);
+            Kfusion[0] = SK_MX[0]*(P[0][19] + P[0][1]*SH_MAG[0] + P[0][3]*SH_MAG[2] + P[0][0]*SK_MX[3] - P[0][2]*SK_MX[2] - P[0][16]*SK_MX[1] + P[0][17]*SK_MX[5] - P[0][18]*SK_MX[4]);
+            Kfusion[1] = SK_MX[0]*(P[1][19] + P[1][1]*SH_MAG[0] + P[1][3]*SH_MAG[2] + P[1][0]*SK_MX[3] - P[1][2]*SK_MX[2] - P[1][16]*SK_MX[1] + P[1][17]*SK_MX[5] - P[1][18]*SK_MX[4]);
+            Kfusion[2] = SK_MX[0]*(P[2][19] + P[2][1]*SH_MAG[0] + P[2][3]*SH_MAG[2] + P[2][0]*SK_MX[3] - P[2][2]*SK_MX[2] - P[2][16]*SK_MX[1] + P[2][17]*SK_MX[5] - P[2][18]*SK_MX[4]);
+            Kfusion[3] = SK_MX[0]*(P[3][19] + P[3][1]*SH_MAG[0] + P[3][3]*SH_MAG[2] + P[3][0]*SK_MX[3] - P[3][2]*SK_MX[2] - P[3][16]*SK_MX[1] + P[3][17]*SK_MX[5] - P[3][18]*SK_MX[4]);
+            Kfusion[4] = SK_MX[0]*(P[4][19] + P[4][1]*SH_MAG[0] + P[4][3]*SH_MAG[2] + P[4][0]*SK_MX[3] - P[4][2]*SK_MX[2] - P[4][16]*SK_MX[1] + P[4][17]*SK_MX[5] - P[4][18]*SK_MX[4]);
+            Kfusion[5] = SK_MX[0]*(P[5][19] + P[5][1]*SH_MAG[0] + P[5][3]*SH_MAG[2] + P[5][0]*SK_MX[3] - P[5][2]*SK_MX[2] - P[5][16]*SK_MX[1] + P[5][17]*SK_MX[5] - P[5][18]*SK_MX[4]);
+            Kfusion[6] = SK_MX[0]*(P[6][19] + P[6][1]*SH_MAG[0] + P[6][3]*SH_MAG[2] + P[6][0]*SK_MX[3] - P[6][2]*SK_MX[2] - P[6][16]*SK_MX[1] + P[6][17]*SK_MX[5] - P[6][18]*SK_MX[4]);
+            Kfusion[7] = SK_MX[0]*(P[7][19] + P[7][1]*SH_MAG[0] + P[7][3]*SH_MAG[2] + P[7][0]*SK_MX[3] - P[7][2]*SK_MX[2] - P[7][16]*SK_MX[1] + P[7][17]*SK_MX[5] - P[7][18]*SK_MX[4]);
+            Kfusion[8] = SK_MX[0]*(P[8][19] + P[8][1]*SH_MAG[0] + P[8][3]*SH_MAG[2] + P[8][0]*SK_MX[3] - P[8][2]*SK_MX[2] - P[8][16]*SK_MX[1] + P[8][17]*SK_MX[5] - P[8][18]*SK_MX[4]);
+            Kfusion[9] = SK_MX[0]*(P[9][19] + P[9][1]*SH_MAG[0] + P[9][3]*SH_MAG[2] + P[9][0]*SK_MX[3] - P[9][2]*SK_MX[2] - P[9][16]*SK_MX[1] + P[9][17]*SK_MX[5] - P[9][18]*SK_MX[4]);
+            Kfusion[10] = SK_MX[0]*(P[10][19] + P[10][1]*SH_MAG[0] + P[10][3]*SH_MAG[2] + P[10][0]*SK_MX[3] - P[10][2]*SK_MX[2] - P[10][16]*SK_MX[1] + P[10][17]*SK_MX[5] - P[10][18]*SK_MX[4]);
+            Kfusion[11] = SK_MX[0]*(P[11][19] + P[11][1]*SH_MAG[0] + P[11][3]*SH_MAG[2] + P[11][0]*SK_MX[3] - P[11][2]*SK_MX[2] - P[11][16]*SK_MX[1] + P[11][17]*SK_MX[5] - P[11][18]*SK_MX[4]);
+            Kfusion[12] = SK_MX[0]*(P[12][19] + P[12][1]*SH_MAG[0] + P[12][3]*SH_MAG[2] + P[12][0]*SK_MX[3] - P[12][2]*SK_MX[2] - P[12][16]*SK_MX[1] + P[12][17]*SK_MX[5] - P[12][18]*SK_MX[4]);
+            Kfusion[13] = SK_MX[0]*(P[13][19] + P[13][1]*SH_MAG[0] + P[13][3]*SH_MAG[2] + P[13][0]*SK_MX[3] - P[13][2]*SK_MX[2] - P[13][16]*SK_MX[1] + P[13][17]*SK_MX[5] - P[13][18]*SK_MX[4]);
+            Kfusion[14] = SK_MX[0]*(P[14][19] + P[14][1]*SH_MAG[0] + P[14][3]*SH_MAG[2] + P[14][0]*SK_MX[3] - P[14][2]*SK_MX[2] - P[14][16]*SK_MX[1] + P[14][17]*SK_MX[5] - P[14][18]*SK_MX[4]);
+            Kfusion[15] = SK_MX[0]*(P[15][19] + P[15][1]*SH_MAG[0] + P[15][3]*SH_MAG[2] + P[15][0]*SK_MX[3] - P[15][2]*SK_MX[2] - P[15][16]*SK_MX[1] + P[15][17]*SK_MX[5] - P[15][18]*SK_MX[4]);
+            Kfusion[16] = SK_MX[0]*(P[16][19] + P[16][1]*SH_MAG[0] + P[16][3]*SH_MAG[2] + P[16][0]*SK_MX[3] - P[16][2]*SK_MX[2] - P[16][16]*SK_MX[1] + P[16][17]*SK_MX[5] - P[16][18]*SK_MX[4]);
+            Kfusion[17] = SK_MX[0]*(P[17][19] + P[17][1]*SH_MAG[0] + P[17][3]*SH_MAG[2] + P[17][0]*SK_MX[3] - P[17][2]*SK_MX[2] - P[17][16]*SK_MX[1] + P[17][17]*SK_MX[5] - P[17][18]*SK_MX[4]);
+            Kfusion[18] = SK_MX[0]*(P[18][19] + P[18][1]*SH_MAG[0] + P[18][3]*SH_MAG[2] + P[18][0]*SK_MX[3] - P[18][2]*SK_MX[2] - P[18][16]*SK_MX[1] + P[18][17]*SK_MX[5] - P[18][18]*SK_MX[4]);
+            Kfusion[19] = SK_MX[0]*(P[19][19] + P[19][1]*SH_MAG[0] + P[19][3]*SH_MAG[2] + P[19][0]*SK_MX[3] - P[19][2]*SK_MX[2] - P[19][16]*SK_MX[1] + P[19][17]*SK_MX[5] - P[19][18]*SK_MX[4]);
+            Kfusion[20] = SK_MX[0]*(P[20][19] + P[20][1]*SH_MAG[0] + P[20][3]*SH_MAG[2] + P[20][0]*SK_MX[3] - P[20][2]*SK_MX[2] - P[20][16]*SK_MX[1] + P[20][17]*SK_MX[5] - P[20][18]*SK_MX[4]);
+            Kfusion[21] = SK_MX[0]*(P[21][19] + P[21][1]*SH_MAG[0] + P[21][3]*SH_MAG[2] + P[21][0]*SK_MX[3] - P[21][2]*SK_MX[2] - P[21][16]*SK_MX[1] + P[21][17]*SK_MX[5] - P[21][18]*SK_MX[4]);
+            Kfusion[22] = SK_MX[0]*(P[22][19] + P[22][1]*SH_MAG[0] + P[22][3]*SH_MAG[2] + P[22][0]*SK_MX[3] - P[22][2]*SK_MX[2] - P[22][16]*SK_MX[1] + P[22][17]*SK_MX[5] - P[22][18]*SK_MX[4]);
             varInnovMag[0] = 1.0f/SK_MX[0];
             innovMag[0] = MagPred[0] - magData.x;
 
@@ -1432,87 +1434,91 @@ void FuseMagnetometer()
         else if (obsIndex == 1) // we are now fusing the Y measurement
         {
             // Calculate observation jacobians
-            for (unsigned int i=0; i<n_states; i++) H_MAG[i] = 0;
+            for (unsigned int i = 0; i < n_states; i++) H_MAG[i] = 0;
             H_MAG[0] = SH_MAG[2];
             H_MAG[1] = SH_MAG[1];
             H_MAG[2] = SH_MAG[0];
             H_MAG[3] = 2*magD*q2 - SH_MAG[8] - SH_MAG[7];
-            H_MAG[15] = 2*q1*q2 - 2*q0*q3;
-            H_MAG[16] = SH_MAG[4] - SH_MAG[3] - SH_MAG[5] + SH_MAG[6];
-            H_MAG[17] = 2*q0*q1 + 2*q2*q3;
-            H_MAG[19] = 1;
+            H_MAG[16] = 2*q1*q2 - 2*q0*q3;
+            H_MAG[17] = SH_MAG[4] - SH_MAG[3] - SH_MAG[5] + SH_MAG[6];
+            H_MAG[18] = 2*q0*q1 + 2*q2*q3;
+            H_MAG[20] = 1;
 
             // Calculate Kalman gain
-            SK_MY[0] = 1/(P[19][19] + R_MAG + P[0][19]*SH_MAG[2] + P[1][19]*SH_MAG[1] + P[2][19]*SH_MAG[0] - P[16][19]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - (2*q0*q3 - 2*q1*q2)*(P[19][15] + P[0][15]*SH_MAG[2] + P[1][15]*SH_MAG[1] + P[2][15]*SH_MAG[0] - P[16][15]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][15]*(2*q0*q3 - 2*q1*q2) + P[17][15]*(2*q0*q1 + 2*q2*q3) - P[3][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P[19][17] + P[0][17]*SH_MAG[2] + P[1][17]*SH_MAG[1] + P[2][17]*SH_MAG[0] - P[16][17]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][17]*(2*q0*q3 - 2*q1*q2) + P[17][17]*(2*q0*q1 + 2*q2*q3) - P[3][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[19][3] + P[0][3]*SH_MAG[2] + P[1][3]*SH_MAG[1] + P[2][3]*SH_MAG[0] - P[16][3]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][3]*(2*q0*q3 - 2*q1*q2) + P[17][3]*(2*q0*q1 + 2*q2*q3) - P[3][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[15][19]*(2*q0*q3 - 2*q1*q2) + P[17][19]*(2*q0*q1 + 2*q2*q3) + SH_MAG[2]*(P[19][0] + P[0][0]*SH_MAG[2] + P[1][0]*SH_MAG[1] + P[2][0]*SH_MAG[0] - P[16][0]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][0]*(2*q0*q3 - 2*q1*q2) + P[17][0]*(2*q0*q1 + 2*q2*q3) - P[3][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[19][1] + P[0][1]*SH_MAG[2] + P[1][1]*SH_MAG[1] + P[2][1]*SH_MAG[0] - P[16][1]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][1]*(2*q0*q3 - 2*q1*q2) + P[17][1]*(2*q0*q1 + 2*q2*q3) - P[3][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[19][2] + P[0][2]*SH_MAG[2] + P[1][2]*SH_MAG[1] + P[2][2]*SH_MAG[0] - P[16][2]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][2]*(2*q0*q3 - 2*q1*q2) + P[17][2]*(2*q0*q1 + 2*q2*q3) - P[3][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6])*(P[19][16] + P[0][16]*SH_MAG[2] + P[1][16]*SH_MAG[1] + P[2][16]*SH_MAG[0] - P[16][16]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][16]*(2*q0*q3 - 2*q1*q2) + P[17][16]*(2*q0*q1 + 2*q2*q3) - P[3][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[3][19]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
+            SK_MY[0] = 1/(P[20][20] + R_MAG + P[0][20]*SH_MAG[2] + P[1][20]*SH_MAG[1] + P[2][20]*SH_MAG[0] - P[17][20]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - (2*q0*q3 - 2*q1*q2)*(P[20][16] + P[0][16]*SH_MAG[2] + P[1][16]*SH_MAG[1] + P[2][16]*SH_MAG[0] - P[17][16]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][16]*(2*q0*q3 - 2*q1*q2) + P[18][16]*(2*q0*q1 + 2*q2*q3) - P[3][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P[20][18] + P[0][18]*SH_MAG[2] + P[1][18]*SH_MAG[1] + P[2][18]*SH_MAG[0] - P[17][18]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][18]*(2*q0*q3 - 2*q1*q2) + P[18][18]*(2*q0*q1 + 2*q2*q3) - P[3][18]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[20][3] + P[0][3]*SH_MAG[2] + P[1][3]*SH_MAG[1] + P[2][3]*SH_MAG[0] - P[17][3]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][3]*(2*q0*q3 - 2*q1*q2) + P[18][3]*(2*q0*q1 + 2*q2*q3) - P[3][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[16][20]*(2*q0*q3 - 2*q1*q2) + P[18][20]*(2*q0*q1 + 2*q2*q3) + SH_MAG[2]*(P[20][0] + P[0][0]*SH_MAG[2] + P[1][0]*SH_MAG[1] + P[2][0]*SH_MAG[0] - P[17][0]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][0]*(2*q0*q3 - 2*q1*q2) + P[18][0]*(2*q0*q1 + 2*q2*q3) - P[3][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[20][1] + P[0][1]*SH_MAG[2] + P[1][1]*SH_MAG[1] + P[2][1]*SH_MAG[0] - P[17][1]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][1]*(2*q0*q3 - 2*q1*q2) + P[18][1]*(2*q0*q1 + 2*q2*q3) - P[3][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[20][2] + P[0][2]*SH_MAG[2] + P[1][2]*SH_MAG[1] + P[2][2]*SH_MAG[0] - P[17][2]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][2]*(2*q0*q3 - 2*q1*q2) + P[18][2]*(2*q0*q1 + 2*q2*q3) - P[3][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6])*(P[20][17] + P[0][17]*SH_MAG[2] + P[1][17]*SH_MAG[1] + P[2][17]*SH_MAG[0] - P[17][17]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[16][17]*(2*q0*q3 - 2*q1*q2) + P[18][17]*(2*q0*q1 + 2*q2*q3) - P[3][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[3][20]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MY[1] = SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6];
             SK_MY[2] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             SK_MY[3] = 2*q0*q3 - 2*q1*q2;
             SK_MY[4] = 2*q0*q1 + 2*q2*q3;
-            Kfusion[0] = SK_MY[0]*(P[0][19] + P[0][0]*SH_MAG[2] + P[0][1]*SH_MAG[1] + P[0][2]*SH_MAG[0] - P[0][3]*SK_MY[2] - P[0][16]*SK_MY[1] - P[0][15]*SK_MY[3] + P[0][17]*SK_MY[4]);
-            Kfusion[1] = SK_MY[0]*(P[1][19] + P[1][0]*SH_MAG[2] + P[1][1]*SH_MAG[1] + P[1][2]*SH_MAG[0] - P[1][3]*SK_MY[2] - P[1][16]*SK_MY[1] - P[1][15]*SK_MY[3] + P[1][17]*SK_MY[4]);
-            Kfusion[2] = SK_MY[0]*(P[2][19] + P[2][0]*SH_MAG[2] + P[2][1]*SH_MAG[1] + P[2][2]*SH_MAG[0] - P[2][3]*SK_MY[2] - P[2][16]*SK_MY[1] - P[2][15]*SK_MY[3] + P[2][17]*SK_MY[4]);
-            Kfusion[3] = SK_MY[0]*(P[3][19] + P[3][0]*SH_MAG[2] + P[3][1]*SH_MAG[1] + P[3][2]*SH_MAG[0] - P[3][3]*SK_MY[2] - P[3][16]*SK_MY[1] - P[3][15]*SK_MY[3] + P[3][17]*SK_MY[4]);
-            Kfusion[4] = SK_MY[0]*(P[4][19] + P[4][0]*SH_MAG[2] + P[4][1]*SH_MAG[1] + P[4][2]*SH_MAG[0] - P[4][3]*SK_MY[2] - P[4][16]*SK_MY[1] - P[4][15]*SK_MY[3] + P[4][17]*SK_MY[4]);
-            Kfusion[5] = SK_MY[0]*(P[5][19] + P[5][0]*SH_MAG[2] + P[5][1]*SH_MAG[1] + P[5][2]*SH_MAG[0] - P[5][3]*SK_MY[2] - P[5][16]*SK_MY[1] - P[5][15]*SK_MY[3] + P[5][17]*SK_MY[4]);
-            Kfusion[6] = SK_MY[0]*(P[6][19] + P[6][0]*SH_MAG[2] + P[6][1]*SH_MAG[1] + P[6][2]*SH_MAG[0] - P[6][3]*SK_MY[2] - P[6][16]*SK_MY[1] - P[6][15]*SK_MY[3] + P[6][17]*SK_MY[4]);
-            Kfusion[7] = SK_MY[0]*(P[7][19] + P[7][0]*SH_MAG[2] + P[7][1]*SH_MAG[1] + P[7][2]*SH_MAG[0] - P[7][3]*SK_MY[2] - P[7][16]*SK_MY[1] - P[7][15]*SK_MY[3] + P[7][17]*SK_MY[4]);
-            Kfusion[8] = SK_MY[0]*(P[8][19] + P[8][0]*SH_MAG[2] + P[8][1]*SH_MAG[1] + P[8][2]*SH_MAG[0] - P[8][3]*SK_MY[2] - P[8][16]*SK_MY[1] - P[8][15]*SK_MY[3] + P[8][17]*SK_MY[4]);
-            Kfusion[9] = SK_MY[0]*(P[9][19] + P[9][0]*SH_MAG[2] + P[9][1]*SH_MAG[1] + P[9][2]*SH_MAG[0] - P[9][3]*SK_MY[2] - P[9][16]*SK_MY[1] - P[9][15]*SK_MY[3] + P[9][17]*SK_MY[4]);
-            Kfusion[10] = SK_MY[0]*(P[10][19] + P[10][0]*SH_MAG[2] + P[10][1]*SH_MAG[1] + P[10][2]*SH_MAG[0] - P[10][3]*SK_MY[2] - P[10][16]*SK_MY[1] - P[10][15]*SK_MY[3] + P[10][17]*SK_MY[4]);
-            Kfusion[11] = SK_MY[0]*(P[11][19] + P[11][0]*SH_MAG[2] + P[11][1]*SH_MAG[1] + P[11][2]*SH_MAG[0] - P[11][3]*SK_MY[2] - P[11][16]*SK_MY[1] - P[11][15]*SK_MY[3] + P[11][17]*SK_MY[4]);
-            Kfusion[12] = SK_MY[0]*(P[12][19] + P[12][0]*SH_MAG[2] + P[12][1]*SH_MAG[1] + P[12][2]*SH_MAG[0] - P[12][3]*SK_MY[2] - P[12][16]*SK_MY[1] - P[12][15]*SK_MY[3] + P[12][17]*SK_MY[4]);
-            Kfusion[13] = SK_MY[0]*(P[13][19] + P[13][0]*SH_MAG[2] + P[13][1]*SH_MAG[1] + P[13][2]*SH_MAG[0] - P[13][3]*SK_MY[2] - P[13][16]*SK_MY[1] - P[13][15]*SK_MY[3] + P[13][17]*SK_MY[4]);
-            Kfusion[14] = SK_MY[0]*(P[14][19] + P[14][0]*SH_MAG[2] + P[14][1]*SH_MAG[1] + P[14][2]*SH_MAG[0] - P[14][3]*SK_MY[2] - P[14][16]*SK_MY[1] - P[14][15]*SK_MY[3] + P[14][17]*SK_MY[4]);
-            Kfusion[15] = SK_MY[0]*(P[15][19] + P[15][0]*SH_MAG[2] + P[15][1]*SH_MAG[1] + P[15][2]*SH_MAG[0] - P[15][3]*SK_MY[2] - P[15][16]*SK_MY[1] - P[15][15]*SK_MY[3] + P[15][17]*SK_MY[4]);
-            Kfusion[16] = SK_MY[0]*(P[16][19] + P[16][0]*SH_MAG[2] + P[16][1]*SH_MAG[1] + P[16][2]*SH_MAG[0] - P[16][3]*SK_MY[2] - P[16][16]*SK_MY[1] - P[16][15]*SK_MY[3] + P[16][17]*SK_MY[4]);
-            Kfusion[17] = SK_MY[0]*(P[17][19] + P[17][0]*SH_MAG[2] + P[17][1]*SH_MAG[1] + P[17][2]*SH_MAG[0] - P[17][3]*SK_MY[2] - P[17][16]*SK_MY[1] - P[17][15]*SK_MY[3] + P[17][17]*SK_MY[4]);
-            Kfusion[18] = SK_MY[0]*(P[18][19] + P[18][0]*SH_MAG[2] + P[18][1]*SH_MAG[1] + P[18][2]*SH_MAG[0] - P[18][3]*SK_MY[2] - P[18][16]*SK_MY[1] - P[18][15]*SK_MY[3] + P[18][17]*SK_MY[4]);
-            Kfusion[19] = SK_MY[0]*(P[19][19] + P[19][0]*SH_MAG[2] + P[19][1]*SH_MAG[1] + P[19][2]*SH_MAG[0] - P[19][3]*SK_MY[2] - P[19][16]*SK_MY[1] - P[19][15]*SK_MY[3] + P[19][17]*SK_MY[4]);
-            Kfusion[20] = SK_MY[0]*(P[20][19] + P[20][0]*SH_MAG[2] + P[20][1]*SH_MAG[1] + P[20][2]*SH_MAG[0] - P[20][3]*SK_MY[2] - P[20][16]*SK_MY[1] - P[20][15]*SK_MY[3] + P[20][17]*SK_MY[4]);
+            Kfusion[0] = SK_MY[0]*(P[0][20] + P[0][0]*SH_MAG[2] + P[0][1]*SH_MAG[1] + P[0][2]*SH_MAG[0] - P[0][3]*SK_MY[2] - P[0][17]*SK_MY[1] - P[0][16]*SK_MY[3] + P[0][18]*SK_MY[4]);
+            Kfusion[1] = SK_MY[0]*(P[1][20] + P[1][0]*SH_MAG[2] + P[1][1]*SH_MAG[1] + P[1][2]*SH_MAG[0] - P[1][3]*SK_MY[2] - P[1][17]*SK_MY[1] - P[1][16]*SK_MY[3] + P[1][18]*SK_MY[4]);
+            Kfusion[2] = SK_MY[0]*(P[2][20] + P[2][0]*SH_MAG[2] + P[2][1]*SH_MAG[1] + P[2][2]*SH_MAG[0] - P[2][3]*SK_MY[2] - P[2][17]*SK_MY[1] - P[2][16]*SK_MY[3] + P[2][18]*SK_MY[4]);
+            Kfusion[3] = SK_MY[0]*(P[3][20] + P[3][0]*SH_MAG[2] + P[3][1]*SH_MAG[1] + P[3][2]*SH_MAG[0] - P[3][3]*SK_MY[2] - P[3][17]*SK_MY[1] - P[3][16]*SK_MY[3] + P[3][18]*SK_MY[4]);
+            Kfusion[4] = SK_MY[0]*(P[4][20] + P[4][0]*SH_MAG[2] + P[4][1]*SH_MAG[1] + P[4][2]*SH_MAG[0] - P[4][3]*SK_MY[2] - P[4][17]*SK_MY[1] - P[4][16]*SK_MY[3] + P[4][18]*SK_MY[4]);
+            Kfusion[5] = SK_MY[0]*(P[5][20] + P[5][0]*SH_MAG[2] + P[5][1]*SH_MAG[1] + P[5][2]*SH_MAG[0] - P[5][3]*SK_MY[2] - P[5][17]*SK_MY[1] - P[5][16]*SK_MY[3] + P[5][18]*SK_MY[4]);
+            Kfusion[6] = SK_MY[0]*(P[6][20] + P[6][0]*SH_MAG[2] + P[6][1]*SH_MAG[1] + P[6][2]*SH_MAG[0] - P[6][3]*SK_MY[2] - P[6][17]*SK_MY[1] - P[6][16]*SK_MY[3] + P[6][18]*SK_MY[4]);
+            Kfusion[7] = SK_MY[0]*(P[7][20] + P[7][0]*SH_MAG[2] + P[7][1]*SH_MAG[1] + P[7][2]*SH_MAG[0] - P[7][3]*SK_MY[2] - P[7][17]*SK_MY[1] - P[7][16]*SK_MY[3] + P[7][18]*SK_MY[4]);
+            Kfusion[8] = SK_MY[0]*(P[8][20] + P[8][0]*SH_MAG[2] + P[8][1]*SH_MAG[1] + P[8][2]*SH_MAG[0] - P[8][3]*SK_MY[2] - P[8][17]*SK_MY[1] - P[8][16]*SK_MY[3] + P[8][18]*SK_MY[4]);
+            Kfusion[9] = SK_MY[0]*(P[9][20] + P[9][0]*SH_MAG[2] + P[9][1]*SH_MAG[1] + P[9][2]*SH_MAG[0] - P[9][3]*SK_MY[2] - P[9][17]*SK_MY[1] - P[9][16]*SK_MY[3] + P[9][18]*SK_MY[4]);
+            Kfusion[10] = SK_MY[0]*(P[10][20] + P[10][0]*SH_MAG[2] + P[10][1]*SH_MAG[1] + P[10][2]*SH_MAG[0] - P[10][3]*SK_MY[2] - P[10][17]*SK_MY[1] - P[10][16]*SK_MY[3] + P[10][18]*SK_MY[4]);
+            Kfusion[11] = SK_MY[0]*(P[11][20] + P[11][0]*SH_MAG[2] + P[11][1]*SH_MAG[1] + P[11][2]*SH_MAG[0] - P[11][3]*SK_MY[2] - P[11][17]*SK_MY[1] - P[11][16]*SK_MY[3] + P[11][18]*SK_MY[4]);
+            Kfusion[12] = SK_MY[0]*(P[12][20] + P[12][0]*SH_MAG[2] + P[12][1]*SH_MAG[1] + P[12][2]*SH_MAG[0] - P[12][3]*SK_MY[2] - P[12][17]*SK_MY[1] - P[12][16]*SK_MY[3] + P[12][18]*SK_MY[4]);
+            Kfusion[13] = SK_MY[0]*(P[13][20] + P[13][0]*SH_MAG[2] + P[13][1]*SH_MAG[1] + P[13][2]*SH_MAG[0] - P[13][3]*SK_MY[2] - P[13][17]*SK_MY[1] - P[13][16]*SK_MY[3] + P[13][18]*SK_MY[4]);
+            Kfusion[14] = SK_MY[0]*(P[14][20] + P[14][0]*SH_MAG[2] + P[14][1]*SH_MAG[1] + P[14][2]*SH_MAG[0] - P[14][3]*SK_MY[2] - P[14][17]*SK_MY[1] - P[14][16]*SK_MY[3] + P[14][18]*SK_MY[4]);
+            Kfusion[15] = SK_MY[0]*(P[15][20] + P[15][0]*SH_MAG[2] + P[15][1]*SH_MAG[1] + P[15][2]*SH_MAG[0] - P[15][3]*SK_MY[2] - P[15][17]*SK_MY[1] - P[15][16]*SK_MY[3] + P[15][18]*SK_MY[4]);
+            Kfusion[16] = SK_MY[0]*(P[16][20] + P[16][0]*SH_MAG[2] + P[16][1]*SH_MAG[1] + P[16][2]*SH_MAG[0] - P[16][3]*SK_MY[2] - P[16][17]*SK_MY[1] - P[16][16]*SK_MY[3] + P[16][18]*SK_MY[4]);
+            Kfusion[17] = SK_MY[0]*(P[17][20] + P[17][0]*SH_MAG[2] + P[17][1]*SH_MAG[1] + P[17][2]*SH_MAG[0] - P[17][3]*SK_MY[2] - P[17][17]*SK_MY[1] - P[17][16]*SK_MY[3] + P[17][18]*SK_MY[4]);
+            Kfusion[18] = SK_MY[0]*(P[18][20] + P[18][0]*SH_MAG[2] + P[18][1]*SH_MAG[1] + P[18][2]*SH_MAG[0] - P[18][3]*SK_MY[2] - P[18][17]*SK_MY[1] - P[18][16]*SK_MY[3] + P[18][18]*SK_MY[4]);
+            Kfusion[19] = SK_MY[0]*(P[19][20] + P[19][0]*SH_MAG[2] + P[19][1]*SH_MAG[1] + P[19][2]*SH_MAG[0] - P[19][3]*SK_MY[2] - P[19][17]*SK_MY[1] - P[19][16]*SK_MY[3] + P[19][18]*SK_MY[4]);
+            Kfusion[20] = SK_MY[0]*(P[20][20] + P[20][0]*SH_MAG[2] + P[20][1]*SH_MAG[1] + P[20][2]*SH_MAG[0] - P[20][3]*SK_MY[2] - P[20][17]*SK_MY[1] - P[20][16]*SK_MY[3] + P[20][18]*SK_MY[4]);
+            Kfusion[21] = SK_MY[0]*(P[21][20] + P[21][0]*SH_MAG[2] + P[21][1]*SH_MAG[1] + P[21][2]*SH_MAG[0] - P[21][3]*SK_MY[2] - P[21][17]*SK_MY[1] - P[21][16]*SK_MY[3] + P[21][18]*SK_MY[4]);
+            Kfusion[22] = SK_MY[0]*(P[22][20] + P[22][0]*SH_MAG[2] + P[22][1]*SH_MAG[1] + P[22][2]*SH_MAG[0] - P[22][3]*SK_MY[2] - P[22][17]*SK_MY[1] - P[22][16]*SK_MY[3] + P[22][18]*SK_MY[4]);
             varInnovMag[1] = 1.0f/SK_MY[0];
             innovMag[1] = MagPred[1] - magData.y;
         }
         else if (obsIndex == 2) // we are now fusing the Z measurement
         {
             // Calculate observation jacobians
-            for (uint8_t i=0; i<=20; i++) H_MAG[i] = 0;
+            for (uint8_t i = 0; i < n_states; i++) H_MAG[i] = 0;
             H_MAG[0] = SH_MAG[1];
             H_MAG[1] = 2*magN*q3 - 2*magE*q0 - 2*magD*q1;
             H_MAG[2] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             H_MAG[3] = SH_MAG[0];
-            H_MAG[15] = 2*q0*q2 + 2*q1*q3;
-            H_MAG[16] = 2*q2*q3 - 2*q0*q1;
-            H_MAG[17] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
-            H_MAG[20] = 1;
+            H_MAG[16] = 2*q0*q2 + 2*q1*q3;
+            H_MAG[17] = 2*q2*q3 - 2*q0*q1;
+            H_MAG[18] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
+            H_MAG[21] = 1;
 
             // Calculate Kalman gain
-            SK_MZ[0] = 1/(P[20][20] + R_MAG + P[0][20]*SH_MAG[1] + P[3][20]*SH_MAG[0] + P[17][20]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P[20][1] + P[0][1]*SH_MAG[1] + P[3][1]*SH_MAG[0] + P[17][1]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][1]*(2*q0*q2 + 2*q1*q3) - P[16][1]*(2*q0*q1 - 2*q2*q3) - P[1][1]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[20][2] + P[0][2]*SH_MAG[1] + P[3][2]*SH_MAG[0] + P[17][2]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][2]*(2*q0*q2 + 2*q1*q3) - P[16][2]*(2*q0*q1 - 2*q2*q3) - P[1][2]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[20][0] + P[0][0]*SH_MAG[1] + P[3][0]*SH_MAG[0] + P[17][0]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][0]*(2*q0*q2 + 2*q1*q3) - P[16][0]*(2*q0*q1 - 2*q2*q3) - P[1][0]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[20][3] + P[0][3]*SH_MAG[1] + P[3][3]*SH_MAG[0] + P[17][3]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][3]*(2*q0*q2 + 2*q1*q3) - P[16][3]*(2*q0*q1 - 2*q2*q3) - P[1][3]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6])*(P[20][17] + P[0][17]*SH_MAG[1] + P[3][17]*SH_MAG[0] + P[17][17]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][17]*(2*q0*q2 + 2*q1*q3) - P[16][17]*(2*q0*q1 - 2*q2*q3) - P[1][17]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[15][20]*(2*q0*q2 + 2*q1*q3) - P[16][20]*(2*q0*q1 - 2*q2*q3) - P[1][20]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P[20][15] + P[0][15]*SH_MAG[1] + P[3][15]*SH_MAG[0] + P[17][15]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][15]*(2*q0*q2 + 2*q1*q3) - P[16][15]*(2*q0*q1 - 2*q2*q3) - P[1][15]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P[20][16] + P[0][16]*SH_MAG[1] + P[3][16]*SH_MAG[0] + P[17][16]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][16]*(2*q0*q2 + 2*q1*q3) - P[16][16]*(2*q0*q1 - 2*q2*q3) - P[1][16]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[2][20]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
+            SK_MZ[0] = 1/(P[21][21] + R_MAG + P[0][21]*SH_MAG[1] + P[3][21]*SH_MAG[0] + P[18][21]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P[21][1] + P[0][1]*SH_MAG[1] + P[3][1]*SH_MAG[0] + P[18][1]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][1]*(2*q0*q2 + 2*q1*q3) - P[17][1]*(2*q0*q1 - 2*q2*q3) - P[1][1]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[21][2] + P[0][2]*SH_MAG[1] + P[3][2]*SH_MAG[0] + P[18][2]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][2]*(2*q0*q2 + 2*q1*q3) - P[17][2]*(2*q0*q1 - 2*q2*q3) - P[1][2]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[21][0] + P[0][0]*SH_MAG[1] + P[3][0]*SH_MAG[0] + P[18][0]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][0]*(2*q0*q2 + 2*q1*q3) - P[17][0]*(2*q0*q1 - 2*q2*q3) - P[1][0]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[21][3] + P[0][3]*SH_MAG[1] + P[3][3]*SH_MAG[0] + P[18][3]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][3]*(2*q0*q2 + 2*q1*q3) - P[17][3]*(2*q0*q1 - 2*q2*q3) - P[1][3]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6])*(P[21][18] + P[0][18]*SH_MAG[1] + P[3][18]*SH_MAG[0] + P[18][18]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][18]*(2*q0*q2 + 2*q1*q3) - P[17][18]*(2*q0*q1 - 2*q2*q3) - P[1][18]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][18]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[16][21]*(2*q0*q2 + 2*q1*q3) - P[17][21]*(2*q0*q1 - 2*q2*q3) - P[1][21]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P[21][16] + P[0][16]*SH_MAG[1] + P[3][16]*SH_MAG[0] + P[18][16]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][16]*(2*q0*q2 + 2*q1*q3) - P[17][16]*(2*q0*q1 - 2*q2*q3) - P[1][16]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P[21][17] + P[0][17]*SH_MAG[1] + P[3][17]*SH_MAG[0] + P[18][17]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[16][17]*(2*q0*q2 + 2*q1*q3) - P[17][17]*(2*q0*q1 - 2*q2*q3) - P[1][17]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[2][21]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MZ[1] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
             SK_MZ[2] = 2*magD*q1 + 2*magE*q0 - 2*magN*q3;
             SK_MZ[3] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             SK_MZ[4] = 2*q0*q1 - 2*q2*q3;
             SK_MZ[5] = 2*q0*q2 + 2*q1*q3;
-            Kfusion[0] = SK_MZ[0]*(P[0][20] + P[0][0]*SH_MAG[1] + P[0][3]*SH_MAG[0] - P[0][1]*SK_MZ[2] + P[0][2]*SK_MZ[3] + P[0][17]*SK_MZ[1] + P[0][15]*SK_MZ[5] - P[0][16]*SK_MZ[4]);
-            Kfusion[1] = SK_MZ[0]*(P[1][20] + P[1][0]*SH_MAG[1] + P[1][3]*SH_MAG[0] - P[1][1]*SK_MZ[2] + P[1][2]*SK_MZ[3] + P[1][17]*SK_MZ[1] + P[1][15]*SK_MZ[5] - P[1][16]*SK_MZ[4]);
-            Kfusion[2] = SK_MZ[0]*(P[2][20] + P[2][0]*SH_MAG[1] + P[2][3]*SH_MAG[0] - P[2][1]*SK_MZ[2] + P[2][2]*SK_MZ[3] + P[2][17]*SK_MZ[1] + P[2][15]*SK_MZ[5] - P[2][16]*SK_MZ[4]);
-            Kfusion[3] = SK_MZ[0]*(P[3][20] + P[3][0]*SH_MAG[1] + P[3][3]*SH_MAG[0] - P[3][1]*SK_MZ[2] + P[3][2]*SK_MZ[3] + P[3][17]*SK_MZ[1] + P[3][15]*SK_MZ[5] - P[3][16]*SK_MZ[4]);
-            Kfusion[4] = SK_MZ[0]*(P[4][20] + P[4][0]*SH_MAG[1] + P[4][3]*SH_MAG[0] - P[4][1]*SK_MZ[2] + P[4][2]*SK_MZ[3] + P[4][17]*SK_MZ[1] + P[4][15]*SK_MZ[5] - P[4][16]*SK_MZ[4]);
-            Kfusion[5] = SK_MZ[0]*(P[5][20] + P[5][0]*SH_MAG[1] + P[5][3]*SH_MAG[0] - P[5][1]*SK_MZ[2] + P[5][2]*SK_MZ[3] + P[5][17]*SK_MZ[1] + P[5][15]*SK_MZ[5] - P[5][16]*SK_MZ[4]);
-            Kfusion[6] = SK_MZ[0]*(P[6][20] + P[6][0]*SH_MAG[1] + P[6][3]*SH_MAG[0] - P[6][1]*SK_MZ[2] + P[6][2]*SK_MZ[3] + P[6][17]*SK_MZ[1] + P[6][15]*SK_MZ[5] - P[6][16]*SK_MZ[4]);
-            Kfusion[7] = SK_MZ[0]*(P[7][20] + P[7][0]*SH_MAG[1] + P[7][3]*SH_MAG[0] - P[7][1]*SK_MZ[2] + P[7][2]*SK_MZ[3] + P[7][17]*SK_MZ[1] + P[7][15]*SK_MZ[5] - P[7][16]*SK_MZ[4]);
-            Kfusion[8] = SK_MZ[0]*(P[8][20] + P[8][0]*SH_MAG[1] + P[8][3]*SH_MAG[0] - P[8][1]*SK_MZ[2] + P[8][2]*SK_MZ[3] + P[8][17]*SK_MZ[1] + P[8][15]*SK_MZ[5] - P[8][16]*SK_MZ[4]);
-            Kfusion[9] = SK_MZ[0]*(P[9][20] + P[9][0]*SH_MAG[1] + P[9][3]*SH_MAG[0] - P[9][1]*SK_MZ[2] + P[9][2]*SK_MZ[3] + P[9][17]*SK_MZ[1] + P[9][15]*SK_MZ[5] - P[9][16]*SK_MZ[4]);
-            Kfusion[10] = SK_MZ[0]*(P[10][20] + P[10][0]*SH_MAG[1] + P[10][3]*SH_MAG[0] - P[10][1]*SK_MZ[2] + P[10][2]*SK_MZ[3] + P[10][17]*SK_MZ[1] + P[10][15]*SK_MZ[5] - P[10][16]*SK_MZ[4]);
-            Kfusion[11] = SK_MZ[0]*(P[11][20] + P[11][0]*SH_MAG[1] + P[11][3]*SH_MAG[0] - P[11][1]*SK_MZ[2] + P[11][2]*SK_MZ[3] + P[11][17]*SK_MZ[1] + P[11][15]*SK_MZ[5] - P[11][16]*SK_MZ[4]);
-            Kfusion[12] = SK_MZ[0]*(P[12][20] + P[12][0]*SH_MAG[1] + P[12][3]*SH_MAG[0] - P[12][1]*SK_MZ[2] + P[12][2]*SK_MZ[3] + P[12][17]*SK_MZ[1] + P[12][15]*SK_MZ[5] - P[12][16]*SK_MZ[4]);
-            Kfusion[13] = SK_MZ[0]*(P[13][20] + P[13][0]*SH_MAG[1] + P[13][3]*SH_MAG[0] - P[13][1]*SK_MZ[2] + P[13][2]*SK_MZ[3] + P[13][17]*SK_MZ[1] + P[13][15]*SK_MZ[5] - P[13][16]*SK_MZ[4]);
-            Kfusion[14] = SK_MZ[0]*(P[14][20] + P[14][0]*SH_MAG[1] + P[14][3]*SH_MAG[0] - P[14][1]*SK_MZ[2] + P[14][2]*SK_MZ[3] + P[14][17]*SK_MZ[1] + P[14][15]*SK_MZ[5] - P[14][16]*SK_MZ[4]);
-            Kfusion[15] = SK_MZ[0]*(P[15][20] + P[15][0]*SH_MAG[1] + P[15][3]*SH_MAG[0] - P[15][1]*SK_MZ[2] + P[15][2]*SK_MZ[3] + P[15][17]*SK_MZ[1] + P[15][15]*SK_MZ[5] - P[15][16]*SK_MZ[4]);
-            Kfusion[16] = SK_MZ[0]*(P[16][20] + P[16][0]*SH_MAG[1] + P[16][3]*SH_MAG[0] - P[16][1]*SK_MZ[2] + P[16][2]*SK_MZ[3] + P[16][17]*SK_MZ[1] + P[16][15]*SK_MZ[5] - P[16][16]*SK_MZ[4]);
-            Kfusion[17] = SK_MZ[0]*(P[17][20] + P[17][0]*SH_MAG[1] + P[17][3]*SH_MAG[0] - P[17][1]*SK_MZ[2] + P[17][2]*SK_MZ[3] + P[17][17]*SK_MZ[1] + P[17][15]*SK_MZ[5] - P[17][16]*SK_MZ[4]);
-            Kfusion[18] = SK_MZ[0]*(P[18][20] + P[18][0]*SH_MAG[1] + P[18][3]*SH_MAG[0] - P[18][1]*SK_MZ[2] + P[18][2]*SK_MZ[3] + P[18][17]*SK_MZ[1] + P[18][15]*SK_MZ[5] - P[18][16]*SK_MZ[4]);
-            Kfusion[19] = SK_MZ[0]*(P[19][20] + P[19][0]*SH_MAG[1] + P[19][3]*SH_MAG[0] - P[19][1]*SK_MZ[2] + P[19][2]*SK_MZ[3] + P[19][17]*SK_MZ[1] + P[19][15]*SK_MZ[5] - P[19][16]*SK_MZ[4]);
-            Kfusion[20] = SK_MZ[0]*(P[20][20] + P[20][0]*SH_MAG[1] + P[20][3]*SH_MAG[0] - P[20][1]*SK_MZ[2] + P[20][2]*SK_MZ[3] + P[20][17]*SK_MZ[1] + P[20][15]*SK_MZ[5] - P[20][16]*SK_MZ[4]);
+            Kfusion[0] = SK_MZ[0]*(P[0][21] + P[0][0]*SH_MAG[1] + P[0][3]*SH_MAG[0] - P[0][1]*SK_MZ[2] + P[0][2]*SK_MZ[3] + P[0][18]*SK_MZ[1] + P[0][16]*SK_MZ[5] - P[0][17]*SK_MZ[4]);
+            Kfusion[1] = SK_MZ[0]*(P[1][21] + P[1][0]*SH_MAG[1] + P[1][3]*SH_MAG[0] - P[1][1]*SK_MZ[2] + P[1][2]*SK_MZ[3] + P[1][18]*SK_MZ[1] + P[1][16]*SK_MZ[5] - P[1][17]*SK_MZ[4]);
+            Kfusion[2] = SK_MZ[0]*(P[2][21] + P[2][0]*SH_MAG[1] + P[2][3]*SH_MAG[0] - P[2][1]*SK_MZ[2] + P[2][2]*SK_MZ[3] + P[2][18]*SK_MZ[1] + P[2][16]*SK_MZ[5] - P[2][17]*SK_MZ[4]);
+            Kfusion[3] = SK_MZ[0]*(P[3][21] + P[3][0]*SH_MAG[1] + P[3][3]*SH_MAG[0] - P[3][1]*SK_MZ[2] + P[3][2]*SK_MZ[3] + P[3][18]*SK_MZ[1] + P[3][16]*SK_MZ[5] - P[3][17]*SK_MZ[4]);
+            Kfusion[4] = SK_MZ[0]*(P[4][21] + P[4][0]*SH_MAG[1] + P[4][3]*SH_MAG[0] - P[4][1]*SK_MZ[2] + P[4][2]*SK_MZ[3] + P[4][18]*SK_MZ[1] + P[4][16]*SK_MZ[5] - P[4][17]*SK_MZ[4]);
+            Kfusion[5] = SK_MZ[0]*(P[5][21] + P[5][0]*SH_MAG[1] + P[5][3]*SH_MAG[0] - P[5][1]*SK_MZ[2] + P[5][2]*SK_MZ[3] + P[5][18]*SK_MZ[1] + P[5][16]*SK_MZ[5] - P[5][17]*SK_MZ[4]);
+            Kfusion[6] = SK_MZ[0]*(P[6][21] + P[6][0]*SH_MAG[1] + P[6][3]*SH_MAG[0] - P[6][1]*SK_MZ[2] + P[6][2]*SK_MZ[3] + P[6][18]*SK_MZ[1] + P[6][16]*SK_MZ[5] - P[6][17]*SK_MZ[4]);
+            Kfusion[7] = SK_MZ[0]*(P[7][21] + P[7][0]*SH_MAG[1] + P[7][3]*SH_MAG[0] - P[7][1]*SK_MZ[2] + P[7][2]*SK_MZ[3] + P[7][18]*SK_MZ[1] + P[7][16]*SK_MZ[5] - P[7][17]*SK_MZ[4]);
+            Kfusion[8] = SK_MZ[0]*(P[8][21] + P[8][0]*SH_MAG[1] + P[8][3]*SH_MAG[0] - P[8][1]*SK_MZ[2] + P[8][2]*SK_MZ[3] + P[8][18]*SK_MZ[1] + P[8][16]*SK_MZ[5] - P[8][17]*SK_MZ[4]);
+            Kfusion[9] = SK_MZ[0]*(P[9][21] + P[9][0]*SH_MAG[1] + P[9][3]*SH_MAG[0] - P[9][1]*SK_MZ[2] + P[9][2]*SK_MZ[3] + P[9][18]*SK_MZ[1] + P[9][16]*SK_MZ[5] - P[9][17]*SK_MZ[4]);
+            Kfusion[10] = SK_MZ[0]*(P[10][21] + P[10][0]*SH_MAG[1] + P[10][3]*SH_MAG[0] - P[10][1]*SK_MZ[2] + P[10][2]*SK_MZ[3] + P[10][18]*SK_MZ[1] + P[10][16]*SK_MZ[5] - P[10][17]*SK_MZ[4]);
+            Kfusion[11] = SK_MZ[0]*(P[11][21] + P[11][0]*SH_MAG[1] + P[11][3]*SH_MAG[0] - P[11][1]*SK_MZ[2] + P[11][2]*SK_MZ[3] + P[11][18]*SK_MZ[1] + P[11][16]*SK_MZ[5] - P[11][17]*SK_MZ[4]);
+            Kfusion[12] = SK_MZ[0]*(P[12][21] + P[12][0]*SH_MAG[1] + P[12][3]*SH_MAG[0] - P[12][1]*SK_MZ[2] + P[12][2]*SK_MZ[3] + P[12][18]*SK_MZ[1] + P[12][16]*SK_MZ[5] - P[12][17]*SK_MZ[4]);
+            Kfusion[13] = SK_MZ[0]*(P[13][21] + P[13][0]*SH_MAG[1] + P[13][3]*SH_MAG[0] - P[13][1]*SK_MZ[2] + P[13][2]*SK_MZ[3] + P[13][18]*SK_MZ[1] + P[13][16]*SK_MZ[5] - P[13][17]*SK_MZ[4]);
+            Kfusion[14] = SK_MZ[0]*(P[14][21] + P[14][0]*SH_MAG[1] + P[14][3]*SH_MAG[0] - P[14][1]*SK_MZ[2] + P[14][2]*SK_MZ[3] + P[14][18]*SK_MZ[1] + P[14][16]*SK_MZ[5] - P[14][17]*SK_MZ[4]);
+            Kfusion[15] = SK_MZ[0]*(P[15][21] + P[15][0]*SH_MAG[1] + P[15][3]*SH_MAG[0] - P[15][1]*SK_MZ[2] + P[15][2]*SK_MZ[3] + P[15][18]*SK_MZ[1] + P[15][16]*SK_MZ[5] - P[15][17]*SK_MZ[4]);
+            Kfusion[16] = SK_MZ[0]*(P[16][21] + P[16][0]*SH_MAG[1] + P[16][3]*SH_MAG[0] - P[16][1]*SK_MZ[2] + P[16][2]*SK_MZ[3] + P[16][18]*SK_MZ[1] + P[16][16]*SK_MZ[5] - P[16][17]*SK_MZ[4]);
+            Kfusion[17] = SK_MZ[0]*(P[17][21] + P[17][0]*SH_MAG[1] + P[17][3]*SH_MAG[0] - P[17][1]*SK_MZ[2] + P[17][2]*SK_MZ[3] + P[17][18]*SK_MZ[1] + P[17][16]*SK_MZ[5] - P[17][17]*SK_MZ[4]);
+            Kfusion[18] = SK_MZ[0]*(P[18][21] + P[18][0]*SH_MAG[1] + P[18][3]*SH_MAG[0] - P[18][1]*SK_MZ[2] + P[18][2]*SK_MZ[3] + P[18][18]*SK_MZ[1] + P[18][16]*SK_MZ[5] - P[18][17]*SK_MZ[4]);
+            Kfusion[19] = SK_MZ[0]*(P[19][21] + P[19][0]*SH_MAG[1] + P[19][3]*SH_MAG[0] - P[19][1]*SK_MZ[2] + P[19][2]*SK_MZ[3] + P[19][18]*SK_MZ[1] + P[19][16]*SK_MZ[5] - P[19][17]*SK_MZ[4]);
+            Kfusion[20] = SK_MZ[0]*(P[20][21] + P[20][0]*SH_MAG[1] + P[20][3]*SH_MAG[0] - P[20][1]*SK_MZ[2] + P[20][2]*SK_MZ[3] + P[20][18]*SK_MZ[1] + P[20][16]*SK_MZ[5] - P[20][17]*SK_MZ[4]);
+            Kfusion[21] = SK_MZ[0]*(P[21][21] + P[21][0]*SH_MAG[1] + P[21][3]*SH_MAG[0] - P[21][1]*SK_MZ[2] + P[21][2]*SK_MZ[3] + P[21][18]*SK_MZ[1] + P[21][16]*SK_MZ[5] - P[21][17]*SK_MZ[4]);
+            Kfusion[22] = SK_MZ[0]*(P[22][21] + P[22][0]*SH_MAG[1] + P[22][3]*SH_MAG[0] - P[22][1]*SK_MZ[2] + P[22][2]*SK_MZ[3] + P[22][18]*SK_MZ[1] + P[22][16]*SK_MZ[5] - P[22][17]*SK_MZ[4]);
             varInnovMag[2] = 1.0f/SK_MZ[0];
             innovMag[2] = MagPred[2] - magData.z;
 
@@ -1541,21 +1547,21 @@ void FuseMagnetometer()
             // number of operations
             for (uint8_t i = 0; i<=indexLimit; i++)
             {
-                for (uint8_t j = 0; j<=3; j++)
+                for (uint8_t j = 0; j <= 3; j++)
                 {
                     KH[i][j] = Kfusion[i] * H_MAG[j];
                 }
-                for (uint8_t j = 4; j<=17; j++) KH[i][j] = 0.0f;
+                for (uint8_t j = 4; j <= 15; j++) KH[i][j] = 0.0f;
                 if (!onGround)
                 {
-                    for (uint8_t j = 15; j<=20; j++)
+                    for (uint8_t j = 16; j <= 21; j++)
                     {
                         KH[i][j] = Kfusion[i] * H_MAG[j];
                     }
                 }
                 else
                 {
-                    for (uint8_t j = 15; j<=20; j++)
+                    for (uint8_t j = 16; j <= 21; j++)
                     {
                         KH[i][j] = 0.0f;
                     }
@@ -1566,13 +1572,13 @@ void FuseMagnetometer()
                 for (uint8_t j = 0; j<=indexLimit; j++)
                 {
                     KHP[i][j] = 0.0f;
-                    for (uint8_t k = 0; k<=3; k++)
+                    for (uint8_t k = 0; k <= 3; k++)
                     {
                         KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
                     if (!onGround)
                     {
-                        for (uint8_t k = 15; k<=20; k++)
+                        for (uint8_t k = 16; k<=21; k++)
                         {
                             KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                         }
@@ -1580,9 +1586,9 @@ void FuseMagnetometer()
                 }
             }
         }
-        for (uint8_t i = 0; i<=indexLimit; i++)
+        for (uint8_t i = 0; i <= indexLimit; i++)
         {
-            for (uint8_t j = 0; j<=indexLimit; j++)
+            for (uint8_t j = 0; j <= indexLimit; j++)
             {
                 P[i][j] = P[i][j] - KHP[i][j];
             }
@@ -1603,15 +1609,14 @@ void FuseAirspeed()
     float vwe;
     const float R_TAS = 2.0f;
     float SH_TAS[3];
-    float Kfusion[21];
     float VtasPred;
 
     // Copy required states to local variable names
     vn = statesAtVtasMeasTime[4];
     ve = statesAtVtasMeasTime[5];
     vd = statesAtVtasMeasTime[6];
-    vwn = statesAtVtasMeasTime[13];
-    vwe = statesAtVtasMeasTime[14];
+    vwn = statesAtVtasMeasTime[14];
+    vwe = statesAtVtasMeasTime[15];
 
     // Need to check that it is flying before fusing airspeed data
     // Calculate the predicted airspeed
@@ -1624,38 +1629,42 @@ void FuseAirspeed()
         SH_TAS[1] = (SH_TAS[0]*(2*ve - 2*vwe))/2;
         SH_TAS[2] = (SH_TAS[0]*(2*vn - 2*vwn))/2;
         
-        float H_TAS[21];
-        for (uint8_t i=0; i<=20; i++) H_TAS[i] = 0.0f;
+        float H_TAS[n_states];
+        for (uint8_t i=0; i<n_states; i++) H_TAS[i] = 0.0f;
         H_TAS[4] = SH_TAS[2];
         H_TAS[5] = SH_TAS[1];
         H_TAS[6] = vd*SH_TAS[0];
-        H_TAS[13] = -SH_TAS[2];
-        H_TAS[14] = -SH_TAS[1];
+        H_TAS[14] = -SH_TAS[2];
+        H_TAS[15] = -SH_TAS[1];
 
         // Calculate Kalman gains
-        float SK_TAS = 1.0f/(R_TAS + SH_TAS[2]*(P[4][4]*SH_TAS[2] + P[5][4]*SH_TAS[1] - P[13][4]*SH_TAS[2] - P[14][4]*SH_TAS[1] + P[6][4]*vd*SH_TAS[0]) + SH_TAS[1]*(P[4][5]*SH_TAS[2] + P[5][5]*SH_TAS[1] - P[13][5]*SH_TAS[2] - P[14][5]*SH_TAS[1] + P[6][5]*vd*SH_TAS[0]) - SH_TAS[2]*(P[4][13]*SH_TAS[2] + P[5][13]*SH_TAS[1] - P[13][13]*SH_TAS[2] - P[14][13]*SH_TAS[1] + P[6][13]*vd*SH_TAS[0]) - SH_TAS[1]*(P[4][14]*SH_TAS[2] + P[5][14]*SH_TAS[1] - P[13][14]*SH_TAS[2] - P[14][14]*SH_TAS[1] + P[6][14]*vd*SH_TAS[0]) + vd*SH_TAS[0]*(P[4][6]*SH_TAS[2] + P[5][6]*SH_TAS[1] - P[13][6]*SH_TAS[2] - P[14][6]*SH_TAS[1] + P[6][6]*vd*SH_TAS[0]));
-        Kfusion[0] = SK_TAS*(P[0][4]*SH_TAS[2] - P[0][13]*SH_TAS[2] + P[0][5]*SH_TAS[1] - P[0][14]*SH_TAS[1] + P[0][6]*vd*SH_TAS[0]);
-        Kfusion[1] = SK_TAS*(P[1][4]*SH_TAS[2] - P[1][13]*SH_TAS[2] + P[1][5]*SH_TAS[1] - P[1][14]*SH_TAS[1] + P[1][6]*vd*SH_TAS[0]);
-        Kfusion[2] = SK_TAS*(P[2][4]*SH_TAS[2] - P[2][13]*SH_TAS[2] + P[2][5]*SH_TAS[1] - P[2][14]*SH_TAS[1] + P[2][6]*vd*SH_TAS[0]);
-        Kfusion[3] = SK_TAS*(P[3][4]*SH_TAS[2] - P[3][13]*SH_TAS[2] + P[3][5]*SH_TAS[1] - P[3][14]*SH_TAS[1] + P[3][6]*vd*SH_TAS[0]);
-        Kfusion[4] = SK_TAS*(P[4][4]*SH_TAS[2] - P[4][13]*SH_TAS[2] + P[4][5]*SH_TAS[1] - P[4][14]*SH_TAS[1] + P[4][6]*vd*SH_TAS[0]);
-        Kfusion[5] = SK_TAS*(P[5][4]*SH_TAS[2] - P[5][13]*SH_TAS[2] + P[5][5]*SH_TAS[1] - P[5][14]*SH_TAS[1] + P[5][6]*vd*SH_TAS[0]);
-        Kfusion[6] = SK_TAS*(P[6][4]*SH_TAS[2] - P[6][13]*SH_TAS[2] + P[6][5]*SH_TAS[1] - P[6][14]*SH_TAS[1] + P[6][6]*vd*SH_TAS[0]);
-        Kfusion[7] = SK_TAS*(P[7][4]*SH_TAS[2] - P[7][13]*SH_TAS[2] + P[7][5]*SH_TAS[1] - P[7][14]*SH_TAS[1] + P[7][6]*vd*SH_TAS[0]);
-        Kfusion[8] = SK_TAS*(P[8][4]*SH_TAS[2] - P[8][13]*SH_TAS[2] + P[8][5]*SH_TAS[1] - P[8][14]*SH_TAS[1] + P[8][6]*vd*SH_TAS[0]);
-        Kfusion[9] = SK_TAS*(P[9][4]*SH_TAS[2] - P[9][13]*SH_TAS[2] + P[9][5]*SH_TAS[1] - P[9][14]*SH_TAS[1] + P[9][6]*vd*SH_TAS[0]);
-        Kfusion[10] = SK_TAS*(P[10][4]*SH_TAS[2] - P[10][13]*SH_TAS[2] + P[10][5]*SH_TAS[1] - P[10][14]*SH_TAS[1] + P[10][6]*vd*SH_TAS[0]);
-        Kfusion[11] = SK_TAS*(P[11][4]*SH_TAS[2] - P[11][13]*SH_TAS[2] + P[11][5]*SH_TAS[1] - P[11][14]*SH_TAS[1] + P[11][6]*vd*SH_TAS[0]);
-        Kfusion[12] = SK_TAS*(P[12][4]*SH_TAS[2] - P[12][13]*SH_TAS[2] + P[12][5]*SH_TAS[1] - P[12][14]*SH_TAS[1] + P[12][6]*vd*SH_TAS[0]);
-        Kfusion[13] = SK_TAS*(P[13][4]*SH_TAS[2] - P[13][13]*SH_TAS[2] + P[13][5]*SH_TAS[1] - P[13][14]*SH_TAS[1] + P[13][6]*vd*SH_TAS[0]);
-        Kfusion[14] = SK_TAS*(P[14][4]*SH_TAS[2] - P[14][13]*SH_TAS[2] + P[14][5]*SH_TAS[1] - P[14][14]*SH_TAS[1] + P[14][6]*vd*SH_TAS[0]);
-        Kfusion[15] = SK_TAS*(P[15][4]*SH_TAS[2] - P[15][13]*SH_TAS[2] + P[15][5]*SH_TAS[1] - P[15][14]*SH_TAS[1] + P[15][6]*vd*SH_TAS[0]);
-        Kfusion[16] = SK_TAS*(P[16][4]*SH_TAS[2] - P[16][13]*SH_TAS[2] + P[16][5]*SH_TAS[1] - P[16][14]*SH_TAS[1] + P[16][6]*vd*SH_TAS[0]);
-        Kfusion[17] = SK_TAS*(P[17][4]*SH_TAS[2] - P[17][13]*SH_TAS[2] + P[17][5]*SH_TAS[1] - P[17][14]*SH_TAS[1] + P[17][6]*vd*SH_TAS[0]);
-        Kfusion[18] = SK_TAS*(P[18][4]*SH_TAS[2] - P[18][13]*SH_TAS[2] + P[18][5]*SH_TAS[1] - P[18][14]*SH_TAS[1] + P[18][6]*vd*SH_TAS[0]);
-        Kfusion[19] = SK_TAS*(P[19][4]*SH_TAS[2] - P[19][13]*SH_TAS[2] + P[19][5]*SH_TAS[1] - P[19][14]*SH_TAS[1] + P[19][6]*vd*SH_TAS[0]);
-        Kfusion[20] = SK_TAS*(P[20][4]*SH_TAS[2] - P[20][13]*SH_TAS[2] + P[20][5]*SH_TAS[1] - P[20][14]*SH_TAS[1] + P[20][6]*vd*SH_TAS[0]);
-        varInnovVtas = 1.0f/SK_TAS;
+        float SK_TAS[2];
+        SK_TAS[0] = 1/(R_TAS + SH_TAS[2]*(P[4][4]*SH_TAS[2] + P[5][4]*SH_TAS[1] - P[14][4]*SH_TAS[2] - P[15][4]*SH_TAS[1] + P[6][4]*vd*SH_TAS[0]) + SH_TAS[1]*(P[4][5]*SH_TAS[2] + P[5][5]*SH_TAS[1] - P[14][5]*SH_TAS[2] - P[15][5]*SH_TAS[1] + P[6][5]*vd*SH_TAS[0]) - SH_TAS[2]*(P[4][14]*SH_TAS[2] + P[5][14]*SH_TAS[1] - P[14][14]*SH_TAS[2] - P[15][14]*SH_TAS[1] + P[6][14]*vd*SH_TAS[0]) - SH_TAS[1]*(P[4][15]*SH_TAS[2] + P[5][15]*SH_TAS[1] - P[14][15]*SH_TAS[2] - P[15][15]*SH_TAS[1] + P[6][15]*vd*SH_TAS[0]) + vd*SH_TAS[0]*(P[4][6]*SH_TAS[2] + P[5][6]*SH_TAS[1] - P[14][6]*SH_TAS[2] - P[15][6]*SH_TAS[1] + P[6][6]*vd*SH_TAS[0]));
+        SK_TAS[1] = SH_TAS[1];
+        Kfusion[0] = SK_TAS[0]*(P[0][4]*SH_TAS[2] - P[0][14]*SH_TAS[2] + P[0][5]*SK_TAS[1] - P[0][15]*SK_TAS[1] + P[0][6]*vd*SH_TAS[0]);
+        Kfusion[1] = SK_TAS[0]*(P[1][4]*SH_TAS[2] - P[1][14]*SH_TAS[2] + P[1][5]*SK_TAS[1] - P[1][15]*SK_TAS[1] + P[1][6]*vd*SH_TAS[0]);
+        Kfusion[2] = SK_TAS[0]*(P[2][4]*SH_TAS[2] - P[2][14]*SH_TAS[2] + P[2][5]*SK_TAS[1] - P[2][15]*SK_TAS[1] + P[2][6]*vd*SH_TAS[0]);
+        Kfusion[3] = SK_TAS[0]*(P[3][4]*SH_TAS[2] - P[3][14]*SH_TAS[2] + P[3][5]*SK_TAS[1] - P[3][15]*SK_TAS[1] + P[3][6]*vd*SH_TAS[0]);
+        Kfusion[4] = SK_TAS[0]*(P[4][4]*SH_TAS[2] - P[4][14]*SH_TAS[2] + P[4][5]*SK_TAS[1] - P[4][15]*SK_TAS[1] + P[4][6]*vd*SH_TAS[0]);
+        Kfusion[5] = SK_TAS[0]*(P[5][4]*SH_TAS[2] - P[5][14]*SH_TAS[2] + P[5][5]*SK_TAS[1] - P[5][15]*SK_TAS[1] + P[5][6]*vd*SH_TAS[0]);
+        Kfusion[6] = SK_TAS[0]*(P[6][4]*SH_TAS[2] - P[6][14]*SH_TAS[2] + P[6][5]*SK_TAS[1] - P[6][15]*SK_TAS[1] + P[6][6]*vd*SH_TAS[0]);
+        Kfusion[7] = SK_TAS[0]*(P[7][4]*SH_TAS[2] - P[7][14]*SH_TAS[2] + P[7][5]*SK_TAS[1] - P[7][15]*SK_TAS[1] + P[7][6]*vd*SH_TAS[0]);
+        Kfusion[8] = SK_TAS[0]*(P[8][4]*SH_TAS[2] - P[8][14]*SH_TAS[2] + P[8][5]*SK_TAS[1] - P[8][15]*SK_TAS[1] + P[8][6]*vd*SH_TAS[0]);
+        Kfusion[9] = SK_TAS[0]*(P[9][4]*SH_TAS[2] - P[9][14]*SH_TAS[2] + P[9][5]*SK_TAS[1] - P[9][15]*SK_TAS[1] + P[9][6]*vd*SH_TAS[0]);
+        Kfusion[10] = SK_TAS[0]*(P[10][4]*SH_TAS[2] - P[10][14]*SH_TAS[2] + P[10][5]*SK_TAS[1] - P[10][15]*SK_TAS[1] + P[10][6]*vd*SH_TAS[0]);
+        Kfusion[11] = SK_TAS[0]*(P[11][4]*SH_TAS[2] - P[11][14]*SH_TAS[2] + P[11][5]*SK_TAS[1] - P[11][15]*SK_TAS[1] + P[11][6]*vd*SH_TAS[0]);
+        Kfusion[12] = SK_TAS[0]*(P[12][4]*SH_TAS[2] - P[12][14]*SH_TAS[2] + P[12][5]*SK_TAS[1] - P[12][15]*SK_TAS[1] + P[12][6]*vd*SH_TAS[0]);
+        Kfusion[13] = SK_TAS[0]*(P[13][4]*SH_TAS[2] - P[13][14]*SH_TAS[2] + P[13][5]*SK_TAS[1] - P[13][15]*SK_TAS[1] + P[13][6]*vd*SH_TAS[0]);
+        Kfusion[14] = SK_TAS[0]*(P[14][4]*SH_TAS[2] - P[14][14]*SH_TAS[2] + P[14][5]*SK_TAS[1] - P[14][15]*SK_TAS[1] + P[14][6]*vd*SH_TAS[0]);
+        Kfusion[15] = SK_TAS[0]*(P[15][4]*SH_TAS[2] - P[15][14]*SH_TAS[2] + P[15][5]*SK_TAS[1] - P[15][15]*SK_TAS[1] + P[15][6]*vd*SH_TAS[0]);
+        Kfusion[16] = SK_TAS[0]*(P[16][4]*SH_TAS[2] - P[16][14]*SH_TAS[2] + P[16][5]*SK_TAS[1] - P[16][15]*SK_TAS[1] + P[16][6]*vd*SH_TAS[0]);
+        Kfusion[17] = SK_TAS[0]*(P[17][4]*SH_TAS[2] - P[17][14]*SH_TAS[2] + P[17][5]*SK_TAS[1] - P[17][15]*SK_TAS[1] + P[17][6]*vd*SH_TAS[0]);
+        Kfusion[18] = SK_TAS[0]*(P[18][4]*SH_TAS[2] - P[18][14]*SH_TAS[2] + P[18][5]*SK_TAS[1] - P[18][15]*SK_TAS[1] + P[18][6]*vd*SH_TAS[0]);
+        Kfusion[19] = SK_TAS[0]*(P[19][4]*SH_TAS[2] - P[19][14]*SH_TAS[2] + P[19][5]*SK_TAS[1] - P[19][15]*SK_TAS[1] + P[19][6]*vd*SH_TAS[0]);
+        Kfusion[20] = SK_TAS[0]*(P[20][4]*SH_TAS[2] - P[20][14]*SH_TAS[2] + P[20][5]*SK_TAS[1] - P[20][15]*SK_TAS[1] + P[20][6]*vd*SH_TAS[0]);
+        Kfusion[21] = SK_TAS[0]*(P[21][4]*SH_TAS[2] - P[21][14]*SH_TAS[2] + P[21][5]*SK_TAS[1] - P[21][15]*SK_TAS[1] + P[21][6]*vd*SH_TAS[0]);
+        Kfusion[22] = SK_TAS[0]*(P[22][4]*SH_TAS[2] - P[22][14]*SH_TAS[2] + P[22][5]*SK_TAS[1] - P[22][15]*SK_TAS[1] + P[22][6]*vd*SH_TAS[0]);
+        varInnovVtas = 1.0f/SK_TAS[0];
 
         // Calculate the measurement innovation
         innovVtas = VtasPred - VtasMeas;
@@ -1663,7 +1672,7 @@ void FuseAirspeed()
         if ((innovVtas*innovVtas*SK_TAS) < 25.0)
         {
             // correct the state vector
-            for (uint8_t j=0; j<=20; j++)
+            for (uint8_t j=0; j <= 22; j++)
             {
                 states[j] = states[j] - Kfusion[j] * innovVtas;
             }
@@ -1671,7 +1680,7 @@ void FuseAirspeed()
             float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
             if (quatMag > 1e-12f)
             {
-                for (uint8_t j= 0; j<=3; j++)
+                for (uint8_t j= 0; j <= 3; j++)
                 {
                     float quatMagInv = 1.0f/quatMag;
                     states[j] = states[j] * quatMagInv;
@@ -1680,38 +1689,38 @@ void FuseAirspeed()
             // correct the covariance P = (I - K*H)*P
             // take advantage of the empty columns in H to reduce the
             // number of operations
-            for (uint8_t i = 0; i<=20; i++)
+            for (uint8_t i = 0; i <= 22; i++)
             {
-                for (uint8_t j = 0; j<=3; j++) KH[i][j] = 0.0;
-                for (uint8_t j = 4; j<=6; j++)
+                for (uint8_t j = 0; j <= 3; j++) KH[i][j] = 0.0;
+                for (uint8_t j = 4; j <= 6; j++)
                 {
                     KH[i][j] = Kfusion[i] * H_TAS[j];
                 }
-                for (uint8_t j = 7; j<=12; j++) KH[i][j] = 0.0;
-                for (uint8_t j = 13; j<=14; j++)
+                for (uint8_t j = 7; j <= 13; j++) KH[i][j] = 0.0;
+                for (uint8_t j = 14; j <= 15; j++)
                 {
                     KH[i][j] = Kfusion[i] * H_TAS[j];
                 }
-                for (uint8_t j = 15; j<=20; j++) KH[i][j] = 0.0;
+                for (uint8_t j = 16; j <= 22; j++) KH[i][j] = 0.0;
             }
-            for (uint8_t i = 0; i<=20; i++)
+            for (uint8_t i = 0; i <= 22; i++)
             {
-                for (uint8_t j = 0; j<=20; j++)
+                for (uint8_t j = 0; j <= 22; j++)
                 {
                     KHP[i][j] = 0.0;
-                    for (uint8_t k = 4; k<=6; k++)
+                    for (uint8_t k = 4; k <= 6; k++)
                     {
                         KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
-                    for (uint8_t k = 13; k<=14; k++)
+                    for (uint8_t k = 14; k <= 15; k++)
                     {
                         KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                     }
                 }
             }
-            for (uint8_t i = 0; i<=20; i++)
+            for (uint8_t i = 0; i <= 22; i++)
             {
-                for (uint8_t j = 0; j<=20; j++)
+                for (uint8_t j = 0; j <= 22; j++)
                 {
                     P[i][j] = P[i][j] - KHP[i][j];
                 }
