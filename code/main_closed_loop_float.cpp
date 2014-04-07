@@ -335,32 +335,36 @@ int main()
             // 4-6: Velocity - m/sec (North, East, Down)
             // 7-9: Position - m (North, East, Down)
             // 10-12: Delta Angle bias - rad (X,Y,Z)
-            // 13-14: Wind Vector  - m/sec (North,East)
-            // 15-17: Earth Magnetic Field Vector - milligauss (North, East, Down)
-            // 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
-            printf("\n");
-            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", dtIMU, dt, IMUmsec);
-            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)posNED[0], (double)posNED[1], (double)posNED[2],
-                (double)velNED[0], (double)velNED[1], (double)velNED[2]);
-            printf("vTAS: %8.4f baro alt: %8.4f\n", VtasMeas, hgtMea);
-            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)magData.x, (double)magData.y, (double)magData.z);
-            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)states[0], (double)states[1], (double)states[2], (double)states[3]);
-            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)states[4], (double)states[5], (double)states[6]);
-            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)states[7], (double)states[8], (double)states[9]);
-            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)states[10], (double)states[11], (double)states[12]);
-            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)states[13], (double)states[14]);
-            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)states[15], (double)states[16], (double)states[17]);
-            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)states[18], (double)states[19], (double)states[20]);
-            printf("states: %s %s %s %s %s %s %s %s %s\n",
-                (statesInitialised) ? "INITIALIZED" : "NON_INIT",
-                (onGround) ? "ON_GROUND" : "AIRBORNE",
-                (fuseVelData) ? "FUSE_VEL" : "INH_VEL",
-                (fusePosData) ? "FUSE_POS" : "INH_POS",
-                (fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
-                (fuseMagData) ? "FUSE_MAG" : "INH_MAG",
-                (fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
-                (useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
-                (useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
+            // 13: Delta Velocity Z bias -m/s
+            // 14-15: Wind Vector  - m/sec (North,East)
+            // 16-18: Earth Magnetic Field Vector - milligauss (North, East, Down)
+            // 19-21: Body Magnetic Field Vector - milligauss (X,Y,Z)
+            // 22: Terrain Vertical Offset - m
+//            printf("\n");
+//            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", dtIMU, dt, IMUmsec);
+//            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)posNED[0], (double)posNED[1], (double)posNED[2],
+//                (double)velNED[0], (double)velNED[1], (double)velNED[2]);
+//            printf("vTAS: %8.4f baro alt: %8.4f\n", VtasMeas, hgtMea);
+//            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)magData.x, (double)magData.y, (double)magData.z);
+//            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)states[0], (double)states[1], (double)states[2], (double)states[3]);
+//            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)states[4], (double)states[5], (double)states[6]);
+//            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)states[7], (double)states[8], (double)states[9]);
+//            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)states[10], (double)states[11], (double)states[12]);
+//            printf("states (delta vel) [14]: %8.4ff\n", (double)states[13]);
+//            printf("states (wind)      [15-16]: %8.4f, %8.4f\n", (double)states[14], (double)states[15]);
+//            printf("states (earth mag) [17-19]: %8.4f, %8.4f, %8.4f\n", (double)states[16], (double)states[17], (double)states[18]);
+//            printf("states (body mag)  [20-22]: %8.4f, %8.4f, %8.4f\n", (double)states[19], (double)states[20], (double)states[21]);
+//            printf("states (terain offset) [23]: %8.4ff\n", (double)states[22]);
+//            printf("states: %s %s %s %s %s %s %s %s %s\n",
+//                (statesInitialised) ? "INITIALIZED" : "NON_INIT",
+//                (onGround) ? "ON_GROUND" : "AIRBORNE",
+//                (fuseVelData) ? "FUSE_VEL" : "INH_VEL",
+//                (fusePosData) ? "FUSE_POS" : "INH_POS",
+//                (fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
+//                (fuseMagData) ? "FUSE_MAG" : "INH_MAG",
+//                (fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
+//                (useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
+//                (useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
 
         }
     }
@@ -635,7 +639,7 @@ void WriteFilterOutput()
 
     fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
     fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
-    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+//    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     fprintf(pOnboardPosVelOutFile,"\n");
 
     // raw GPS outputs
