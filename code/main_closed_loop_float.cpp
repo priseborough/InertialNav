@@ -521,7 +521,7 @@ void readAirData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
-            baroHgt = 0;//tempAdsPrev[8];
+            baroHgt = tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
