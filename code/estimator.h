@@ -69,6 +69,8 @@ extern Vector3f correctedDelAng; // delta angles about the xyz body axes correct
 extern Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
 extern Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
 extern Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
+extern Mat3f Tbn; // transformation matrix from body to NED coordinates
+extern Mat3f Tnb; // transformation amtrix from NED to body coordinates
 
 extern float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
 
@@ -87,19 +89,23 @@ extern bool fuseMagData; // boolean true when magnetometer data is to be fused
 extern float velNED[3]; // North, East, Down velocity obs (m/s)
 extern float posNE[2]; // North, East position obs (m)
 extern float hgtMea; //  measured height (m)
+extern float rngMea; // terrain laser range finder measurement (m)
 extern float posNED[3]; // North, East Down position (m)
 
 extern float statesAtVelTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
 extern float statesAtPosTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
 extern float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
+extern float statesAtRngTime[n_states]; // States at the effective measurement time for the rngMea measurement
 
 extern float innovMag[3]; // innovation output
 extern float varInnovMag[3]; // innovation variance output
 extern Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
 extern float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
-extern float innovVtas; // innovation output
+extern float innovVtas; // true airspeed measurement innovation
+extern float innovRng; // laser range finder measurement innovation
 extern float varInnovVtas; // innovation variance output
 extern bool fuseVtasData; // boolean true when airspeed data is to be fused
+extern bool fuseRngData; // boolean true when range finder data is to be fused
 extern float VtasMeas; // true airspeed measurement (m/s)
 extern float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
 extern float latRef; // WGS-84 latitude of reference point (rad)
@@ -125,6 +131,7 @@ extern bool numericalProtection;
 
 const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
 const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
+const float rngFinderPitch = 0.0f; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
 
 extern bool staticMode;
 
@@ -143,6 +150,10 @@ void FuseVelposNED();
 void FuseMagnetometer();
 
 void FuseAirspeed();
+
+void FuseRangeFinder();
+
+void FuseOpticalFlow();
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 

@@ -30,6 +30,7 @@ bool endOfData = false; //boolean set to true when all files have returned data
 uint32_t msecVelDelay = 230;
 uint32_t msecPosDelay = 210;
 uint32_t msecHgtDelay = 350;
+uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
 
@@ -293,10 +294,19 @@ int main()
                 RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 FuseVelposNED();
+
+                // Fudge a fusion of range finder data using measurements synthesised from baro alt
+                rngMea = (hgtMea + 2.0f) / Tbn.z.z;
+                // recall states stored at time of measurement after adjusting for delays
+                RecallStates(statesAtRngTime, (IMUmsec - msecRngDelay));
+                fuseRngData = true;
+                // TODO -  fix unstable terrain offset estimate
+                //FuseRangeFinder();
             }
             else
             {
                 fuseHgtData = false;
+                fuseRngData = false;
             }
 
             // Fuse Magnetometer Measurements
@@ -413,7 +423,11 @@ void readGpsData()
     static uint32_t lastGPSmsec = 0;
     static float tempGps[14];
     static float tempGpsPrev[14];
-    static float GPStimestamp = 0;
+    static float GPStimestamp = 0;Code : Add method for fusing laser range finder data
+
+                                         This includes a fudged range measurement based on baro alt plus an offset
+                                         The terrain offset estimate is currently not stable, but other states are
+                                         working.
 
     while (GPStimestamp <= IMUtimestamp)
     {
@@ -508,6 +522,7 @@ void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
+    // Currently synthesise a terrain measurement that is 5 m below the baro alt
     while (ADStimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=9; j++)
@@ -522,6 +537,7 @@ void readAirData()
             ADSmsec = tempAdsPrev[1];
             VtasMeas = EAS2TAS*tempAdsPrev[7];
             baroHgt = tempAdsPrev[8];
+            rngMea = (baroHgt + 5.0f) / Tbn.z.z;
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -534,7 +550,6 @@ void readAirData()
         newAdsData = false;
     }
 }
-
 
 
 void readOnboardData()
