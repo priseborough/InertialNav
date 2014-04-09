@@ -423,11 +423,7 @@ void readGpsData()
     static uint32_t lastGPSmsec = 0;
     static float tempGps[14];
     static float tempGpsPrev[14];
-    static float GPStimestamp = 0;Code : Add method for fusing laser range finder data
-
-                                         This includes a fudged range measurement based on baro alt plus an offset
-                                         The terrain offset estimate is currently not stable, but other states are
-                                         working.
+    static float GPStimestamp = 0;
 
     while (GPStimestamp <= IMUtimestamp)
     {
