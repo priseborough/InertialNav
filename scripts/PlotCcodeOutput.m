@@ -267,7 +267,7 @@ print(gcf, '-djpeg', strcat(dirName,fileName,'.jpg'), '-r200');
 %% Terrain Offset
 fileName = 'TerrainPosOffset';
 figure;
-plot(StateDataOut(:,1),StateDataOut(:,24)/dt);
+plot(StateDataOut(:,1),StateDataOut(:,24));
 xlim([xmin,xmax]);
 grid on;
 xlabel('time (sec)');ylabel('terrain offset (m)');
