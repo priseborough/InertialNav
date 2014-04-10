@@ -1,5 +1,5 @@
 #include "estimator.h"
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 
 // Global variables
@@ -366,7 +366,7 @@ void CovariancePrediction(float dt)
     dVelBiasSigma = dt*1e-4f;
     magEarthSigma = dt*3.0e-4f;
     magBodySigma  = dt*3.0e-4f;
-    gndHgtSigma   = dt*sqrtf(sq(states[4]) + sq(states[5]))*0.02f; // assume up to 2% terrain gradient
+    gndHgtSigma   = dt*sqrtf(sq(states[4]) + sq(states[5]))*0.02f; // assume 2% terrain gradient 1-sigma
 
     for (uint8_t i= 0; i<=9;  i++) processNoise[i] = 1.0e-9f;
     for (uint8_t i=10; i<=12; i++) processNoise[i] = dAngBiasSigma;
@@ -1753,6 +1753,7 @@ void FuseRangeFinder()
     float SH_RNG[5];
     float H_RNG[23];
     float SK_RNG[6];
+    float cosRngTilt;
     const float R_RNG = 0.25f; // 0.5 m2 rangefinder measurement variance
 
     // Copy required states to local variable names
@@ -1763,23 +1764,21 @@ void FuseRangeFinder()
     float pd = statesAtRngTime[9];
     float ptd = statesAtRngTime[22];
 
-    // Need to check that our tilt angle is less than 45 degrees and we are using range finder data
-    if (useRangeFinder && Tbn.z.z > 0.7)
+    // Need to check that our range finder tilt angle is less than 30 degrees and we are using range finder data
+    SH_RNG[4] = sin(rngFinderPitch);
+    cosRngTilt = - Tbn.z.x * SH_RNG[4] + Tbn.z.z * cos(rngFinderPitch);
+    if (useRangeFinder && cosRngTilt > 0.87f)
     {
-        // Calculate Kalman gains
-        SH_RNG[4] = sin(rngFinderPitch);
+        // Calculate observation jacobian and Kalman gain ignoring all states other than the terrain offset
+        // This prevents the range finder measurement modifying any of the other filter states and significantly reduces computations
         SH_RNG[0] = SH_RNG[4]*(2*q0*q2 - 2*q1*q3) - sq(q0) + sq(q1) + sq(q2) - sq(q3);
         SH_RNG[1] = pd - ptd;
         SH_RNG[2] = 1/sq(SH_RNG[0]);
         SH_RNG[3] = 1/SH_RNG[0];
         for (uint8_t i = 0; i < n_states; i++) {
             H_RNG[i] = 0.0f;
+            Kfusion[i] = 0.0f;
         }
-        H_RNG[0] = SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]);
-        H_RNG[1] = -SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]);
-        H_RNG[2] = -SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]);
-        H_RNG[3] = SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4]);
-        H_RNG[9] = SH_RNG[3];
         H_RNG[22] = -SH_RNG[3];
         SK_RNG[0] = 1/(R_RNG + SH_RNG[3]*(P[9][9]*SH_RNG[3] - P[22][9]*SH_RNG[3] + P[0][9]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][9]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][9]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][9]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[3]*(P[9][22]*SH_RNG[3] - P[22][22]*SH_RNG[3] + P[0][22]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][22]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][22]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][22]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) + SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4])*(P[9][0]*SH_RNG[3] - P[22][0]*SH_RNG[3] + P[0][0]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][0]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][0]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][0]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4])*(P[9][1]*SH_RNG[3] - P[22][1]*SH_RNG[3] + P[0][1]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][1]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][1]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][1]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4])*(P[9][2]*SH_RNG[3] - P[22][2]*SH_RNG[3] + P[0][2]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][2]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][2]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][2]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) + SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])*(P[9][3]*SH_RNG[3] - P[22][3]*SH_RNG[3] + P[0][3]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][3]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][3]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][3]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])));
         SK_RNG[1] = 2*q1 - 2*q3*SH_RNG[4];
@@ -1787,98 +1786,25 @@ void FuseRangeFinder()
         SK_RNG[3] = 2*q3 + 2*q1*SH_RNG[4];
         SK_RNG[4] = 2*q2 + 2*q0*SH_RNG[4];
         SK_RNG[5] = SH_RNG[2];
-        Kfusion[0] = SK_RNG[0]*(P[0][9]*SH_RNG[3] - P[0][22]*SH_RNG[3] + P[0][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[0][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[0][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[0][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[1] = SK_RNG[0]*(P[1][9]*SH_RNG[3] - P[1][22]*SH_RNG[3] + P[1][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[1][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[1][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[1][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[2] = SK_RNG[0]*(P[2][9]*SH_RNG[3] - P[2][22]*SH_RNG[3] + P[2][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[2][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[2][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[2][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[3] = SK_RNG[0]*(P[3][9]*SH_RNG[3] - P[3][22]*SH_RNG[3] + P[3][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[3][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[3][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[3][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[4] = SK_RNG[0]*(P[4][9]*SH_RNG[3] - P[4][22]*SH_RNG[3] + P[4][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[4][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[4][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[4][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[5] = SK_RNG[0]*(P[5][9]*SH_RNG[3] - P[5][22]*SH_RNG[3] + P[5][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[5][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[5][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[5][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[6] = SK_RNG[0]*(P[6][9]*SH_RNG[3] - P[6][22]*SH_RNG[3] + P[6][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[6][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[6][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[6][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[7] = SK_RNG[0]*(P[7][9]*SH_RNG[3] - P[7][22]*SH_RNG[3] + P[7][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[7][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[7][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[7][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[8] = SK_RNG[0]*(P[8][9]*SH_RNG[3] - P[8][22]*SH_RNG[3] + P[8][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[8][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[8][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[8][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[9] = SK_RNG[0]*(P[9][9]*SH_RNG[3] - P[9][22]*SH_RNG[3] + P[9][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[9][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[9][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[9][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[10] = SK_RNG[0]*(P[10][9]*SH_RNG[3] - P[10][22]*SH_RNG[3] + P[10][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[10][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[10][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[10][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[11] = SK_RNG[0]*(P[11][9]*SH_RNG[3] - P[11][22]*SH_RNG[3] + P[11][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[11][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[11][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[11][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[12] = SK_RNG[0]*(P[12][9]*SH_RNG[3] - P[12][22]*SH_RNG[3] + P[12][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[12][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[12][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[12][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        // Only height measurements are allowed to modify the Z delta velocity bias state. This improves the stability of the estimate
-        Kfusion[13] = 0.0f;//SK_RNG[0]*(P[13][9]*SH_RNG[3] - P[13][22]*SH_RNG[3] + P[13][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[13][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[13][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[13][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[14] = SK_RNG[0]*(P[14][9]*SH_RNG[3] - P[14][22]*SH_RNG[3] + P[14][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[14][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[14][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[14][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[15] = SK_RNG[0]*(P[15][9]*SH_RNG[3] - P[15][22]*SH_RNG[3] + P[15][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[15][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[15][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[15][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[16] = SK_RNG[0]*(P[16][9]*SH_RNG[3] - P[16][22]*SH_RNG[3] + P[16][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[16][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[16][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[16][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[17] = SK_RNG[0]*(P[17][9]*SH_RNG[3] - P[17][22]*SH_RNG[3] + P[17][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[17][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[17][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[17][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[18] = SK_RNG[0]*(P[18][9]*SH_RNG[3] - P[18][22]*SH_RNG[3] + P[18][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[18][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[18][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[18][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[19] = SK_RNG[0]*(P[19][9]*SH_RNG[3] - P[19][22]*SH_RNG[3] + P[19][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[19][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[19][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[19][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[20] = SK_RNG[0]*(P[20][9]*SH_RNG[3] - P[20][22]*SH_RNG[3] + P[20][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[20][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[20][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[20][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        Kfusion[21] = SK_RNG[0]*(P[21][9]*SH_RNG[3] - P[21][22]*SH_RNG[3] + P[21][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[21][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[21][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[21][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
         Kfusion[22] = SK_RNG[0]*(P[22][9]*SH_RNG[3] - P[22][22]*SH_RNG[3] + P[22][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[22][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[22][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[22][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-        varInnovVtas = 1.0f/SK_RNG[0];
 
         // Calculate the measurement innovation
-        rngPred = (ptd - pd)/(Tbn.z.x * sin(rngFinderPitch) + Tbn.z.z);
+        rngPred = (ptd - pd)/cosRngTilt;
         innovRng = rngPred - rngMea;
-        //printf("mea = %5.2f , pred = %5.2f , pd = %5.2f \n", rngMea, rngPred, pd);
+        //printf("mea=%5.1f, pred=%5.1f, pd=%5.1f, ptd=%5.2f\n", rngMea, rngPred, pd, ptd);
 
         // Check the innovation for consistency and don't fuse if > 5Sigma
         if ((innovRng*innovRng*SK_RNG[0]) < 25)
         {
             // correct the state vector
-            for (uint8_t j=0; j <= 22; j++)
-            {
-                states[j] = states[j] - Kfusion[j] * innovVtas;
-            }
-            // normalise the quaternion states
-            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
-            if (quatMag > 1e-12f)
-            {
-                for (uint8_t j= 0; j <= 3; j++)
-                {
-                    float quatMagInv = 1.0f/quatMag;
-                    states[j] = states[j] * quatMagInv;
-                }
-            }
+            states[22] = states[22] - Kfusion[22] * innovRng;
+
             // correct the covariance P = (I - K*H)*P
-            // take advantage of the empty columns in H to reduce the
-            // number of operations
-            for (uint8_t i = 0; i <= 22; i++)
-            {
-                for (uint8_t j = 0; j <= 3; j++) {
-                    KH[i][j] = Kfusion[i] * H_RNG[j];
-                }
-                for (uint8_t j = 4; j <= 8; j++)
-                {
-                    KH[i][j] = 0.0f;
-                }
-                KH[i][9] = Kfusion[i] * H_RNG[9];
-                for (uint8_t j = 10; j <= 21; j++) {
-                    KH[i][j] = 0.0;
-                }
-                KH[i][22] = Kfusion[i] * H_RNG[22];
-            }
-            for (uint8_t i = 0; i <= 22; i++)
-            {
-                for (uint8_t j = 0; j <= 22; j++)
-                {
-                    KHP[i][j] = 0.0;
-                    for (uint8_t k = 0; k <= 3; k++)
-                    {
-                        KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
-                    }
-                        KHP[i][j] = KHP[i][j] + KH[i][9] * P[9][j];
-                        KHP[i][j] = KHP[i][j] + KH[i][22] * P[22][j];
-                }
-            }
-            for (uint8_t i = 0; i <= 22; i++)
-            {
-                for (uint8_t j = 0; j <= 22; j++)
-                {
-                    P[i][j] = P[i][j] - KHP[i][j];
-                }
-            }
+            P[22][22] = P[22][22] - Kfusion[22] * H_RNG[22] * P[22][22];
+            P[22][22] = ConstrainFloat(P[22][22], 0.0f, 10000.0f);
         }
     }
 
-    ForceSymmetry();
-    ConstrainVariances();
 }
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)

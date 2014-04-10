@@ -296,12 +296,12 @@ int main()
                 FuseVelposNED();
 
                 // Fudge a fusion of range finder data using measurements synthesised from baro alt
+                //TODO - use logged rangefinder data
                 rngMea = (hgtMea + 2.0f) / Tbn.z.z;
                 // recall states stored at time of measurement after adjusting for delays
                 RecallStates(statesAtRngTime, (IMUmsec - msecRngDelay));
                 fuseRngData = true;
-                // TODO -  fix unstable terrain offset estimate
-                //FuseRangeFinder();
+                FuseRangeFinder();
             }
             else
             {
