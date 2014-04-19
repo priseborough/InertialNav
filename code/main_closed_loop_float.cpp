@@ -242,7 +242,7 @@ int main()
                 dt += _ekf->dtIMU;
                 // perform a covariance prediction if the total delta angle has exceeded the limit
                 // or the time limit will be exceeded at the next IMU update
-                if ((dt >= (AttPosEKF::covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > AttPosEKF::covDelAngMax))
+                if ((dt >= (_ekf->covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > _ekf->covDelAngMax))
                 {
                     _ekf->CovariancePrediction(dt);
                     _ekf->summedDelAng = _ekf->summedDelAng.zero();

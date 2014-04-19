@@ -48,27 +48,6 @@ void swap_var(float &d1, float &d2);
 const unsigned int n_states = 23;
 const unsigned int data_buffer_size = 50;
 
-
-// extern float rngMea; // terrain laser range finder measurement (m)
-
-
-// extern float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
-// extern float innovVtas; // true airspeed measurement innovation
-// extern float innovRng; // laser range finder measurement innovation
-// extern float varInnovVtas; // innovation variance output
-// extern bool fuseVtasData; // boolean true when airspeed data is to be fused
-// extern bool fuseRngData; // boolean true when range finder data is to be fused
-// extern float VtasMeas; // true airspeed measurement (m/s)
-// extern float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
-// extern float latRef; // WGS-84 latitude of reference point (rad)
-// extern float lonRef; // WGS-84 longitude of reference point (rad)
-// extern float hgtRef; // WGS-84 height of reference point (m)
-// extern Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
-// extern uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
-
-
-// extern bool staticMode;
-
 enum GPS_FIX {
     GPS_FIX_NOFIX = 0,
     GPS_FIX_2D = 2,
@@ -146,22 +125,37 @@ public:
     float innovRng; ///< Range finder innovation
     float varInnovVtas; // innovation variance output
     float VtasMeas; // true airspeed measurement (m/s)
-    float latRef; // WGS-84 latitude of reference point (rad)
-    float lonRef; // WGS-84 longitude of reference point (rad)
+    double latRef; // WGS-84 latitude of reference point (rad)
+    double lonRef; // WGS-84 longitude of reference point (rad)
     float hgtRef; // WGS-84 height of reference point (m)
     Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
     uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
-    static const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
-    static const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
-    static const float rngFinderPitch = 0.0f; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
+    float covTimeStepMax; // maximum time allowed between covariance predictions
+    float covDelAngMax; // maximum delta angle between covariance predictions
+    float rngFinderPitch; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
+
+    float yawVarScale;
+    float windVelSigma;
+    float dAngBiasSigma;
+    float dVelBiasSigma;
+    float magEarthSigma;
+    float magBodySigma;
+    float gndHgtSigma;
+
+    float vneSigma;
+    float vdSigma;
+    float posNeSigma;
+    float posDSigma;
+    float magMeasurementSigma;
+    float airspeedMeasurementSigma;
 
     float EAS2TAS; // ratio f true to equivalent airspeed
 
     // GPS input data variables
     float gpsCourse;
     float gpsVelD;
-    float gpsLat;
-    float gpsLon;
+    double gpsLat;
+    double gpsLon;
     float gpsHgt;
     uint8_t GPSstatus;
 
@@ -225,7 +219,7 @@ void StoreStates(uint64_t timestamp_ms);
  *         time-wise where valid states were updated and invalid remained at the old
  *         value.
  */
-int RecallStates(float statesForFusion[n_states], uint64_t msec);
+int RecallStates(float *statesForFusion, uint64_t msec);
 
 void ResetStoredStates();
 
@@ -239,7 +233,7 @@ static void quat2eul(float (&eul)[3], const float (&quat)[4]);
 
 static void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
 
-static void calcposNED(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
+static void calcposNED(float (&posNED)[3], double lat, double lon, float hgt, double latRef, double lonRef, float hgtRef);
 
 static void calcLLH(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef);
 
@@ -285,6 +279,8 @@ bool FilterHealthy();
 void ResetHeight(void);
 
 void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat);
+
+void InitialiseParameters();
 
 };
 
