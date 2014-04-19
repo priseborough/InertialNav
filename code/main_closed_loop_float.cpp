@@ -91,6 +91,8 @@ uint32_t msecEndTime;
 
 float gpsGndSpd;
 
+AttPosEKF                   *_ekf;
+
 // Data file identifiers
 FILE * pImuFile;
 FILE * pMagFile;
@@ -128,28 +130,30 @@ int printstates() {
     printf("Quaternion:\n");
     for (; i<4; i++)
     {
-        printf(" %e", states[i]);
+        printf(" %e", _ekf->states[i]);
     }
     printf("\n");
     for (; i<4+6; i++)
     {
-        printf(" %e", states[i]);
+        printf(" %e", _ekf->states[i]);
     }
     printf("\n");
     for (; i<4+6+6; i++)
     {
-        printf(" %e", states[i]);
+        printf(" %e", _ekf->states[i]);
     }
     printf("\n");
     for (; i<n_states; i++)
     {
-        printf(" %e", states[i]);
+        printf(" %e", _ekf->states[i]);
     }
     printf("\n");
 }
 
 int main()
 {
+    // Instantiate EKF
+    _ekf = new AttPosEKF();
 
     // open data files
     pImuFile = open_with_exit ("IMU.txt","r");
@@ -198,136 +202,136 @@ int main()
         if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
         {
             // Initialise states, covariance and other data
-            if ((IMUmsec > msecAlignTime) && !statesInitialised && (GPSstatus == 3))
+            if ((IMUmsec > msecAlignTime) && !_ekf->statesInitialised && (_ekf->GPSstatus == 3))
             {
                 if (pGpsRawINFile > 0)
                 {
-                    velNED[0] = gpsRaw[4];
-                    velNED[1] = gpsRaw[5];
-                    velNED[2] = gpsRaw[6];
+                    _ekf->velNED[0] = gpsRaw[4];
+                    _ekf->velNED[1] = gpsRaw[5];
+                    _ekf->velNED[2] = gpsRaw[6];
                 }
                 else
                 {
-                    calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                    _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
                 }
-                InitialiseFilter(velNED);
+                _ekf->InitialiseFilter(_ekf->velNED);
             }
 
             // If valid IMU data and states initialised, predict states and covariances
-            if (statesInitialised)
+            if (_ekf->statesInitialised)
             {
                 // Run the strapdown INS equations every IMU update
-                UpdateStrapdownEquationsNED();
+                _ekf->UpdateStrapdownEquationsNED();
                 #if 1
                 // debug code - could be turned into a filter mnitoring/watchdog function
                 float tempQuat[4];
-                for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
-                quat2eul(eulerEst, tempQuat);
+                for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
+                _ekf->quat2eul(eulerEst, tempQuat);
                 for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
                 if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
                 if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
                 #endif
                 // store the predicted states for subsequent use by measurement fusion
-                StoreStates(IMUmsec);
+                _ekf->StoreStates(IMUmsec);
                 // Check if on ground - status is used by covariance prediction
-                OnGroundCheck();
+                _ekf->OnGroundCheck();
                 // sum delta angles and time used by covariance prediction
-                summedDelAng = summedDelAng + correctedDelAng;
-                summedDelVel = summedDelVel + dVelIMU;
-                dt += dtIMU;
+                _ekf->summedDelAng = _ekf->summedDelAng + _ekf->correctedDelAng;
+                _ekf->summedDelVel = _ekf->summedDelVel + _ekf->dVelIMU;
+                dt += _ekf->dtIMU;
                 // perform a covariance prediction if the total delta angle has exceeded the limit
                 // or the time limit will be exceeded at the next IMU update
-                if ((dt >= (covTimeStepMax - dtIMU)) || (summedDelAng.length() > covDelAngMax))
+                if ((dt >= (covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > covDelAngMax))
                 {
-                    CovariancePrediction(dt);
-                    summedDelAng = summedDelAng.zero();
-                    summedDelVel = summedDelVel.zero();
+                    _ekf->CovariancePrediction(dt);
+                    _ekf->summedDelAng = _ekf->summedDelAng.zero();
+                    _ekf->summedDelVel = _ekf->summedDelVel.zero();
                     dt = 0.0f;
                 }
             }
 
             // Fuse GPS Measurements
-            if (newDataGps && statesInitialised)
+            if (newDataGps && _ekf->statesInitialised)
             {
                 // Convert GPS measurements to Pos NE, hgt and Vel NED
                 if (pGpsRawINFile > 0)
                 {
-                    velNED[0] = gpsRaw[4];
-                    velNED[1] = gpsRaw[5];
-                    velNED[2] = gpsRaw[6];
+                    _ekf->velNED[0] = gpsRaw[4];
+                    _ekf->velNED[1] = gpsRaw[5];
+                    _ekf->velNED[2] = gpsRaw[6];
                 }
                 else
                 {
-                    calcvelNED(velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                    _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
                 }
-                calcposNED(posNED, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
+                _ekf->calcposNED(_ekf->posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                 if (pOnboardFile > 0) {
-                    calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, latRef, lonRef, hgtRef);
+                    _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
                     printf("in: %e %e %e posned 1: %e\n", onboardLat, onboardLon, onboardHgt, onboardPosNED[1]);
                 }
 
-                posNE[0] = posNED[0];
-                posNE[1] = posNED[1];
+                _ekf->posNE[0] = _ekf->posNED[0];
+                _ekf->posNE[1] = _ekf->posNED[1];
                  // set fusion flags
-                fuseVelData = true;
-                fusePosData = true;
+                _ekf->fuseVelData = true;
+                _ekf->fusePosData = true;
                 // recall states stored at time of measurement after adjusting for delays
-                RecallStates(statesAtVelTime, (IMUmsec - msecVelDelay));
-                RecallStates(statesAtPosTime, (IMUmsec - msecPosDelay));
+                _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
+                _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
                 // run the fusion step
-                FuseVelposNED();
+                _ekf->FuseVelposNED();
             }
             else
             {
-                fuseVelData = false;
-                fusePosData = false;
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
             }
 
-            if (newAdsData && statesInitialised)
+            if (newAdsData && _ekf->statesInitialised)
             {
                 // Could use a blend of GPS and baro alt data if desired
-                hgtMea = 1.0f*baroHgt + 0.0f*gpsHgt;
-                fuseHgtData = true;
+                _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt;
+                _ekf->fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
-                RecallStates(statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
-                FuseVelposNED();
+                _ekf->FuseVelposNED();
             }
             else
             {
-                fuseHgtData = false;
+                _ekf->fuseHgtData = false;
             }
 
             // Fuse Magnetometer Measurements
-            if (newDataMag && statesInitialised)
+            if (newDataMag && _ekf->statesInitialised)
             {
-                fuseMagData = true;
-                RecallStates(statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+                _ekf->fuseMagData = true;
+                _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
             }
             else
             {
-                fuseMagData = false;
+                _ekf->fuseMagData = false;
             }
-            if (statesInitialised) FuseMagnetometer();
+            if (_ekf->statesInitialised) _ekf->FuseMagnetometer();
 
             // Fuse Airspeed Measurements
-            if (newAdsData && statesInitialised && VtasMeas > 8.0f)
+            if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
             {
-                fuseVtasData = true;
-                RecallStates(statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
-                FuseAirspeed();
+                _ekf->fuseVtasData = true;
+                _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
+                _ekf->FuseAirspeed();
             }
             else
             {
-                fuseVtasData = false;
+                _ekf->fuseVtasData = false;
             }
 
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
 
-            onGround = false;
+            _ekf->onGround = false;
 
 
             // State vector:
@@ -339,28 +343,28 @@ int main()
             // 15-17: Earth Magnetic Field Vector - milligauss (North, East, Down)
             // 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
             printf("\n");
-            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", dtIMU, dt, IMUmsec);
-            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)posNED[0], (double)posNED[1], (double)posNED[2],
-                (double)velNED[0], (double)velNED[1], (double)velNED[2]);
-            printf("vTAS: %8.4f baro alt: %8.4f\n", VtasMeas, hgtMea);
-            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)magData.x, (double)magData.y, (double)magData.z);
-            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)states[0], (double)states[1], (double)states[2], (double)states[3]);
-            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)states[4], (double)states[5], (double)states[6]);
-            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)states[7], (double)states[8], (double)states[9]);
-            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)states[10], (double)states[11], (double)states[12]);
-            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)states[13], (double)states[14]);
-            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)states[15], (double)states[16], (double)states[17]);
-            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)states[18], (double)states[19], (double)states[20]);
+            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", _ekf->dtIMU, dt, IMUmsec);
+            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)_ekf->posNED[0], (double)_ekf->posNED[1], (double)_ekf->posNED[2],
+                (double)_ekf->velNED[0], (double)_ekf->velNED[1], (double)_ekf->velNED[2]);
+            printf("vTAS: %8.4f baro alt: %8.4f\n", _ekf->VtasMeas, _ekf->hgtMea);
+            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)_ekf->magData.x, (double)_ekf->magData.y, (double)_ekf->magData.z);
+            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[0], (double)_ekf->states[1], (double)_ekf->states[2], (double)_ekf->states[3]);
+            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[4], (double)_ekf->states[5], (double)_ekf->states[6]);
+            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[7], (double)_ekf->states[8], (double)_ekf->states[9]);
+            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[10], (double)_ekf->states[11], (double)_ekf->states[12]);
+            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)_ekf->states[13], (double)_ekf->states[14]);
+            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[15], (double)_ekf->states[16], (double)_ekf->states[17]);
+            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[18], (double)_ekf->states[19], (double)_ekf->states[20]);
             printf("states: %s %s %s %s %s %s %s %s %s\n",
-                (statesInitialised) ? "INITIALIZED" : "NON_INIT",
-                (onGround) ? "ON_GROUND" : "AIRBORNE",
-                (fuseVelData) ? "FUSE_VEL" : "INH_VEL",
-                (fusePosData) ? "FUSE_POS" : "INH_POS",
-                (fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
-                (fuseMagData) ? "FUSE_MAG" : "INH_MAG",
-                (fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
-                (useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
-                (useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
+                (_ekf->statesInitialised) ? "INITIALIZED" : "NON_INIT",
+                (_ekf->onGround) ? "ON_GROUND" : "AIRBORNE",
+                (_ekf->fuseVelData) ? "FUSE_VEL" : "INH_VEL",
+                (_ekf->fusePosData) ? "FUSE_POS" : "INH_POS",
+                (_ekf->fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
+                (_ekf->fuseMagData) ? "FUSE_MAG" : "INH_MAG",
+                (_ekf->fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
+                (_ekf->useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
+                (_ekf->useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
 
         }
     }
@@ -383,18 +387,18 @@ void readIMUData()
     if (!endOfData)
     {
         IMUtimestamp  = tempImu[0];
-        dtIMU     = 0.001f*(tempImu[1] - IMUmsec);
+        _ekf->dtIMU     = 0.001f*(tempImu[1] - IMUmsec);
         IMUmsec   = tempImu[1];
-        angRate.x = tempImu[2];
-        angRate.y = tempImu[3];
-        angRate.z = tempImu[4];
-        accel.x   = tempImu[5];
-        accel.y   = tempImu[6];
-        accel.z   = tempImu[7];
-        dAngIMU = 0.5f*(angRate + lastAngRate)*dtIMU;
-        lastAngRate = angRate;
-        dVelIMU = 0.5f*(accel + lastAccel)*dtIMU;
-        lastAccel = accel;
+        _ekf->angRate.x = tempImu[2];
+        _ekf->angRate.y = tempImu[3];
+        _ekf->angRate.z = tempImu[4];
+        _ekf->accel.x   = tempImu[5];
+        _ekf->accel.y   = tempImu[6];
+        _ekf->accel.z   = tempImu[7];
+        _ekf->dAngIMU = 0.5f*(_ekf->angRate + lastAngRate)*_ekf->dtIMU;
+        lastAngRate = _ekf->angRate;
+        _ekf->dVelIMU = 0.5f*(_ekf->accel + lastAccel)*_ekf->dtIMU;
+        lastAccel = _ekf->accel;
     }
 }
 
@@ -445,13 +449,13 @@ void readGpsData()
         {
             GPStimestamp  = tempGps[0];
             GPSmsec = tempGpsPrev[2];
-            GPSstatus = tempGpsPrev[1];
-            gpsCourse = deg2rad*tempGpsPrev[11];
+            _ekf->GPSstatus = tempGpsPrev[1];
+            _ekf->gpsCourse = deg2rad*tempGpsPrev[11];
             gpsGndSpd = tempGpsPrev[10];
-            gpsVelD = tempGpsPrev[12];
-            gpsLat = deg2rad*tempGpsPrev[6];
-            gpsLon = deg2rad*tempGpsPrev[7] - pi;
-            gpsHgt = tempGpsPrev[8];
+            _ekf->gpsVelD = tempGpsPrev[12];
+            _ekf->gpsLat = deg2rad*tempGpsPrev[6];
+            _ekf->gpsLon = deg2rad*tempGpsPrev[7] - pi;
+            _ekf->gpsHgt = tempGpsPrev[8];
         }
     }
     if (GPSmsec > lastGPSmsec)
@@ -481,12 +485,12 @@ void readMagData()
         {
             MAGtimestamp  = tempMag[0];
             MAGmsec = tempMagPrev[1];
-            magData.x =  0.001f*(tempMagPrev[2] - tempMagPrev[5]);
-            magBias.x = -0.001f*tempMagPrev[5];
-            magData.y =  0.001f*(tempMagPrev[3] - tempMagPrev[6]);
-            magBias.y = -0.001f*tempMagPrev[6];
-            magData.z =  0.001f*(tempMagPrev[4] - tempMagPrev[7]);
-            magBias.z = -0.001f*tempMagPrev[7];
+            _ekf->magData.x =  0.001f*(tempMagPrev[2] - tempMagPrev[5]);
+            _ekf->magBias.x = -0.001f*tempMagPrev[5];
+            _ekf->magData.y =  0.001f*(tempMagPrev[3] - tempMagPrev[6]);
+            _ekf->magBias.y = -0.001f*tempMagPrev[6];
+            _ekf->magData.z =  0.001f*(tempMagPrev[4] - tempMagPrev[7]);
+            _ekf->magBias.z = -0.001f*tempMagPrev[7];
         }
     }
     if (MAGmsec > lastMAGmsec)
@@ -516,8 +520,8 @@ void readAirData()
         {
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
-            VtasMeas = EAS2TAS*tempAdsPrev[7];
-            baroHgt = 0;//tempAdsPrev[8];
+            _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
+            _ekf->baroHgt = 0;//tempAdsPrev[8];
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -603,14 +607,14 @@ void WriteFilterOutput()
 {
 
     float tempQuat[4];
-    for (uint8_t j=0; j<4; j++) tempQuat[j] = states[j];
-    quat2eul(eulerEst, tempQuat);
+    for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
+    _ekf->quat2eul(eulerEst, tempQuat);
 
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<n_states; i++)
     {
-        fprintf(pStateOutFile," %e", states[i]);
+        fprintf(pStateOutFile," %e", _ekf->states[i]);
     }
     fprintf(pStateOutFile,"\n");
     // Euler angles from filter states, AHRS euler angles and AHRS error RP and error Yaw
@@ -625,17 +629,17 @@ void WriteFilterOutput()
     fprintf(pCovOutFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<n_states; i++)
     {
-        fprintf(pCovOutFile," %e", P[i][i]);
+        fprintf(pCovOutFile," %e", _ekf->P[i][i]);
     }
     fprintf(pCovOutFile,"\n");
     // velocity, position and height observations used by the filter
     fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", velNED[0], velNED[1], velNED[2], posNE[0], posNE[1], hgtMea);
+    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", _ekf->velNED[0], _ekf->velNED[1], _ekf->velNED[2], _ekf->posNE[0], _ekf->posNE[1], _ekf->hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
 
     fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
-    fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
-    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+    fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     fprintf(pOnboardPosVelOutFile,"\n");
 
     // raw GPS outputs
@@ -647,19 +651,19 @@ void WriteFilterOutput()
     fprintf(pVelPosFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=5; i++)
     {
-        fprintf(pVelPosFuseFile," %e %e", innovVelPos[i], varInnovVelPos[i]);
+        fprintf(pVelPosFuseFile," %e %e", _ekf->innovVelPos[i], _ekf->varInnovVelPos[i]);
     }
     fprintf(pVelPosFuseFile,"\n");
     // magnetometer innovations and innovation variances
     fprintf(pMagFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=2; i++)
     {
-        fprintf(pMagFuseFile," %e %e", innovMag[i], varInnovMag[i]);
+        fprintf(pMagFuseFile," %e %e", _ekf->innovMag[i], _ekf->varInnovMag[i]);
     }
     fprintf(pMagFuseFile,"\n");
     // airspeed innovation and innovation variance
     fprintf(pTasFuseFile," %e", float(IMUmsec*0.001f));
-    fprintf(pTasFuseFile," %e %e", innovVtas, varInnovVtas);
+    fprintf(pTasFuseFile," %e %e", _ekf->innovVtas, _ekf->varInnovVtas);
     fprintf(pTasFuseFile,"\n");
 
 }
@@ -683,7 +687,7 @@ void readTimingData()
     msecHgtDelay  = uint32_t(timeArray[5]);
     msecMagDelay  = uint32_t(timeArray[6]);
     msecTasDelay  = uint32_t(timeArray[7]);
-    EAS2TAS       = timeArray[8];
+    _ekf->EAS2TAS       = timeArray[8];
 }
 
 void CloseFiles()

@@ -1653,6 +1653,7 @@ int AttPosEKF::RecallStates(float statesForFusion[n_states], uint64_t msec)
                 // found.
                 ret++;
             }
+        }
     }
     else // otherwise output current state
     {
@@ -2239,10 +2240,10 @@ void AttPosEKF::ZeroVariables()
 
 void AttPosEKF::GetFilterState(struct ekf_status_report *state)
 {
-    memcpy(state, &current_ekf_state, sizeof(state));
+    memcpy(state, &current_ekf_state, sizeof(*state));
 }
 
 void AttPosEKF::GetLastErrorState(struct ekf_status_report *last_error)
 {
-    memcpy(last_error, &last_ekf_error, sizeof(last_error));
+    memcpy(last_error, &last_ekf_error, sizeof(*last_error));
 }
