@@ -45,11 +45,27 @@ Vector3f operator*(Vector3f vecIn1, float sclIn1);
 
 void swap_var(float &d1, float &d2);
 
-const unsigned int n_states = 21;
+const unsigned int n_states = 23;
 const unsigned int data_buffer_size = 50;
 
-const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
-const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
+
+// extern float rngMea; // terrain laser range finder measurement (m)
+
+
+// extern float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
+// extern float innovVtas; // true airspeed measurement innovation
+// extern float innovRng; // laser range finder measurement innovation
+// extern float varInnovVtas; // innovation variance output
+// extern bool fuseVtasData; // boolean true when airspeed data is to be fused
+// extern bool fuseRngData; // boolean true when range finder data is to be fused
+// extern float VtasMeas; // true airspeed measurement (m/s)
+// extern float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
+// extern float latRef; // WGS-84 latitude of reference point (rad)
+// extern float lonRef; // WGS-84 longitude of reference point (rad)
+// extern float hgtRef; // WGS-84 height of reference point (m)
+// extern Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
+// extern uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+
 
 // extern bool staticMode;
 
@@ -96,6 +112,7 @@ public:
     float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
     float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
     float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
+    float statesAtRngTime[n_states]; // filter states at the effective measurement time
 
     Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
     Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
@@ -104,6 +121,10 @@ public:
     float accNavMag; // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
     Vector3f earthRateNED; // earths angular rate vector in NED (rad/s)
     Vector3f angRate; // angular rate vector in XYZ body axes measured by the IMU (rad/s)
+
+    Mat3f Tbn; // transformation matrix from body to NED coordinates
+    Mat3f Tnb; // transformation amtrix from NED to body coordinates
+
     Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
     Vector3f dVelIMU;
     Vector3f dAngIMU;
@@ -115,12 +136,14 @@ public:
     float velNED[3]; // North, East, Down velocity obs (m/s)
     float posNE[2]; // North, East position obs (m)
     float hgtMea; //  measured height (m)
+    float rngMea; // Ground distance
     float posNED[3]; // North, East Down position (m)
 
     float innovMag[3]; // innovation output
     float varInnovMag[3]; // innovation variance output
     Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
     float innovVtas; // innovation output
+    float innovRng; ///< Range finder innovation
     float varInnovVtas; // innovation variance output
     float VtasMeas; // true airspeed measurement (m/s)
     float latRef; // WGS-84 latitude of reference point (rad)
@@ -128,6 +151,10 @@ public:
     float hgtRef; // WGS-84 height of reference point (m)
     Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
     uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+    static const float covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
+    static const float covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
+    static const float rngFinderPitch = 0.0f; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
+
     float EAS2TAS; // ratio f true to equivalent airspeed
 
     // GPS input data variables
@@ -148,11 +175,13 @@ public:
     bool fuseHgtData; // this boolean causes the hgtMea obs to be fused
     bool fuseMagData; // boolean true when magnetometer data is to be fused
     bool fuseVtasData; // boolean true when airspeed data is to be fused
+    bool fuseRngData;   ///< true when range data is fused
 
     bool onGround;    ///< boolean true when the flight vehicle is on the ground (not flying)
     bool staticMode;    ///< boolean true if no position feedback is fused
     bool useAirspeed;    ///< boolean true if airspeed data is being used
     bool useCompass;    ///< boolean true if magnetometer data is being used
+    bool useRangeFinder;     ///< true when rangefinder is being used
 
     struct ekf_status_report current_ekf_state;
     struct ekf_status_report last_ekf_error;
@@ -171,6 +200,10 @@ void FuseVelposNED();
 void FuseMagnetometer();
 
 void FuseAirspeed();
+
+void FuseRangeFinder();
+
+void FuseOpticalFlow();
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 

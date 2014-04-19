@@ -30,6 +30,7 @@ bool endOfData = false; //boolean set to true when all files have returned data
 uint32_t msecVelDelay = 230;
 uint32_t msecPosDelay = 210;
 uint32_t msecHgtDelay = 350;
+uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
 
@@ -241,7 +242,7 @@ int main()
                 dt += _ekf->dtIMU;
                 // perform a covariance prediction if the total delta angle has exceeded the limit
                 // or the time limit will be exceeded at the next IMU update
-                if ((dt >= (covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > covDelAngMax))
+                if ((dt >= (AttPosEKF::covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > AttPosEKF::covDelAngMax))
                 {
                     _ekf->CovariancePrediction(dt);
                     _ekf->summedDelAng = _ekf->summedDelAng.zero();
@@ -297,10 +298,19 @@ int main()
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 _ekf->FuseVelposNED();
+
+                // Fudge a fusion of range finder data using measurements synthesised from baro alt
+                //TODO - use logged rangefinder data
+                _ekf->rngMea = (_ekf->hgtMea + 2.0f) / _ekf->Tbn.z.z;
+                // recall states stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+                _ekf->fuseRngData = true;
+                _ekf->FuseRangeFinder();
             }
             else
             {
                 _ekf->fuseHgtData = false;
+                _ekf->fuseRngData = false;
             }
 
             // Fuse Magnetometer Measurements
@@ -339,11 +349,13 @@ int main()
             // 4-6: Velocity - m/sec (North, East, Down)
             // 7-9: Position - m (North, East, Down)
             // 10-12: Delta Angle bias - rad (X,Y,Z)
-            // 13-14: Wind Vector  - m/sec (North,East)
-            // 15-17: Earth Magnetic Field Vector - milligauss (North, East, Down)
-            // 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
+            // 13: Delta Velocity Z bias -m/s
+            // 14-15: Wind Vector  - m/sec (North,East)
+            // 16-18: Earth Magnetic Field Vector - milligauss (North, East, Down)
+            // 19-21: Body Magnetic Field Vector - milligauss (X,Y,Z)
+            // 22: Terrain Vertical Offset - m
             printf("\n");
-            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %lld\n", _ekf->dtIMU, dt, IMUmsec);
+            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %u\n", _ekf->dtIMU, dt, IMUmsec);
             printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)_ekf->posNED[0], (double)_ekf->posNED[1], (double)_ekf->posNED[2],
                 (double)_ekf->velNED[0], (double)_ekf->velNED[1], (double)_ekf->velNED[2]);
             printf("vTAS: %8.4f baro alt: %8.4f\n", _ekf->VtasMeas, _ekf->hgtMea);
@@ -352,9 +364,11 @@ int main()
             printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[4], (double)_ekf->states[5], (double)_ekf->states[6]);
             printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[7], (double)_ekf->states[8], (double)_ekf->states[9]);
             printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[10], (double)_ekf->states[11], (double)_ekf->states[12]);
-            printf("states (wind)      [14-15]: %8.4f, %8.4f\n", (double)_ekf->states[13], (double)_ekf->states[14]);
-            printf("states (earth mag) [16-18]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[15], (double)_ekf->states[16], (double)_ekf->states[17]);
-            printf("states (body mag)  [19-21]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[18], (double)_ekf->states[19], (double)_ekf->states[20]);
+            printf("states (delta vel) [14]: %8.4ff\n", (double)_ekf->states[13]);
+            printf("states (wind)      [15-16]: %8.4f, %8.4f\n", (double)_ekf->states[14], (double)_ekf->states[15]);
+            printf("states (earth mag) [17-19]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[16], (double)_ekf->states[17], (double)_ekf->states[18]);
+            printf("states (body mag)  [20-22]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[19], (double)_ekf->states[20], (double)_ekf->states[21]);
+            printf("states (terain offset) [23]: %8.4ff\n", (double)_ekf->states[22]);
             printf("states: %s %s %s %s %s %s %s %s %s\n",
                 (_ekf->statesInitialised) ? "INITIALIZED" : "NON_INIT",
                 (_ekf->onGround) ? "ON_GROUND" : "AIRBORNE",
@@ -365,7 +379,6 @@ int main()
                 (_ekf->fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
                 (_ekf->useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
                 (_ekf->useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
-
         }
     }
 }
@@ -508,6 +521,7 @@ void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
+    // Currently synthesise a terrain measurement that is 5 m below the baro alt
     while (ADStimestamp <= IMUtimestamp)
     {
         for (uint8_t j=0; j<=9; j++)
@@ -521,7 +535,8 @@ void readAirData()
             ADStimestamp  = tempAds[0];
             ADSmsec = tempAdsPrev[1];
             _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
-            _ekf->baroHgt = 0;//tempAdsPrev[8];
+            _ekf->baroHgt = tempAdsPrev[8];
+            _ekf->rngMea = (_ekf->baroHgt + 5.0f) / _ekf->Tbn.z.z;
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -534,7 +549,6 @@ void readAirData()
         newAdsData = false;
     }
 }
-
 
 
 void readOnboardData()
@@ -639,7 +653,7 @@ void WriteFilterOutput()
 
     fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
     fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
-    printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+    // printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     fprintf(pOnboardPosVelOutFile,"\n");
 
     // raw GPS outputs
