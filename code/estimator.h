@@ -77,6 +77,72 @@ public:
     AttPosEKF();
     ~AttPosEKF();
 
+
+
+    /* ##############################################
+     *
+     *   M A I N    F I L T E R    P A R A M E T E R S
+     *
+     * ########################################### */
+
+    /*
+     * parameters are defined here and initialised in
+     * the InitialiseParameters() (which is just 20 lines down)
+     */
+
+    float covTimeStepMax; // maximum time allowed between covariance predictions
+    float covDelAngMax; // maximum delta angle between covariance predictions
+    float rngFinderPitch; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
+
+    float yawVarScale;
+    float windVelSigma;
+    float dAngBiasSigma;
+    float dVelBiasSigma;
+    float magEarthSigma;
+    float magBodySigma;
+    float gndHgtSigma;
+
+    float vneSigma;
+    float vdSigma;
+    float posNeSigma;
+    float posDSigma;
+    float magMeasurementSigma;
+    float airspeedMeasurementSigma;
+
+    float gyroProcessNoise;
+    float accelProcessNoise;
+
+    float EAS2TAS; // ratio f true to equivalent airspeed
+
+    void InitialiseParameters()
+    {
+        covTimeStepMax = 0.07f; // maximum time allowed between covariance predictions
+        covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
+        rngFinderPitch = 0.0f; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
+        EAS2TAS = 1.0f;
+
+        yawVarScale = 1.0f;
+        windVelSigma = 0.1f;
+        dAngBiasSigma = 5.0e-7f;
+        dVelBiasSigma = 1e-4f;
+        magEarthSigma = 3.0e-4f;
+        magBodySigma  = 3.0e-4f;
+        gndHgtSigma  = 0.02f; // assume 2% terrain gradient 1-sigma
+
+        vneSigma = 0.2f;
+        vdSigma = 0.3f;
+        posNeSigma = 2.0f;
+        posDSigma = 2.0f;
+
+        magMeasurementSigma = 0.05;
+        airspeedMeasurementSigma = 1.4f;
+        gyroProcessNoise = 1.4544411e-2f;
+        accelProcessNoise = 0.5f;
+    }
+
+
+
+
     // Global variables
     float KH[n_states][n_states]; //  intermediate result used for covariance updates
     float KHP[n_states][n_states]; // intermediate result used for covariance updates
@@ -129,27 +195,7 @@ public:
     double lonRef; // WGS-84 longitude of reference point (rad)
     float hgtRef; // WGS-84 height of reference point (m)
     Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
-    uint8_t covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
-    float covTimeStepMax; // maximum time allowed between covariance predictions
-    float covDelAngMax; // maximum delta angle between covariance predictions
-    float rngFinderPitch; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
-
-    float yawVarScale;
-    float windVelSigma;
-    float dAngBiasSigma;
-    float dVelBiasSigma;
-    float magEarthSigma;
-    float magBodySigma;
-    float gndHgtSigma;
-
-    float vneSigma;
-    float vdSigma;
-    float posNeSigma;
-    float posDSigma;
-    float magMeasurementSigma;
-    float airspeedMeasurementSigma;
-
-    float EAS2TAS; // ratio f true to equivalent airspeed
+    unsigned covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 
     // GPS input data variables
     float gpsCourse;
@@ -279,8 +325,6 @@ bool FilterHealthy();
 void ResetHeight(void);
 
 void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat);
-
-void InitialiseParameters();
 
 };
 

@@ -149,6 +149,8 @@ int printstates() {
         printf(" %e", _ekf->states[i]);
     }
     printf("\n");
+
+    return 0;
 }
 
 int main()
@@ -354,33 +356,36 @@ int main()
             // 16-18: Earth Magnetic Field Vector - milligauss (North, East, Down)
             // 19-21: Body Magnetic Field Vector - milligauss (X,Y,Z)
             // 22: Terrain Vertical Offset - m
-            printf("\n");
-            printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %u\n", _ekf->dtIMU, dt, IMUmsec);
-            printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)_ekf->posNED[0], (double)_ekf->posNED[1], (double)_ekf->posNED[2],
-                (double)_ekf->velNED[0], (double)_ekf->velNED[1], (double)_ekf->velNED[2]);
-            printf("vTAS: %8.4f baro alt: %8.4f\n", _ekf->VtasMeas, _ekf->hgtMea);
-            printf("mag: %8.4f, %8.4f, %8.4f\n", (double)_ekf->magData.x, (double)_ekf->magData.y, (double)_ekf->magData.z);
-            printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[0], (double)_ekf->states[1], (double)_ekf->states[2], (double)_ekf->states[3]);
-            printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[4], (double)_ekf->states[5], (double)_ekf->states[6]);
-            printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[7], (double)_ekf->states[8], (double)_ekf->states[9]);
-            printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[10], (double)_ekf->states[11], (double)_ekf->states[12]);
-            printf("states (delta vel) [14]: %8.4ff\n", (double)_ekf->states[13]);
-            printf("states (wind)      [15-16]: %8.4f, %8.4f\n", (double)_ekf->states[14], (double)_ekf->states[15]);
-            printf("states (earth mag) [17-19]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[16], (double)_ekf->states[17], (double)_ekf->states[18]);
-            printf("states (body mag)  [20-22]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[19], (double)_ekf->states[20], (double)_ekf->states[21]);
-            printf("states (terain offset) [23]: %8.4ff\n", (double)_ekf->states[22]);
-            printf("states: %s %s %s %s %s %s %s %s %s\n",
-                (_ekf->statesInitialised) ? "INITIALIZED" : "NON_INIT",
-                (_ekf->onGround) ? "ON_GROUND" : "AIRBORNE",
-                (_ekf->fuseVelData) ? "FUSE_VEL" : "INH_VEL",
-                (_ekf->fusePosData) ? "FUSE_POS" : "INH_POS",
-                (_ekf->fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
-                (_ekf->fuseMagData) ? "FUSE_MAG" : "INH_MAG",
-                (_ekf->fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
-                (_ekf->useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
-                (_ekf->useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
+
+            // printf("\n");
+            // printf("dtIMU: %8.6f, dt: %8.6f, imuMsec: %u\n", _ekf->dtIMU, dt, IMUmsec);
+            // printf("posNED: %8.4f, %8.4f, %8.4f, velNED: %8.4f, %8.4f, %8.4f\n", (double)_ekf->posNED[0], (double)_ekf->posNED[1], (double)_ekf->posNED[2],
+            //     (double)_ekf->velNED[0], (double)_ekf->velNED[1], (double)_ekf->velNED[2]);
+            // printf("vTAS: %8.4f baro alt: %8.4f\n", _ekf->VtasMeas, _ekf->hgtMea);
+            // printf("mag: %8.4f, %8.4f, %8.4f\n", (double)_ekf->magData.x, (double)_ekf->magData.y, (double)_ekf->magData.z);
+            // printf("states (quat)        [1-4]: %8.4f, %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[0], (double)_ekf->states[1], (double)_ekf->states[2], (double)_ekf->states[3]);
+            // printf("states (vel m/s)     [5-7]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[4], (double)_ekf->states[5], (double)_ekf->states[6]);
+            // printf("states (pos m)      [8-10]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[7], (double)_ekf->states[8], (double)_ekf->states[9]);
+            // printf("states (delta ang) [11-13]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[10], (double)_ekf->states[11], (double)_ekf->states[12]);
+            // printf("states (delta vel) [14]: %8.4ff\n", (double)_ekf->states[13]);
+            // printf("states (wind)      [15-16]: %8.4f, %8.4f\n", (double)_ekf->states[14], (double)_ekf->states[15]);
+            // printf("states (earth mag) [17-19]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[16], (double)_ekf->states[17], (double)_ekf->states[18]);
+            // printf("states (body mag)  [20-22]: %8.4f, %8.4f, %8.4f\n", (double)_ekf->states[19], (double)_ekf->states[20], (double)_ekf->states[21]);
+            // printf("states (terain offset) [23]: %8.4ff\n", (double)_ekf->states[22]);
+            // printf("states: %s %s %s %s %s %s %s %s %s\n",
+            //     (_ekf->statesInitialised) ? "INITIALIZED" : "NON_INIT",
+            //     (_ekf->onGround) ? "ON_GROUND" : "AIRBORNE",
+            //     (_ekf->fuseVelData) ? "FUSE_VEL" : "INH_VEL",
+            //     (_ekf->fusePosData) ? "FUSE_POS" : "INH_POS",
+            //     (_ekf->fuseHgtData) ? "FUSE_HGT" : "INH_HGT",
+            //     (_ekf->fuseMagData) ? "FUSE_MAG" : "INH_MAG",
+            //     (_ekf->fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
+            //     (_ekf->useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
+            //     (_ekf->useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
         }
     }
+
+    printf("\n\nSuccess: Finished processing complete dataset. Text files written.\n");
 }
 
 uint32_t millis()
@@ -577,7 +582,7 @@ void readOnboardData()
             onboardVelNED[0] = tempOnboard[4];
             onboardVelNED[1] = tempOnboard[5];
             onboardVelNED[2] = tempOnboard[6];
-            printf("velned onboard: %e %e %e %e %e %e\n", onboardLat, onboardLon, onboardHgt, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+            //printf("velned onboard: %e %e %e %e %e %e\n", onboardLat, onboardLon, onboardHgt, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
         }
     }
     if (onboardMsec > lastOnboardMsec)

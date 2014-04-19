@@ -109,10 +109,6 @@ void swap_var(float &d1, float &d2)
 AttPosEKF::AttPosEKF() :
     fusionModeGPS(0),
     covSkipCount(0),
-    covTimeStepMax(0.07f), // maximum time allowed between covariance predictions
-    covDelAngMax(0.02f), // maximum delta angle between covariance predictions
-    rngFinderPitch(0.0f), // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
-    EAS2TAS(1.0f),
     statesInitialised(false),
     fuseVelData(false),
     fusePosData(false),
@@ -132,25 +128,6 @@ AttPosEKF::AttPosEKF() :
 
 AttPosEKF::~AttPosEKF()
 {
-}
-
-void AttPosEKF::InitialiseParameters()
-{
-    yawVarScale = 1.0f;
-    windVelSigma = 0.1f;
-    dAngBiasSigma = 5.0e-7f;
-    dVelBiasSigma = 1e-4f;
-    magEarthSigma = 3.0e-4f;
-    magBodySigma  = 3.0e-4f;
-    gndHgtSigma  = 0.02f; // assume 2% terrain gradient 1-sigma
-
-    vneSigma = 0.2f;
-    vdSigma = 0.3f;
-    posNeSigma = 2.0f;
-    posDSigma = 2.0f;
-
-    magMeasurementSigma = 0.05;
-    airspeedMeasurementSigma = 1.4f;
 }
 
 void AttPosEKF::UpdateStrapdownEquationsNED()
@@ -339,13 +316,15 @@ void AttPosEKF::CovariancePrediction(float dt)
     day_b = states[11];
     daz_b = states[12];
     dvz_b =  states[13];
-    daxCov = sq(dt*1.4544411e-2f);
-    dayCov = sq(dt*1.4544411e-2f);
-    dazCov = sq(dt*1.4544411e-2f);
+    gyroProcessNoise = ConstrainFloat(gyroProcessNoise, 1e-3f, 5e-2f);
+    daxCov = sq(dt*gyroProcessNoise);
+    dayCov = sq(dt*gyroProcessNoise);
+    dazCov = sq(dt*gyroProcessNoise);
     if (onGround) dazCov = dazCov * sq(yawVarScale);
-    dvxCov = sq(dt*vneSigma);
-    dvyCov = sq(dt*vneSigma);
-    dvzCov = sq(dt*vdSigma);
+    accelProcessNoise = ConstrainFloat(accelProcessNoise, 5e-2, 1.0f);
+    dvxCov = sq(dt*accelProcessNoise);
+    dvyCov = sq(dt*accelProcessNoise);
+    dvzCov = sq(dt*accelProcessNoise);
 
     // Predicted covariance calculation
     SF[0] = dvz - dvz_b;
@@ -1065,7 +1044,7 @@ void AttPosEKF::FuseVelposNED()
         R_OBS[1] = R_OBS[0];
         R_OBS[2] = sq(vdSigma) + sq(velErr);
         R_OBS[3] = sq(posNeSigma) + sq(posErr);
-        R_OBS[4] = R_OBS[3]; 
+        R_OBS[4] = R_OBS[3];
         R_OBS[5] = sq(posDSigma) + sq(posErr);
 
         // Set innovation variances to zero default
