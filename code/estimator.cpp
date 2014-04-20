@@ -7,7 +7,7 @@ float Vector3f::length(void) const
     return sqrt(x*x + y*y + z*z);
 }
 
-void Vector3f::zero(void) const
+void Vector3f::zero(void)
 {
     x = 0.0f;
     y = 0.0f;
