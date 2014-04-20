@@ -7,13 +7,11 @@ float Vector3f::length(void) const
     return sqrt(x*x + y*y + z*z);
 }
 
-Vector3f Vector3f::zero(void) const
+void Vector3f::zero(void) const
 {
-    Vector3f ret = *this;
-    ret.x = 0.0;
-    ret.y = 0.0;
-    ret.z = 0.0;
-    return ret;
+    x = 0.0f;
+    y = 0.0f;
+    z = 0.0f;
 }
 
 Mat3f::Mat3f() {

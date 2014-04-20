@@ -20,7 +20,7 @@ public:
     float z;
 
     float length(void) const;
-    Vector3f zero(void) const;
+    void zero(void) const;
 };
 
 class Mat3f
