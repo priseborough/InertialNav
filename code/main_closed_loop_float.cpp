@@ -247,8 +247,8 @@ int main()
                 if ((dt >= (_ekf->covTimeStepMax - _ekf->dtIMU)) || (_ekf->summedDelAng.length() > _ekf->covDelAngMax))
                 {
                     _ekf->CovariancePrediction(dt);
-                    _ekf->summedDelAng = _ekf->summedDelAng.zero();
-                    _ekf->summedDelVel = _ekf->summedDelVel.zero();
+                    _ekf->summedDelAng.zero();
+                    _ekf->summedDelVel.zero();
                     dt = 0.0f;
                 }
             }
