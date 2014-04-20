@@ -2344,6 +2344,10 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3])
 
     ZeroVariables();
 
+    ResetVelocity();
+    ResetPosition();
+    ResetHeight();
+
     // Calculate initial filter quaternion states from raw measurements
     float initQuat[4];
     Vector3f initMagXYZ;
