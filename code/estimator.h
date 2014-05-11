@@ -33,6 +33,7 @@ public:
 
     Mat3f();
 
+    void identity();
     Mat3f transpose(void) const;
 };
 
@@ -140,7 +141,23 @@ public:
         accelProcessNoise = 0.5f;
     }
 
-
+    struct {
+        unsigned obsIndex;
+        float MagPred[3];
+        float SH_MAG[9];
+        float q0;
+        float q1;
+        float q2;
+        float q3;
+        float magN;
+        float magE;
+        float magD;
+        float magXbias;
+        float magYbias;
+        float magZbias;
+        float R_MAG;
+        Mat3f DCM;
+    } magstate;
 
 
     // Global variables
@@ -191,9 +208,11 @@ public:
     float innovRng; ///< Range finder innovation
     float varInnovVtas; // innovation variance output
     float VtasMeas; // true airspeed measurement (m/s)
+    float magDeclination;       ///< magnetic declination
     double latRef; // WGS-84 latitude of reference point (rad)
     double lonRef; // WGS-84 longitude of reference point (rad)
     float hgtRef; // WGS-84 height of reference point (m)
+    bool refSet;                ///< flag to indicate if the reference position has been set
     Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
     unsigned covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 
@@ -291,7 +310,7 @@ void OnGroundCheck();
 
 void CovarianceInit();
 
-void InitialiseFilter(float (&initvelNED)[3]);
+void InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination);
 
 float ConstrainFloat(float val, float min, float max);
 
@@ -316,7 +335,7 @@ void GetLastErrorState(struct ekf_status_report *last_error);
 bool StatesNaN(struct ekf_status_report *err_report);
 void FillErrorReport(struct ekf_status_report *err);
 
-void InitializeDynamic(float (&initvelNED)[3]);
+void InitializeDynamic(float (&initvelNED)[3], float declination);
 
 protected:
 
@@ -324,7 +343,7 @@ bool FilterHealthy();
 
 void ResetHeight(void);
 
-void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat);
+void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float declination, float *initQuat);
 
 };
 

@@ -217,7 +217,7 @@ int main()
                 {
                     _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
                 }
-                _ekf->InitialiseFilter(_ekf->velNED);
+                _ekf->InitialiseFilter(_ekf->velNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, 0.0f);
             }
 
             // If valid IMU data and states initialised, predict states and covariances
