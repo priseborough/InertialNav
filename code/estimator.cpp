@@ -1,6 +1,37 @@
 #include "estimator.h"
-//#include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+
+// Define EKF_DEBUG here to enable the debug print calls
+// if the macro is not set, these will be completely
+// optimized out by the compiler.
+#define EKF_DEBUG
+
+#ifdef EKF_DEBUG
+#include <stdio.h>
+
+static void
+ekf_debug_print(const char *fmt, va_list args)
+{
+    fprintf(stderr, "%s: ", "[ekf]");
+    vfprintf(stderr, fmt, args);
+
+    fprintf(stderr, "\n");
+}
+
+static void
+ekf_debug(const char *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    ekf_debug_print(fmt, args);
+}
+
+#else
+
+static void ekf_debug(const char *fmt, ...) { while(0){} }
+#endif
 
 float Vector3f::length(void) const
 {
@@ -15,6 +46,10 @@ void Vector3f::zero(void)
 }
 
 Mat3f::Mat3f() {
+    identity();
+}
+
+void Mat3f::identity() {
     x.x = 1.0f;
     x.y = 0.0f;
     x.z = 0.0f;
@@ -104,23 +139,14 @@ void swap_var(float &d1, float &d2)
     d2 = tmp;
 }
 
-AttPosEKF::AttPosEKF() :
-    fusionModeGPS(0),
-    covSkipCount(0),
-    statesInitialised(false),
-    fuseVelData(false),
-    fusePosData(false),
-    fuseHgtData(false),
-    fuseMagData(false),
-    fuseVtasData(false),
-    onGround(true),
-    staticMode(true),
-    useAirspeed(true),
-    useCompass(true),
-    useRangeFinder(true),
-    numericalProtection(true),
-    storeIndex(0)
+AttPosEKF::AttPosEKF()
+
+    /* NOTE: DO NOT initialize class members here. Use ZeroVariables()
+     * instead to allow clean in-air re-initialization.
+     */
 {
+
+    ZeroVariables();
     InitialiseParameters();
 }
 
@@ -1219,26 +1245,23 @@ void AttPosEKF::FuseVelposNED()
 
 void AttPosEKF::FuseMagnetometer()
 {
-    static uint8_t obsIndex;
-    static float MagPred[3];
-    static float SH_MAG[9];
-    static float q0 = 0.0f;
-    static float q1 = 0.0f;
-    static float q2 = 0.0f;
-    static float q3 = 1.0f;
-    static float magN = 0.4f;
-    static float magE = 0.0f;
-    static float magD = 0.3f;
-    static float magXbias = 0.0f;
-    static float magYbias = 0.0f;
-    static float magZbias = 0.0f;
-    float R_MAG = sq(magMeasurementSigma);
-    float DCM[3][3] =
-    {
-        {1.0f,0.0f,0.0f} ,
-        {0.0f,1.0f,0.0f} ,
-        {0.0f,0.0f,1.0f}
-    };
+
+    float &q0 = magstate.q0;
+    float &q1 = magstate.q1;
+    float &q2 = magstate.q2;
+    float &q3 = magstate.q3;
+    float &magN = magstate.magN;
+    float &magE = magstate.magE;
+    float &magD = magstate.magD;
+    float &magXbias = magstate.magXbias;
+    float &magYbias = magstate.magYbias;
+    float &magZbias = magstate.magZbias;
+    unsigned &obsIndex = magstate.obsIndex;
+    Mat3f &DCM = magstate.DCM;
+    float *MagPred = &magstate.MagPred[0];
+    float &R_MAG = magstate.R_MAG;
+    float *SH_MAG = &magstate.SH_MAG[0];
+
     float SK_MX[6];
     float SK_MY[5];
     float SK_MZ[6];
@@ -1246,7 +1269,7 @@ void AttPosEKF::FuseMagnetometer()
     for (uint8_t i = 0; i < n_states; i++) {
         H_MAG[i] = 0.0f;
     }
-    uint8_t indexLimit;
+    unsigned indexLimit;
 
 // Perform sequential fusion of Magnetometer measurements.
 // This assumes that the errors in the different components are
@@ -1259,11 +1282,11 @@ void AttPosEKF::FuseMagnetometer()
         // Limit range of states modified when on ground
         if(!onGround)
         {
-            indexLimit = 22;
+            indexLimit = n_states;
         }
         else
         {
-            indexLimit = 13;
+            indexLimit = 13 + 1;
         }
 
         // Sequential fusion of XYZ components to spread processing load across
@@ -1286,18 +1309,18 @@ void AttPosEKF::FuseMagnetometer()
 
             // rotate predicted earth components into body axes and calculate
             // predicted measurments
-            DCM[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
-            DCM[0][1] = 2*(q1*q2 + q0*q3);
-            DCM[0][2] = 2*(q1*q3-q0*q2);
-            DCM[1][0] = 2*(q1*q2 - q0*q3);
-            DCM[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
-            DCM[1][2] = 2*(q2*q3 + q0*q1);
-            DCM[2][0] = 2*(q1*q3 + q0*q2);
-            DCM[2][1] = 2*(q2*q3 - q0*q1);
-            DCM[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-            MagPred[0] = DCM[0][0]*magN + DCM[0][1]*magE  + DCM[0][2]*magD + magXbias;
-            MagPred[1] = DCM[1][0]*magN + DCM[1][1]*magE  + DCM[1][2]*magD + magYbias;
-            MagPred[2] = DCM[2][0]*magN + DCM[2][1]*magE  + DCM[2][2]*magD + magZbias;
+            DCM.x.x = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+            DCM.x.y = 2*(q1*q2 + q0*q3);
+            DCM.x.z = 2*(q1*q3-q0*q2);
+            DCM.y.x = 2*(q1*q2 - q0*q3);
+            DCM.y.y = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+            DCM.y.z = 2*(q2*q3 + q0*q1);
+            DCM.z.x = 2*(q1*q3 + q0*q2);
+            DCM.z.y = 2*(q2*q3 - q0*q1);
+            DCM.z.z = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+            MagPred[0] = DCM.x.x*magN + DCM.x.y*magE  + DCM.x.z*magD + magXbias;
+            MagPred[1] = DCM.y.x*magN + DCM.y.y*magE  + DCM.y.z*magD + magYbias;
+            MagPred[2] = DCM.z.x*magN + DCM.z.y*magE  + DCM.z.z*magD + magZbias;
 
             // scale magnetometer observation error with total angular rate
             R_MAG = sq(magMeasurementSigma) + sq(0.05f*dAngIMU.length()/dtIMU);
@@ -1488,7 +1511,7 @@ void AttPosEKF::FuseMagnetometer()
         if ((innovMag[obsIndex]*innovMag[obsIndex]/varInnovMag[obsIndex]) < 25.0)
         {
             // correct the state vector
-            for (uint8_t j= 0; j<=indexLimit; j++)
+            for (uint8_t j= 0; j < indexLimit; j++)
             {
                 states[j] = states[j] - Kfusion[j] * innovMag[obsIndex];
             }
@@ -1505,7 +1528,7 @@ void AttPosEKF::FuseMagnetometer()
             // correct the covariance P = (I - K*H)*P
             // take advantage of the empty columns in KH to reduce the
             // number of operations
-            for (uint8_t i = 0; i<=indexLimit; i++)
+            for (uint8_t i = 0; i < indexLimit; i++)
             {
                 for (uint8_t j = 0; j <= 3; j++)
                 {
@@ -1527,9 +1550,9 @@ void AttPosEKF::FuseMagnetometer()
                     }
                 }
             }
-            for (uint8_t i = 0; i<=indexLimit; i++)
+            for (uint8_t i = 0; i < indexLimit; i++)
             {
-                for (uint8_t j = 0; j<=indexLimit; j++)
+                for (uint8_t j = 0; j < indexLimit; j++)
                 {
                     KHP[i][j] = 0.0f;
                     for (uint8_t k = 0; k <= 3; k++)
@@ -1546,9 +1569,9 @@ void AttPosEKF::FuseMagnetometer()
                 }
             }
         }
-        for (uint8_t i = 0; i <= indexLimit; i++)
+        for (uint8_t i = 0; i < indexLimit; i++)
         {
-            for (uint8_t j = 0; j <= indexLimit; j++)
+            for (uint8_t j = 0; j < indexLimit; j++)
             {
                 P[i][j] = P[i][j] - KHP[i][j];
             }
@@ -1972,9 +1995,9 @@ void AttPosEKF::calcLLH(float (&posNED)[3], float lat, float lon, float hgt, flo
 
 void AttPosEKF::OnGroundCheck()
 {
-    onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0f) && (VtasMeas < 8.0f));
+    onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0f) && (VtasMeas < 6.0f));
     if (staticMode) {
-        staticMode = !(GPSstatus > GPS_FIX_2D);
+        staticMode = (!refSet || (GPSstatus < GPS_FIX_3D));
     }
 }
 
@@ -2016,7 +2039,22 @@ void AttPosEKF::CovarianceInit()
 
 float AttPosEKF::ConstrainFloat(float val, float min, float max)
 {
-    return (val > max) ? max : ((val < min) ? min : val);
+    float ret;
+    if (val > max) {
+        ret = max;
+        ekf_debug("> max: %8.4f, val: %8.4f", max, val);
+    } else if (val < min) {
+        ret = min;
+        ekf_debug("< min: %8.4f, val: %8.4f", min, val);
+    } else {
+        ret = val;
+    }
+
+    if (!isfinite(val)) {
+        ekf_debug("constrain: non-finite!");
+    }
+
+    return ret;
 }
 
 void AttPosEKF::ConstrainVariances()
@@ -2243,6 +2281,28 @@ void AttPosEKF::FillErrorReport(struct ekf_status_report *err)
 bool AttPosEKF::StatesNaN(struct ekf_status_report *err_report) {
     bool err = false;
 
+    // check all integrators
+    if (!isfinite(summedDelAng.x) || !isfinite(summedDelAng.y) || !isfinite(summedDelAng.z)) {
+        err_report->statesNaN = true;
+        ekf_debug("summedDelAng NaN: x: %f y: %f z: %f", (double)summedDelAng.x, (double)summedDelAng.y, (double)summedDelAng.z);
+        err = true;
+        goto out;
+    } // delta angles
+
+    if (!isfinite(correctedDelAng.x) || !isfinite(correctedDelAng.y) || !isfinite(correctedDelAng.z)) {
+        err_report->statesNaN = true;
+        ekf_debug("correctedDelAng NaN: x: %f y: %f z: %f", (double)correctedDelAng.x, (double)correctedDelAng.y, (double)correctedDelAng.z);
+        err = true;
+        goto out;
+    } // delta angles
+
+    if (!isfinite(summedDelVel.x) || !isfinite(summedDelVel.y) || !isfinite(summedDelVel.z)) {
+        err_report->statesNaN = true;
+        ekf_debug("summedDelVel NaN: x: %f y: %f z: %f", (double)summedDelVel.x, (double)summedDelVel.y, (double)summedDelVel.z);
+        err = true;
+        goto out;
+    } // delta velocities
+
     // check all states and covariance matrices
     for (unsigned i = 0; i < n_states; i++) {
         for (unsigned j = 0; j < n_states; j++) {
@@ -2250,32 +2310,44 @@ bool AttPosEKF::StatesNaN(struct ekf_status_report *err_report) {
 
                 err_report->covarianceNaN = true;
                 err = true;
+                ekf_debug("KH NaN");
+                goto out;
             } //  intermediate result used for covariance updates
+
             if (!isfinite(KHP[i][j])) {
 
                 err_report->covarianceNaN = true;
                 err = true;
+                ekf_debug("KHP NaN");
+                goto out;
             } // intermediate result used for covariance updates
+
             if (!isfinite(P[i][j])) {
 
                 err_report->covarianceNaN = true;
                 err = true;
+                ekf_debug("P NaN");
             } // covariance matrix
         }
 
         if (!isfinite(Kfusion[i])) {
 
             err_report->kalmanGainsNaN = true;
+            ekf_debug("Kfusion NaN");
             err = true;
+            goto out;
         } // Kalman gains
 
         if (!isfinite(states[i])) {
 
             err_report->statesNaN = true;
+            ekf_debug("states NaN: i: %u val: %f", i, (double)states[i]);
             err = true;
+            goto out;
         } // state matrix
     }
 
+out:
     if (err) {
         FillErrorReport(err_report);
     }
@@ -2301,14 +2373,15 @@ int AttPosEKF::CheckAndBound()
 
     // Reset the filter if the states went NaN
     if (StatesNaN(&last_ekf_error)) {
+        ekf_debug("re-initializing dynamic");
 
-        InitializeDynamic(velNED);
+        InitializeDynamic(velNED, magDeclination);
 
         return 1;
     }
 
     // Reset the filter if the IMU data is too old
-    if (dtIMU > 0.2f) {
+    if (dtIMU > 0.3f) {
 
         ResetVelocity();
         ResetPosition();
@@ -2335,15 +2408,15 @@ int AttPosEKF::CheckAndBound()
     return 0;
 }
 
-void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat)
+void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float declination, float *initQuat)
 {
     float initialRoll, initialPitch;
     float cosRoll, sinRoll, cosPitch, sinPitch;
     float magX, magY;
     float initialHdg, cosHeading, sinHeading;
 
-    initialRoll = atan2(-ay, -az);
-    initialPitch = atan2(ax, -az);
+    initialRoll = atan2f(-ay, -az);
+    initialPitch = atan2f(ax, -az);
 
     cosRoll = cosf(initialRoll);
     sinRoll = sinf(initialRoll);
@@ -2355,6 +2428,8 @@ void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, f
     magY = my * cosRoll - mz * sinRoll;
 
     initialHdg = atan2f(-magY, magX);
+    /* true heading is the mag heading minus declination */
+    initialHdg += declination;
 
     cosRoll = cosf(initialRoll * 0.5f);
     sinRoll = sinf(initialRoll * 0.5f);
@@ -2369,37 +2444,52 @@ void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, f
     initQuat[1] = sinRoll * cosPitch * cosHeading - cosRoll * sinPitch * sinHeading;
     initQuat[2] = cosRoll * sinPitch * cosHeading + sinRoll * cosPitch * sinHeading;
     initQuat[3] = cosRoll * cosPitch * sinHeading - sinRoll * sinPitch * cosHeading;
+
+    /* normalize */
+    float norm = sqrtf(initQuat[0]*initQuat[0] + initQuat[1]*initQuat[1] + initQuat[2]*initQuat[2] + initQuat[3]*initQuat[3]);
+
+    initQuat[0] /= norm;
+    initQuat[1] /= norm;
+    initQuat[2] /= norm;
+    initQuat[3] /= norm;
 }
 
-void AttPosEKF::InitializeDynamic(float (&initvelNED)[3])
+void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
 {
 
-    // Clear the init flag
-    statesInitialised = false;
-
-    ZeroVariables();
-
-    ResetVelocity();
-    ResetPosition();
-    ResetHeight();
+    // Fill variables with valid data
+    velNED[0] = initvelNED[0];
+    velNED[1] = initvelNED[1];
+    velNED[2] = initvelNED[2];
+    magDeclination = declination;
 
     // Calculate initial filter quaternion states from raw measurements
     float initQuat[4];
     Vector3f initMagXYZ;
     initMagXYZ   = magData - magBias;
-    AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, initQuat);
+    AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, declination, initQuat);
 
     // Calculate initial Tbn matrix and rotate Mag measurements into NED
     // to set initial NED magnetic field states
     Mat3f DCM;
     quat2Tbn(DCM, initQuat);
     Vector3f initMagNED;
-    initMagXYZ   = magData - magBias;
     initMagNED.x = DCM.x.x*initMagXYZ.x + DCM.x.y*initMagXYZ.y + DCM.x.z*initMagXYZ.z;
     initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
     initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
 
-
+    magstate.q0 = initQuat[0];
+    magstate.q1 = initQuat[1];
+    magstate.q2 = initQuat[2];
+    magstate.q3 = initQuat[3];
+    magstate.magN = initMagNED.x;
+    magstate.magE = initMagNED.y;
+    magstate.magD = initMagNED.z;
+    magstate.magXbias = magBias.x;
+    magstate.magYbias = magBias.y;
+    magstate.magZbias = magBias.z;
+    magstate.R_MAG = sq(magMeasurementSigma);
+    magstate.DCM = DCM;
 
     // write to state vector
     for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
@@ -2413,6 +2503,10 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3])
     states[21] = magBias.z; // Magnetic Field Bias Z
     states[22] = 0.0f; // terrain height
 
+    ResetVelocity();
+    ResetPosition();
+    ResetHeight();
+
     statesInitialised = true;
 
     // initialise the covariance matrix
@@ -2421,29 +2515,53 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3])
     //Define Earth rotation vector in the NED navigation frame
     calcEarthRateNED(earthRateNED, latRef);
 
-    //Initialise summed variables used by covariance prediction
-    summedDelAng.x = 0.0f;
-    summedDelAng.y = 0.0f;
-    summedDelAng.z = 0.0f;
-    summedDelVel.x = 0.0f;
-    summedDelVel.y = 0.0f;
-    summedDelVel.z = 0.0f;
 }
 
-void AttPosEKF::InitialiseFilter(float (&initvelNED)[3])
+void AttPosEKF::InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination)
 {
-    //store initial lat,long and height
-    latRef = gpsLat;
-    lonRef = gpsLon;
-    hgtRef = gpsHgt;
+    // store initial lat,long and height
+    latRef = referenceLat;
+    lonRef = referenceLon;
+    hgtRef = referenceHgt;
+    refSet = true;
+
+    // we are at reference altitude, so measurement must be zero
+    hgtMea = 0.0f;
+
+    // the baro offset must be this difference now
+    baroHgtOffset = baroHgt - referenceHgt;
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
 
-    InitializeDynamic(initvelNED);
+    InitializeDynamic(initvelNED, declination);
 }
 
 void AttPosEKF::ZeroVariables()
 {
+
+    // Initialize on-init initialized variables
+    fusionModeGPS = 0;
+    covSkipCount = 0;
+    statesInitialised = false;
+    fuseVelData = false;
+    fusePosData = false;
+    fuseHgtData = false;
+    fuseMagData = false;
+    fuseVtasData = false;
+    onGround = true;
+    staticMode = true;
+    useAirspeed = true;
+    useCompass = true;
+    useRangeFinder = true;
+    numericalProtection = true;
+    refSet = false;
+    storeIndex = 0;
+    gpsHgt = 0.0f;
+    baroHgt = 0.0f;
+    GPSstatus = 0;
+    VtasMeas = 0.0f;
+    magDeclination = 0.0f;
+
     // Do the data structure init
     for (unsigned i = 0; i < n_states; i++) {
         for (unsigned j = 0; j < n_states; j++) {
@@ -2457,6 +2575,11 @@ void AttPosEKF::ZeroVariables()
     }
 
     correctedDelAng.zero();
+    summedDelAng.zero();
+    summedDelVel.zero();
+
+    dAngIMU.zero();
+    dVelIMU.zero();
 
     for (unsigned i = 0; i < data_buffer_size; i++) {
 
@@ -2467,7 +2590,12 @@ void AttPosEKF::ZeroVariables()
         statetimeStamp[i] = 0;
     }
 
+    memset(&magstate, 0, sizeof(magstate));
+    magstate.q0 = 1.0f;
+    magstate.DCM.identity();
+
     memset(&current_ekf_state, 0, sizeof(current_ekf_state));
+
 }
 
 void AttPosEKF::GetFilterState(struct ekf_status_report *state)
