@@ -271,7 +271,7 @@ int main()
 
                 if (pOnboardFile > 0) {
                     _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
-                    printf("in: %e %e %e posned 1: %e\n", onboardLat, onboardLon, onboardHgt, onboardPosNED[1]);
+
                 }
 
                 _ekf->posNE[0] = _ekf->posNED[0];
@@ -294,7 +294,7 @@ int main()
             if (newAdsData && _ekf->statesInitialised)
             {
                 // Could use a blend of GPS and baro alt data if desired
-                _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt;
+                _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
                 _ekf->fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));

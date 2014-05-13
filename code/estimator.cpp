@@ -1816,41 +1816,41 @@ int AttPosEKF::RecallStates(float* statesForFusion, uint64_t msec)
 {
     int ret = 0;
 
-    // int64_t bestTimeDelta = 200;
-    // unsigned bestStoreIndex = 0;
-    // for (unsigned storeIndex = 0; storeIndex < data_buffer_size; storeIndex++)
-    // {
-    //     // Work around a GCC compiler bug - we know 64bit support on ARM is
-    //     // sketchy in GCC.
-    //     uint64_t timeDelta;
+    int64_t bestTimeDelta = 200;
+    unsigned bestStoreIndex = 0;
+    for (unsigned storeIndex = 0; storeIndex < data_buffer_size; storeIndex++)
+    {
+        // Work around a GCC compiler bug - we know 64bit support on ARM is
+        // sketchy in GCC.
+        uint64_t timeDelta;
 
-    //     if (msec > statetimeStamp[storeIndex]) {
-    //         timeDelta = msec - statetimeStamp[storeIndex];
-    //     } else {
-    //         timeDelta = statetimeStamp[storeIndex] - msec;
-    //     }
+        if (msec > statetimeStamp[storeIndex]) {
+            timeDelta = msec - statetimeStamp[storeIndex];
+        } else {
+            timeDelta = statetimeStamp[storeIndex] - msec;
+        }
 
-    //     if (timeDelta < bestTimeDelta)
-    //     {
-    //         bestStoreIndex = storeIndex;
-    //         bestTimeDelta = timeDelta;
-    //     }
-    // }
-    // if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
-    // {
-    //     for (unsigned i=0; i < n_states; i++) {
-    //         if (isfinite(storedStates[i][bestStoreIndex])) {
-    //             statesForFusion[i] = storedStates[i][bestStoreIndex];
-    //         } else if (isfinite(states[i])) {
-    //             statesForFusion[i] = states[i];
-    //         } else {
-    //             // There is not much we can do here, except reporting the error we just
-    //             // found.
-    //             ret++;
-    //         }
-    //     }
-    // }
-    // else // otherwise output current state
+        if (timeDelta < bestTimeDelta)
+        {
+            bestStoreIndex = storeIndex;
+            bestTimeDelta = timeDelta;
+        }
+    }
+    if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
+    {
+        for (unsigned i=0; i < n_states; i++) {
+            if (isfinite(storedStates[i][bestStoreIndex])) {
+                statesForFusion[i] = storedStates[i][bestStoreIndex];
+            } else if (isfinite(states[i])) {
+                statesForFusion[i] = states[i];
+            } else {
+                // There is not much we can do here, except reporting the error we just
+                // found.
+                ret++;
+            }
+        }
+    }
+    else // otherwise output current state
     {
         for (unsigned i = 0; i < n_states; i++) {
             if (isfinite(states[i])) {
@@ -2005,10 +2005,10 @@ float AttPosEKF::ConstrainFloat(float val, float min, float max)
     float ret;
     if (val > max) {
         ret = max;
-        ekf_debug("> max: %8.4f, val: %8.4f", min);
+        ekf_debug("> max: %8.4f, val: %8.4f", max, val);
     } else if (val < min) {
         ret = min;
-        ekf_debug("< min: %8.4f, val: %8.4f", max);
+        ekf_debug("< min: %8.4f, val: %8.4f", min, val);
     } else {
         ret = val;
     }
@@ -2482,11 +2482,17 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
 
 void AttPosEKF::InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination)
 {
-    //store initial lat,long and height
+    // store initial lat,long and height
     latRef = referenceLat;
     lonRef = referenceLon;
     hgtRef = referenceHgt;
     refSet = true;
+
+    // we are at reference altitude, so measurement must be zero
+    hgtMea = 0.0f;
+
+    // the baro offset must be this difference now
+    baroHgtOffset = baroHgt - referenceHgt;
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
 
