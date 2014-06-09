@@ -3,10 +3,11 @@ close all;
 
 % load('search_pattern_log002.mat');
 %load('quad_flight_log003.mat');
-load('attitude_log001.mat');
+load('m_14_46_07.mat');
 
 mintime = 0;
-maxtime = 150;
+% Go right to the end of logfile minus 50 ms
+maxtime = IMU.data(end,1) - 50;
 
 i = 1;
 prune_start_time = IMU.data(1,1);
