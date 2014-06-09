@@ -178,6 +178,10 @@ public:
     bool fuseVtasData; // boolean true when airspeed data is to be fused
     bool fuseRngData;   ///< true when range data is fused
 
+    bool inhibitWindStates; // true when wind states and covariances are to remain constant
+    bool inhibitMagStates;  // true when magnetic field states and covariances are to remain constant
+    bool inhibitGndHgtState; // true when the terrain ground height offset state and covariances are to remain constant
+
     bool onGround;    ///< boolean true when the flight vehicle is on the ground (not flying)
     bool staticMode;    ///< boolean true if no position feedback is fused
     bool useAirspeed;    ///< boolean true if airspeed data is being used
