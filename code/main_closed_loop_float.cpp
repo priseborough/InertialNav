@@ -1,5 +1,5 @@
 
-#include "estimator.h"
+#include "estimator_23states.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -44,6 +44,7 @@ static uint32_t IMUmsec = 0;
 float magIn;
 float tempMag[8];
 float tempMagPrev[8];
+float posNED[3];
 float MAGtimestamp = 0;
 uint32_t MAGmsec = 0;
 uint32_t lastMAGmsec = 0;
@@ -268,15 +269,15 @@ int main()
                 {
                     _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
                 }
-                _ekf->calcposNED(_ekf->posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                 if (pOnboardFile > 0) {
                     _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                 }
 
-                _ekf->posNE[0] = _ekf->posNED[0];
-                _ekf->posNE[1] = _ekf->posNED[1];
+                _ekf->posNE[0] = posNED[0];
+                _ekf->posNE[1] = posNED[1];
                  // set fusion flags
                 _ekf->fuseVelData = true;
                 _ekf->fusePosData = true;

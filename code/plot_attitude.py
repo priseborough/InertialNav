@@ -7,6 +7,10 @@ import numpy as np
 import math
 data = np.genfromtxt('EulDataOut.txt', delimiter=' ', skip_header=1,
 	skip_footer=1, names=['time', 'roll', 'roll_onb', 'pitch', 'pitch_onb', 'yaw', 'yaw_onb', 'empty1', 'empty2'])
+gdata = np.genfromtxt('GPSrawOut.txt', delimiter=' ', skip_header=1,
+	skip_footer=1, names=['time', 'lat', 'lon', 'alt', 'veln', 'vele', 'veld'])
+mdata = np.genfromtxt('MAG.txt', skip_header=1,
+	skip_footer=1, names=['time', 'time2', 'magx', 'magy', 'magz', 'offx', 'offy', 'offz'], autostrip=True, filling_values=0)
 
 fig = plt.figure()
 
@@ -43,6 +47,8 @@ ax3.plot(data['time'], data['yaw'], color='b', label='yaw')
 ax1.plot(data['time'], data['roll_onb'], color='m', label='roll onboard')
 ax2.plot(data['time'], data['pitch_onb'], color='c', label='pitch onboard')
 ax3.plot(data['time'], data['yaw_onb'], color='k', label='yaw onboard')
+# ax3.plot(gdata['time'], np.math.atan2(gdata['vele'], gdata['veln']))
+# ax3.plot(mdata['time'], np.math.atan2(mdata['magy'], mdata['magx']))
 
 leg = ax1.legend()
 

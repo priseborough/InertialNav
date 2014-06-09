@@ -10,7 +10,7 @@ LIBS=-lm
 #_DEPS = test.h
 #DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = main_closed_loop_float.o estimator.o
+_OBJ = main_closed_loop_float.o estimator_23states.o estimator_utilities.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 #$(DEPS)
