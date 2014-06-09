@@ -86,9 +86,9 @@ float onboardLon;
 float onboardHgt;
 
 // input data timing
-uint32_t msecAlignTime;
-uint32_t msecStartTime;
-uint32_t msecEndTime;
+uint64_t msecAlignTime;
+uint64_t msecStartTime;
+uint64_t msecEndTime;
 
 float gpsGndSpd;
 
@@ -196,8 +196,9 @@ int main()
         readAirData();
         readAhrsData();
         readOnboardData();
-        if (IMUmsec > msecEndTime)
+        if (IMUmsec > msecEndTime || endOfData)
         {
+            printf("Reached end at %8.4f seconds (end of logfile reached: %s)", IMUmsec/1000.0f, (endOfData) ? "YES" : "NO");
             CloseFiles();
             break;
         }
@@ -320,12 +321,15 @@ int main()
             {
                 _ekf->fuseMagData = true;
                 _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+                _ekf->magstate.obsIndex = 0;
+                _ekf->FuseMagnetometer();
+                _ekf->FuseMagnetometer();
+                _ekf->FuseMagnetometer();
             }
             else
             {
                 _ekf->fuseMagData = false;
             }
-            if (_ekf->statesInitialised) _ekf->FuseMagnetometer();
 
             // Fuse Airspeed Measurements
             if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
@@ -433,7 +437,7 @@ void readGpsData()
     static float tempGpsPrev[14];
     static float GPStimestamp = 0;
 
-    while (GPStimestamp <= IMUtimestamp)
+    while (GPStimestamp <= IMUtimestamp && !endOfData)
     {
 
         // Load APM GPS file format
@@ -446,6 +450,7 @@ void readGpsData()
             else
             {
                 endOfData = true;
+                break;
             }
         }
 
@@ -459,6 +464,7 @@ void readGpsData()
                 else
                 {
                     endOfData = true;
+                    break;
                 }
             }
         }
@@ -474,6 +480,8 @@ void readGpsData()
             _ekf->gpsLat = deg2rad*tempGpsPrev[6];
             _ekf->gpsLon = deg2rad*tempGpsPrev[7] - pi;
             _ekf->gpsHgt = tempGpsPrev[8];
+        } else if (endOfData) {
+            break;
         }
     }
     if (GPSmsec > lastGPSmsec)
@@ -491,7 +499,7 @@ void readMagData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (MAGtimestamp <= IMUtimestamp)
+    while (MAGtimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j=0; j<=7; j++)
         {
@@ -509,6 +517,8 @@ void readMagData()
             _ekf->magBias.y = -0.001f*tempMagPrev[6];
             _ekf->magData.z =  0.001f*(tempMagPrev[4] - tempMagPrev[7]);
             _ekf->magBias.z = -0.001f*tempMagPrev[7];
+        } else {
+            break;
         }
     }
     if (MAGmsec > lastMAGmsec)
@@ -527,13 +537,17 @@ void readAirData()
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
     // Currently synthesise a terrain measurement that is 5 m below the baro alt
-    while (ADStimestamp <= IMUtimestamp)
+    while (ADStimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j=0; j<=9; j++)
         {
             tempAdsPrev[j] = tempAds[j];
-            if (fscanf(pAdsFile, "%f", &adsIn) != EOF) tempAds[j] = adsIn;
-            else endOfData = true;
+            if (fscanf(pAdsFile, "%f", &adsIn) != EOF) {
+                tempAds[j] = adsIn;
+            } else {
+                endOfData = true;
+                break;
+            }
         }
         if (!endOfData)
         {
@@ -542,6 +556,8 @@ void readAirData()
             _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
             _ekf->baroHgt = tempAdsPrev[8];
             _ekf->rngMea = (_ekf->baroHgt + 5.0f) / _ekf->Tbn.z.z;
+        } else {
+            break;
         }
     }
     if (ADSmsec > lastADSmsec)
@@ -565,7 +581,7 @@ void readOnboardData()
 
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (onboardTimestamp <= IMUtimestamp)
+    while (onboardTimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j = 0; j < 7; j++)
         {
@@ -583,6 +599,8 @@ void readOnboardData()
             onboardVelNED[1] = tempOnboard[5];
             onboardVelNED[2] = tempOnboard[6];
             //printf("velned onboard: %e %e %e %e %e %e\n", onboardLat, onboardLon, onboardHgt, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
+        } else {
+            break;
         }
     }
     if (onboardMsec > lastOnboardMsec)
@@ -600,7 +618,7 @@ void readAhrsData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    while (AHRStimestamp <= IMUtimestamp)
+    while (AHRStimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j=0; j<=6; j++)
         {
@@ -618,6 +636,8 @@ void readAhrsData()
             }
             ahrsErrorRP = tempAhrs[5];
             ahrsErrorYaw = tempAhrs[6];
+        } else {
+            break;
         }
     }
 }
@@ -698,14 +718,14 @@ void readTimingData()
             timeArray[j] = timeDataIn;
         }
     }
-    msecAlignTime = uint32_t(1000*timeArray[0]);
-    msecStartTime = uint32_t(1000*timeArray[1]);
-    msecEndTime   = uint32_t(1000*timeArray[2]);
-    msecVelDelay  = uint32_t(timeArray[3]);
-    msecPosDelay  = uint32_t(timeArray[4]);
-    msecHgtDelay  = uint32_t(timeArray[5]);
-    msecMagDelay  = uint32_t(timeArray[6]);
-    msecTasDelay  = uint32_t(timeArray[7]);
+    msecAlignTime = 1000*timeArray[0];
+    msecStartTime = 1000*timeArray[1];
+    msecEndTime   = 1000*timeArray[2];
+    msecVelDelay  = timeArray[3];
+    msecPosDelay  = timeArray[4];
+    msecHgtDelay  = timeArray[5];
+    msecMagDelay  = timeArray[6];
+    msecTasDelay  = timeArray[7];
     _ekf->EAS2TAS       = timeArray[8];
 }
 
