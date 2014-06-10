@@ -344,6 +344,46 @@ int main()
                 _ekf->fuseVtasData = false;
             }
 
+            /*
+             *    CHECK IF THE INPUT DATA IS SANE
+             */
+            int check = _ekf->CheckAndBound();
+
+            switch (check) {
+                case 0:
+                    /* all ok */
+                    break;
+                case 1:
+                {
+                    printf("NaN in states, resetting\n");
+                    break;
+                }
+                case 2:
+                {
+                    printf("stale IMU data, resetting\n");
+                    break;
+                }
+                case 3:
+                {
+                    printf("switching to dynamic state\n");
+                    break;
+                }
+                case 4:
+                {
+                    printf("excessive gyro offsets\n");
+                    break;
+                }
+
+                default:
+                {
+                    printf("unknown reset condition\n");
+                }
+            }
+
+            if (check) {
+                printf("RESET OCCURED AT %d milliseconds\n", (int)IMUmsec);
+            }
+
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
