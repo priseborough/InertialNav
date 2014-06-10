@@ -31,3 +31,4 @@ plots:
 	python plot_attitude.py &
 	python plot_position.py &
 	python plot_states.py &
+	python plot_velocity.py &
