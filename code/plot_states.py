@@ -16,10 +16,19 @@ import math
 	# 16-18: Earth Magnetic Field Vector - milligauss (North, East, Down)
 	# 19-21: Body Magnetic Field Vector - milligauss (X,Y,Z)
 	# 22: Terrain
-
-data = np.genfromtxt('StateDataOut.txt', delimiter=' ', skip_header=1,
-	skip_footer=1, names=['time', 'q1', 'q2', 'q3', 'q4', 'Vn', 'Ve', 'Vd', 'Pn', 'Pe', 'Pd',
-	'Bx', 'By', 'Bz', 'Aoff', 'Wn', 'We', 'Mn', 'Me', 'Md', 'Mbn', 'Mbe', 'Mbd', 'dist'])
+try:
+	data = np.genfromtxt('StateDataOut.txt', delimiter=' ', skip_header=1,
+		skip_footer=1, names=['time', 'q1', 'q2', 'q3', 'q4', 'Vn', 'Ve', 'Vd', 'Pn', 'Pe', 'Pd',
+		'Bx', 'By', 'Bz', 'Aoff', 'Wn', 'We', 'Mn', 'Me', 'Md', 'Mbn', 'Mbe', 'Mbd', 'dist'])
+except ValueError:
+	try:
+		data = np.genfromtxt('StateDataOut.txt', delimiter=' ', skip_header=1,
+		skip_footer=1, names=['time', 'q1', 'q2', 'q3', 'q4', 'Vn', 'Ve', 'Vd', 'Pn', 'Pe', 'Pd',
+		'Bx', 'By', 'Bz', 'Aoff', 'Wn', 'We', 'Mn', 'Me', 'Md', 'Mbn', 'Mbe', 'Mbd'])
+	except ValueError:
+		data = np.genfromtxt('StateDataOut.txt', delimiter=' ', skip_header=1,
+			skip_footer=1, names=['time', 'q1', 'q2', 'q3', 'q4', 'Vn', 'Ve', 'Vd', 'Pn', 'Pe', 'Pd',
+			'Bx', 'By', 'Bz', 'Wn', 'We', 'Mn', 'Me', 'Md', 'Mbn', 'Mbe', 'Mbd'])
 
 fig = plt.figure()
 
