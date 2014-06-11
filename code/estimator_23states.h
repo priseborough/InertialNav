@@ -2,6 +2,9 @@
 
 #include "estimator_utilities.h"
 
+const unsigned int n_states = 23;
+const unsigned int data_buffer_size = 50;
+
 class AttPosEKF {
 
 public:

@@ -2188,6 +2188,7 @@ void AttPosEKF::FillErrorReport(struct ekf_status_report *err)
     {
         err->states[i] = states[i];
     }
+    err->n_states = n_states;
 
     err->velHealth = current_ekf_state.velHealth;
     err->posHealth = current_ekf_state.posHealth;
