@@ -5,12 +5,12 @@ close all;
 %load('quad_flight_log003.mat');
 load('m_14_46_07.mat');
 
-mintime = 0;
-% Go right to the end of logfile minus 50 ms
-maxtime = IMU.data(end,1) - 50;
-
 i = 1;
-prune_start_time = IMU.data(1,1);
+prune_start_time = IMU.data(1,1)
+
+mintime = 0;
+% Go right to the end of logfile minus 100 ms
+maxtime = IMU.data(end,1) - 50;
 
 while (i < size(IMU.data, 1) && (IMU.data(i,1) - prune_start_time) < maxtime)
     i = i+1;
@@ -201,9 +201,9 @@ end
 % startTime = max((alignTime - 30),(IMUtime(1,1) + 1));
 % alignTime = max((startTime+1),alignTime);
 startTime = (IMUtime(1,1) + 1);
-alignTime = startTime + 10;
+alignTime = startTime + 5;
 alignTime = max((startTime+1),alignTime);
-endTime = max(IMUtime)-10;
+endTime = max(IMUtime)-0.1;
 msecVelDelay = 230;
 msecPosDelay = 210;
 msecHgtDelay = 350;
