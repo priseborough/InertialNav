@@ -111,6 +111,7 @@ FILE * pTasFuseFile;
 FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
+FILE * validationOutFile;
 FILE * pOnboardPosVelOutFile;
 FILE * pOnboardFile;
 
@@ -175,6 +176,7 @@ int main()
     pTasFuseFile = open_with_exit ("TasFuse.txt","w");
     pGpsRawINFile = fopen ("GPSraw.txt","r");
     pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
+    validationOutFile = fopen("ValidationOut.txt", "w");
     pOnboardFile = fopen ("GPOSonboard.txt","r");
     pOnboardPosVelOutFile = open_with_exit ("OnboardVelPosDataOut.txt","w");
 
@@ -373,6 +375,12 @@ int main()
                     printf("excessive gyro offsets\n");
                     break;
                 }
+                case 5:
+                {
+                    printf("GPS velocity diversion\n");
+                    break;
+                }
+
 
                 default:
                 {
@@ -727,6 +735,11 @@ void WriteFilterOutput()
     fprintf(pGpsRawOUTFile," %e %e %e %e %e %e", gpsRaw[1], gpsRaw[2], gpsRaw[3], gpsRaw[4], gpsRaw[5], gpsRaw[6]);
     fprintf(pGpsRawOUTFile,"\n");
 
+    // raw GPS put into local frame and integrated gyros
+    fprintf(validationOutFile," %e", float(IMUmsec*0.001f));
+    fprintf(validationOutFile," %e %e %e %e %e %e", _ekf->delAngTotal.x, _ekf->delAngTotal.y, _ekf->delAngTotal.z, _ekf->posNE[0], _ekf->posNE[1], _ekf->hgtMea);
+    fprintf(validationOutFile,"\n");
+
     // velocity and position innovations and innovation variances
     fprintf(pVelPosFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=5; i++)
@@ -787,6 +800,7 @@ void CloseFiles()
     fclose (pTimeFile);
     fclose (pGpsRawINFile);
     fclose (pGpsRawOUTFile);
+    fclose (validationOutFile);
     fclose (pOnboardPosVelOutFile);
     fclose (pOnboardFile);
 }
