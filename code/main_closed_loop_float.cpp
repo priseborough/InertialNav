@@ -380,6 +380,11 @@ int main()
                     printf("GPS velocity diversion\n");
                     break;
                 }
+                case 6:
+                {
+                    printf("Excessive covariances\n");
+                    break;
+                }
 
 
                 default:
