@@ -72,6 +72,8 @@ struct ekf_status_report {
     bool covarianceNaN;
     bool kalmanGainsNaN;
     bool statesNaN;
+    bool gyroOffsetsExcessive;
+    bool covariancesExcessive;
 };
 
 void ekf_debug(const char *fmt, ...);
