@@ -1,6 +1,5 @@
 clear all;
-%load('NEO.mat')
-load('LEA.mat');
+load('FlightData.mat');
 
 %% IMU Data
 
@@ -70,11 +69,11 @@ startTime = (IMUtime(1,1) + 1);
 alignTime = startTime + 10;
 alignTime = max((startTime+1),alignTime);
 endTime = max(IMUtime)-10;
-msecVelDelay = 230;
-msecPosDelay = 210;
-msecHgtDelay = 350;
-msecMagDelay = 30;
-msecTasDelay = 210;
+msecVelDelay = 220;
+msecPosDelay = 220;
+msecHgtDelay = 60;
+msecMagDelay = 40;
+msecTasDelay = 250;
 EAS2TAS = 1.0;
 
 save('NavFilterTestData.mat', ...

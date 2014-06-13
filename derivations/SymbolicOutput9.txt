@@ -1,0 +1,94 @@
+
+SH_MAG = zeros(7,1);
+SH_MAG(1) = q3^2;
+SH_MAG(2) = q2^2;
+SH_MAG(3) = q1^2;
+SH_MAG(4) = q0^2;
+SH_MAG(5) = 2*q2*q3;
+SH_MAG(6) = 2*q1*q3;
+SH_MAG(7) = 2*q1*q2;
+
+
+H_MAG = zeros(1,9);
+H_MAG(1) = SH_MAG(3) - SH_MAG(2) - SH_MAG(1) + SH_MAG(4);
+H_MAG(2) = SH_MAG(7) + 2*q0*q3;
+H_MAG(3) = SH_MAG(6) - 2*q0*q2;
+H_MAG(4) = 1;
+H_MAG(7) = mot;
+
+
+SK_MX = zeros(4,1);
+SK_MX(1) = 1/(OP_l_4_c_4_r_ + R_MAG - OP_l_1_c_4_r_*(SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4)) + OP_l_7_c_4_r_*mot + (SH_MAG(7) + 2*q0*q3)*(OP_l_4_c_2_r_ - OP_l_1_c_2_r_*(SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4)) + OP_l_7_c_2_r_*mot + OP_l_2_c_2_r_*(SH_MAG(7) + 2*q0*q3) + OP_l_3_c_2_r_*(SH_MAG(6) - 2*q0*q2)) + (SH_MAG(6) - 2*q0*q2)*(OP_l_4_c_3_r_ - OP_l_1_c_3_r_*(SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4)) + OP_l_7_c_3_r_*mot + OP_l_2_c_3_r_*(SH_MAG(7) + 2*q0*q3) + OP_l_3_c_3_r_*(SH_MAG(6) - 2*q0*q2)) + OP_l_2_c_4_r_*(SH_MAG(7) + 2*q0*q3) + OP_l_3_c_4_r_*(SH_MAG(6) - 2*q0*q2) - (SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4))*(OP_l_4_c_1_r_ - OP_l_1_c_1_r_*(SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4)) + OP_l_7_c_1_r_*mot + OP_l_2_c_1_r_*(SH_MAG(7) + 2*q0*q3) + OP_l_3_c_1_r_*(SH_MAG(6) - 2*q0*q2)) + mot*(OP_l_4_c_7_r_ - OP_l_1_c_7_r_*(SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4)) + OP_l_7_c_7_r_*mot + OP_l_2_c_7_r_*(SH_MAG(7) + 2*q0*q3) + OP_l_3_c_7_r_*(SH_MAG(6) - 2*q0*q2)));
+SK_MX(2) = SH_MAG(1) + SH_MAG(2) - SH_MAG(3) - SH_MAG(4);
+SK_MX(3) = SH_MAG(6) - 2*q0*q2;
+SK_MX(4) = SH_MAG(7) + 2*q0*q3;
+
+
+Kfusion = zeros(9,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = SK_MX(1)*(OP_l_1_c_4_r_ - OP_l_1_c_1_r_*SK_MX(2) + OP_l_1_c_2_r_*SK_MX(4) + OP_l_1_c_3_r_*SK_MX(3) + OP_l_1_c_7_r_*mot);
+Kfusion(2) = SK_MX(1)*(OP_l_2_c_4_r_ - OP_l_2_c_1_r_*SK_MX(2) + OP_l_2_c_2_r_*SK_MX(4) + OP_l_2_c_3_r_*SK_MX(3) + OP_l_2_c_7_r_*mot);
+Kfusion(3) = SK_MX(1)*(OP_l_3_c_4_r_ - OP_l_3_c_1_r_*SK_MX(2) + OP_l_3_c_2_r_*SK_MX(4) + OP_l_3_c_3_r_*SK_MX(3) + OP_l_3_c_7_r_*mot);
+Kfusion(4) = SK_MX(1)*(OP_l_4_c_4_r_ - OP_l_4_c_1_r_*SK_MX(2) + OP_l_4_c_2_r_*SK_MX(4) + OP_l_4_c_3_r_*SK_MX(3) + OP_l_4_c_7_r_*mot);
+Kfusion(5) = SK_MX(1)*(OP_l_5_c_4_r_ - OP_l_5_c_1_r_*SK_MX(2) + OP_l_5_c_2_r_*SK_MX(4) + OP_l_5_c_3_r_*SK_MX(3) + OP_l_5_c_7_r_*mot);
+Kfusion(6) = SK_MX(1)*(OP_l_6_c_4_r_ - OP_l_6_c_1_r_*SK_MX(2) + OP_l_6_c_2_r_*SK_MX(4) + OP_l_6_c_3_r_*SK_MX(3) + OP_l_6_c_7_r_*mot);
+Kfusion(7) = SK_MX(1)*(OP_l_7_c_4_r_ - OP_l_7_c_1_r_*SK_MX(2) + OP_l_7_c_2_r_*SK_MX(4) + OP_l_7_c_3_r_*SK_MX(3) + OP_l_7_c_7_r_*mot);
+Kfusion(8) = SK_MX(1)*(OP_l_8_c_4_r_ - OP_l_8_c_1_r_*SK_MX(2) + OP_l_8_c_2_r_*SK_MX(4) + OP_l_8_c_3_r_*SK_MX(3) + OP_l_8_c_7_r_*mot);
+Kfusion(9) = SK_MX(1)*(OP_l_9_c_4_r_ - OP_l_9_c_1_r_*SK_MX(2) + OP_l_9_c_2_r_*SK_MX(4) + OP_l_9_c_3_r_*SK_MX(3) + OP_l_9_c_7_r_*mot);
+
+
+H_MAG = zeros(1,9);
+H_MAG(1) = SH_MAG(7) - 2*q0*q3;
+H_MAG(2) = SH_MAG(2) - SH_MAG(1) - SH_MAG(3) + SH_MAG(4);
+H_MAG(3) = SH_MAG(5) + 2*q0*q1;
+H_MAG(5) = 1;
+H_MAG(8) = mot;
+
+
+SK_MY = zeros(4,1);
+SK_MY(1) = 1/(OP_l_5_c_5_r_ + R_MAG - OP_l_2_c_5_r_*(SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4)) + OP_l_8_c_5_r_*mot + (SH_MAG(7) - 2*q0*q3)*(OP_l_5_c_1_r_ - OP_l_2_c_1_r_*(SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4)) + OP_l_8_c_1_r_*mot + OP_l_1_c_1_r_*(SH_MAG(7) - 2*q0*q3) + OP_l_3_c_1_r_*(SH_MAG(5) + 2*q0*q1)) + (SH_MAG(5) + 2*q0*q1)*(OP_l_5_c_3_r_ - OP_l_2_c_3_r_*(SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4)) + OP_l_8_c_3_r_*mot + OP_l_1_c_3_r_*(SH_MAG(7) - 2*q0*q3) + OP_l_3_c_3_r_*(SH_MAG(5) + 2*q0*q1)) + OP_l_1_c_5_r_*(SH_MAG(7) - 2*q0*q3) + OP_l_3_c_5_r_*(SH_MAG(5) + 2*q0*q1) - (SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4))*(OP_l_5_c_2_r_ - OP_l_2_c_2_r_*(SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4)) + OP_l_8_c_2_r_*mot + OP_l_1_c_2_r_*(SH_MAG(7) - 2*q0*q3) + OP_l_3_c_2_r_*(SH_MAG(5) + 2*q0*q1)) + mot*(OP_l_5_c_8_r_ - OP_l_2_c_8_r_*(SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4)) + OP_l_8_c_8_r_*mot + OP_l_1_c_8_r_*(SH_MAG(7) - 2*q0*q3) + OP_l_3_c_8_r_*(SH_MAG(5) + 2*q0*q1)));
+SK_MY(2) = SH_MAG(1) - SH_MAG(2) + SH_MAG(3) - SH_MAG(4);
+SK_MY(3) = SH_MAG(7) - 2*q0*q3;
+SK_MY(4) = SH_MAG(5) + 2*q0*q1;
+
+
+Kfusion = zeros(9,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = SK_MY(1)*(OP_l_1_c_5_r_ + OP_l_1_c_1_r_*SK_MY(3) - OP_l_1_c_2_r_*SK_MY(2) + OP_l_1_c_3_r_*SK_MY(4) + OP_l_1_c_8_r_*mot);
+Kfusion(2) = SK_MY(1)*(OP_l_2_c_5_r_ + OP_l_2_c_1_r_*SK_MY(3) - OP_l_2_c_2_r_*SK_MY(2) + OP_l_2_c_3_r_*SK_MY(4) + OP_l_2_c_8_r_*mot);
+Kfusion(3) = SK_MY(1)*(OP_l_3_c_5_r_ + OP_l_3_c_1_r_*SK_MY(3) - OP_l_3_c_2_r_*SK_MY(2) + OP_l_3_c_3_r_*SK_MY(4) + OP_l_3_c_8_r_*mot);
+Kfusion(4) = SK_MY(1)*(OP_l_4_c_5_r_ + OP_l_4_c_1_r_*SK_MY(3) - OP_l_4_c_2_r_*SK_MY(2) + OP_l_4_c_3_r_*SK_MY(4) + OP_l_4_c_8_r_*mot);
+Kfusion(5) = SK_MY(1)*(OP_l_5_c_5_r_ + OP_l_5_c_1_r_*SK_MY(3) - OP_l_5_c_2_r_*SK_MY(2) + OP_l_5_c_3_r_*SK_MY(4) + OP_l_5_c_8_r_*mot);
+Kfusion(6) = SK_MY(1)*(OP_l_6_c_5_r_ + OP_l_6_c_1_r_*SK_MY(3) - OP_l_6_c_2_r_*SK_MY(2) + OP_l_6_c_3_r_*SK_MY(4) + OP_l_6_c_8_r_*mot);
+Kfusion(7) = SK_MY(1)*(OP_l_7_c_5_r_ + OP_l_7_c_1_r_*SK_MY(3) - OP_l_7_c_2_r_*SK_MY(2) + OP_l_7_c_3_r_*SK_MY(4) + OP_l_7_c_8_r_*mot);
+Kfusion(8) = SK_MY(1)*(OP_l_8_c_5_r_ + OP_l_8_c_1_r_*SK_MY(3) - OP_l_8_c_2_r_*SK_MY(2) + OP_l_8_c_3_r_*SK_MY(4) + OP_l_8_c_8_r_*mot);
+Kfusion(9) = SK_MY(1)*(OP_l_9_c_5_r_ + OP_l_9_c_1_r_*SK_MY(3) - OP_l_9_c_2_r_*SK_MY(2) + OP_l_9_c_3_r_*SK_MY(4) + OP_l_9_c_8_r_*mot);
+
+
+H_MAG = zeros(1,9);
+H_MAG(1) = SH_MAG(6) + 2*q0*q2;
+H_MAG(2) = SH_MAG(5) - 2*q0*q1;
+H_MAG(3) = SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4);
+H_MAG(6) = 1;
+H_MAG(9) = mot;
+
+
+SK_MZ = zeros(4,1);
+SK_MZ(1) = 1/(OP_l_6_c_6_r_ + R_MAG + OP_l_3_c_6_r_*(SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4)) + OP_l_9_c_6_r_*mot + (SH_MAG(6) + 2*q0*q2)*(OP_l_6_c_1_r_ + OP_l_3_c_1_r_*(SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4)) + OP_l_9_c_1_r_*mot + OP_l_1_c_1_r_*(SH_MAG(6) + 2*q0*q2) + OP_l_2_c_1_r_*(SH_MAG(5) - 2*q0*q1)) + (SH_MAG(5) - 2*q0*q1)*(OP_l_6_c_2_r_ + OP_l_3_c_2_r_*(SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4)) + OP_l_9_c_2_r_*mot + OP_l_1_c_2_r_*(SH_MAG(6) + 2*q0*q2) + OP_l_2_c_2_r_*(SH_MAG(5) - 2*q0*q1)) + OP_l_1_c_6_r_*(SH_MAG(6) + 2*q0*q2) + OP_l_2_c_6_r_*(SH_MAG(5) - 2*q0*q1) + (SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4))*(OP_l_6_c_3_r_ + OP_l_3_c_3_r_*(SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4)) + OP_l_9_c_3_r_*mot + OP_l_1_c_3_r_*(SH_MAG(6) + 2*q0*q2) + OP_l_2_c_3_r_*(SH_MAG(5) - 2*q0*q1)) + mot*(OP_l_6_c_9_r_ + OP_l_3_c_9_r_*(SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4)) + OP_l_9_c_9_r_*mot + OP_l_1_c_9_r_*(SH_MAG(6) + 2*q0*q2) + OP_l_2_c_9_r_*(SH_MAG(5) - 2*q0*q1)));
+SK_MZ(2) = SH_MAG(1) - SH_MAG(2) - SH_MAG(3) + SH_MAG(4);
+SK_MZ(3) = SH_MAG(5) - 2*q0*q1;
+SK_MZ(4) = SH_MAG(6) + 2*q0*q2;
+
+
+Kfusion = zeros(9,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = SK_MZ(1)*(OP_l_1_c_6_r_ + OP_l_1_c_1_r_*SK_MZ(4) + OP_l_1_c_2_r_*SK_MZ(3) + OP_l_1_c_3_r_*SK_MZ(2) + OP_l_1_c_9_r_*mot);
+Kfusion(2) = SK_MZ(1)*(OP_l_2_c_6_r_ + OP_l_2_c_1_r_*SK_MZ(4) + OP_l_2_c_2_r_*SK_MZ(3) + OP_l_2_c_3_r_*SK_MZ(2) + OP_l_2_c_9_r_*mot);
+Kfusion(3) = SK_MZ(1)*(OP_l_3_c_6_r_ + OP_l_3_c_1_r_*SK_MZ(4) + OP_l_3_c_2_r_*SK_MZ(3) + OP_l_3_c_3_r_*SK_MZ(2) + OP_l_3_c_9_r_*mot);
+Kfusion(4) = SK_MZ(1)*(OP_l_4_c_6_r_ + OP_l_4_c_1_r_*SK_MZ(4) + OP_l_4_c_2_r_*SK_MZ(3) + OP_l_4_c_3_r_*SK_MZ(2) + OP_l_4_c_9_r_*mot);
+Kfusion(5) = SK_MZ(1)*(OP_l_5_c_6_r_ + OP_l_5_c_1_r_*SK_MZ(4) + OP_l_5_c_2_r_*SK_MZ(3) + OP_l_5_c_3_r_*SK_MZ(2) + OP_l_5_c_9_r_*mot);
+Kfusion(6) = SK_MZ(1)*(OP_l_6_c_6_r_ + OP_l_6_c_1_r_*SK_MZ(4) + OP_l_6_c_2_r_*SK_MZ(3) + OP_l_6_c_3_r_*SK_MZ(2) + OP_l_6_c_9_r_*mot);
+Kfusion(7) = SK_MZ(1)*(OP_l_7_c_6_r_ + OP_l_7_c_1_r_*SK_MZ(4) + OP_l_7_c_2_r_*SK_MZ(3) + OP_l_7_c_3_r_*SK_MZ(2) + OP_l_7_c_9_r_*mot);
+Kfusion(8) = SK_MZ(1)*(OP_l_8_c_6_r_ + OP_l_8_c_1_r_*SK_MZ(4) + OP_l_8_c_2_r_*SK_MZ(3) + OP_l_8_c_3_r_*SK_MZ(2) + OP_l_8_c_9_r_*mot);
+Kfusion(9) = SK_MZ(1)*(OP_l_9_c_6_r_ + OP_l_9_c_1_r_*SK_MZ(4) + OP_l_9_c_2_r_*SK_MZ(3) + OP_l_9_c_3_r_*SK_MZ(2) + OP_l_9_c_9_r_*mot);
+

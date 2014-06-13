@@ -1,6 +1,5 @@
 clear all;
-LoadNavFilterTestDataStruct;
-%LoadNavFilterTestData;
+LoadUbuntuFlashData;
 for i = 1:2
     
     % Find best vel delay
@@ -10,7 +9,7 @@ for i = 1:2
     for index = 1:maxIndex
         msecVelDelay = (index-1)*20;
         save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
-        dos('NavFilterEKF');
+        dos('NavEKF');
         importfile('VelPosFuse.txt');
         velDelay(index) = msecVelDelay;
         velVar(index) = mean([var(VelPosFuse(:,2)),var(VelPosFuse(:,4)),var(VelPosFuse(:,6))]);
@@ -24,7 +23,7 @@ for i = 1:2
     for index = 1:maxIndex
         msecPosDelay = (index-1)*20;
         save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
-        dos('NavFilterEKF');
+        dos('NavEKF');
         importfile('VelPosFuse.txt');
         posDelay(index) = msecPosDelay;
         posVar(index) = mean([var(VelPosFuse(:,8)),var(VelPosFuse(:,10))]);
@@ -38,7 +37,7 @@ for i = 1:2
     for index = 1:maxIndex
         msecHgtDelay = (index-1)*20;
         save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
-        dos('NavFilterEKF');
+        dos('NavEKF');
         importfile('VelPosFuse.txt');
         hgtDelay(index) = msecHgtDelay;
         hgtVar(index) = mean(var(VelPosFuse(:,12)));
@@ -52,7 +51,7 @@ for i = 1:2
     for index = 1:maxIndex
         msecMagDelay = (index-1)*20;
         save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
-        dos('NavFilterEKF');
+        dos('NavEKF');
         importfile('MagFuse.txt');
         magDelay(index) = msecMagDelay;
         magVar(index) = mean([var(MagFuse(:,2)),var(MagFuse(:,4)),var(MagFuse(:,6))]);
@@ -66,7 +65,7 @@ for i = 1:2
     for index = 1:maxIndex
         msecTasDelay = (index-1)*20;
         save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
-        dos('NavFilterEKF');
+        dos('NavEKF');
         importfile('TasFuse.txt');
         tasDelay(index) = msecTasDelay;
         tasVar(index) = mean(var(TasFuse(:,2)));

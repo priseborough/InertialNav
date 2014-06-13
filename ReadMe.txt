@@ -1,4 +1,4 @@
-Files for prototype 24 and 21 state Extended Kalman filters designed for APMPlane implementation
+Files for prototype 23 and 21 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
 This is an implementation of a strapdown inertial navigation system with an Extended Kalman Filter algorithm used 
@@ -9,6 +9,7 @@ to provide aiding using the following data sources:
 Height measurement (could be GPS or barometric height or some combination)
 3-axis body fixed magnetic flux measurements
 True airspeed measurement
+Laser range finder measurement (assumed to be fixed in body axes and pointing downwards with a specified pitch offset)
 
 The IMU delta angles and delta velocities are assumed to be simple integrals of the corresponding angular rates 
 and axial accelerations, with no coning or sculling compensation applied to them before input to the filter.
@@ -18,10 +19,11 @@ The filter estimates the following states:
 3 North,East,Down velocity components
 3 North,East,Down  position components
 3 IMU delta angle bias components
-3 IMU delta velocity bias components (not included in the 21-state filter)
+1 IMU delta velocity bias in Z (not included in the 21-state filter)
 2 North,East wind velocity components
 3 North,East,Down  earth magnetic flux components
 3 X,Y,Z body fixed magnetic flux components (these are opposite sign to the compass offsets used by APM)
+1 Offset of terrain along down axis (not included in 21 sate filter)
 
 The filter is designed to run in parallel with the existing APM AHRS complementary filter, firstly to provide
 a bootstrap for initial alignment, and secondly to provide a watchdog reference to detect filter divergence.
@@ -32,6 +34,9 @@ RMS errors obtained from the test data set.
 The three test data sets were obtained from a PX4 FMU and digital airspeed sensor, installed in a Skywalker X-8 
 airframe. The 2nd and 3rd data sets include aerobatic manoeuvres (loops and axial rolls), but no spinning due to
 airframe limitations.
+
+No range finder measurements have been available, so range finder data has been synthesised from the baro height data
+to test the filter maths.
 
 ========================================================================================================================
 Instructions To Run Simulink Model:
@@ -65,5 +70,4 @@ TasFuse.txt
 VelPosFuse.txt
 
 5) These text files can be plotted using the Matlab script PlotCcodeOutput.m , if you don't have Matlab a the
-   script file will show you what data is in each column so you can use your plotting tool of choice - 
-   you could even use Excel....
+   script file will show you what data is in each column so you can use your plotting tool of choice

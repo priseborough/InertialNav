@@ -10,7 +10,7 @@ LIBS=-lm
 #_DEPS = test.h
 #DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = main_closed_loop_float.o estimator.o
+_OBJ = main_closed_loop_float.o estimator_23states.o estimator_utilities.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 #$(DEPS)
@@ -20,9 +20,15 @@ $(ODIR)/%.o: %.cpp
 
 #
 estimator_closed_loop_test: $(OBJ)
-	g++ -o $@ $^ $(CFLAGS) $(LIBS)
+	g++ -O3 -o $@ $^ $(CFLAGS) $(LIBS)
 
-.PHONY: clean
+.PHONY: clean plots
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+
+plots:
+	python plot_attitude.py &
+	python plot_position.py &
+	python plot_states.py &
+	python plot_velocity.py &

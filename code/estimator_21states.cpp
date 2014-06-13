@@ -1,166 +1,38 @@
-#include "estimator.h"
+#include "estimator_21states.h"
 
-// Global variables
-float KH[n_states][n_states]; //  intermediate result used for covariance updates
-float KHP[n_states][n_states]; // intermediate result used for covariance updates
-float P[n_states][n_states]; // covariance matrix
-float Kfusion[n_states]; // Kalman gains
-float states[n_states]; // state matrix
-float storedStates[n_states][data_buffer_size]; // state vectors stored for the last 50 time steps
-uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
-Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
-Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
-Vector3f summedDelAng; // summed delta angles about the xyz body axes corrected for errors (rad)
-Vector3f summedDelVel; // summed delta velocities along the XYZ body axes corrected for errors (m/s)
-float accNavMag; // magnitude of navigation accel (- used to adjust GPS obs variance (m/s^2)
-Vector3f earthRateNED; // earths angular rate vector in NED (rad/s)
-Vector3f angRate; // angular rate vector in XYZ body axes measured by the IMU (rad/s)
-Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
-Vector3f dVelIMU;
-Vector3f dAngIMU;
-float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
-float dt; // time lapsed since last covariance prediction
-bool onGround = true; // boolean true when the flight vehicle is on the ground (not flying)
-bool useAirspeed = true; // boolean true if airspeed data is being used
-bool useCompass = true; // boolean true if magnetometer data is being used
-uint8_t fusionModeGPS = 0; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
-float innovVelPos[6]; // innovation output
-float varInnovVelPos[6]; // innovation variance output
-bool fuseVelData = false; // this boolean causes the posNE and velNED obs to be fused
-bool fusePosData = false; // this boolean causes the posNE and velNED obs to be fused
-bool fuseHgtData = false; // this boolean causes the hgtMea obs to be fused
-bool fuseMagData = false; // boolean true when magnetometer data is to be fused
+#include <string.h>
+#include <stdio.h>
 
-float velNED[3]; // North, East, Down velocity obs (m/s)
-float posNE[2]; // North, East position obs (m)
-float hgtMea; //  measured height (m)
-float posNED[3]; // North, East Down position (m)
+#define EKF_COVARIANCE_DIVERGED 1.0e8f
 
-float statesAtVelTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
-float statesAtPosTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
-float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
-float innovMag[3]; // innovation output
-float varInnovMag[3]; // innovation variance output
-Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
-float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
-float innovVtas; // innovation output
-float varInnovVtas; // innovation variance output
-bool fuseVtasData = false; // boolean true when airspeed data is to be fused
-float VtasMeas; // true airspeed measurement (m/s)
-float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
-float latRef; // WGS-84 latitude of reference point (rad)
-float lonRef; // WGS-84 longitude of reference point (rad)
-float hgtRef; // WGS-84 height of reference point (m)
-Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
-uint8_t covSkipCount = 0; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
-float EAS2TAS = 1.0f; // ratio f true to equivalent airspeed
-
-// GPS input data variables
-float gpsCourse;
-float gpsGndSpd;
-float gpsVelD;
-float gpsLat;
-float gpsLon;
-float gpsHgt;
-uint8_t GPSstatus;
-
-
-bool statesInitialised = false;
-
-
-float Vector3f::length(void) const
+AttPosEKF::AttPosEKF() :
+    fusionModeGPS(0),
+    covSkipCount(0),
+    EAS2TAS(1.0f),
+    statesInitialised(false),
+    fuseVelData(false),
+    fusePosData(false),
+    fuseHgtData(false),
+    fuseMagData(false),
+    fuseVtasData(false),
+    onGround(true),
+    staticMode(true),
+    useAirspeed(true),
+    useCompass(true),
+    numericalProtection(true),
+    storeIndex(0),
+    magDeclination(0.0f)
 {
-    return sqrt(x*x + y*y + z*z);
+    fuseRngData = false;
+    InitialiseParameters();
 }
 
-Vector3f Vector3f::zero(void) const
+AttPosEKF::~AttPosEKF()
 {
-    Vector3f ret = *this;
-    ret.x = 0.0;
-    ret.y = 0.0;
-    ret.z = 0.0;
-    return ret;
 }
 
-Mat3f Mat3f::transpose(void) const
+void AttPosEKF::UpdateStrapdownEquationsNED()
 {
-    Mat3f ret = *this;
-    swap_var(ret.x.y, ret.y.x);
-    swap_var(ret.x.z, ret.z.x);
-    swap_var(ret.y.z, ret.z.y);
-    return ret;
-}
-
-// overload + operator to provide a vector addition
-Vector3f operator+( Vector3f vecIn1, Vector3f vecIn2)
-{
-    Vector3f vecOut;
-    vecOut.x = vecIn1.x + vecIn2.x;
-    vecOut.y = vecIn1.y + vecIn2.y;
-    vecOut.z = vecIn1.z + vecIn2.z;
-    return vecOut;
-}
-
-// overload - operator to provide a vector subtraction
-Vector3f operator-( Vector3f vecIn1, Vector3f vecIn2)
-{
-    Vector3f vecOut;
-    vecOut.x = vecIn1.x - vecIn2.x;
-    vecOut.y = vecIn1.y - vecIn2.y;
-    vecOut.z = vecIn1.z - vecIn2.z;
-    return vecOut;
-}
-
-// overload * operator to provide a matrix vector product
-Vector3f operator*( Mat3f matIn, Vector3f vecIn)
-{
-    Vector3f vecOut;
-    vecOut.x = matIn.x.x*vecIn.x + matIn.x.y*vecIn.y + matIn.x.z*vecIn.z;
-    vecOut.y = matIn.y.x*vecIn.x + matIn.y.y*vecIn.y + matIn.y.z*vecIn.z;
-    vecOut.z = matIn.x.x*vecIn.x + matIn.z.y*vecIn.y + matIn.z.z*vecIn.z;
-    return vecOut;
-}
-
-// overload % operator to provide a vector cross product
-Vector3f operator%( Vector3f vecIn1, Vector3f vecIn2)
-{
-    Vector3f vecOut;
-    vecOut.x = vecIn1.y*vecIn2.z - vecIn1.z*vecIn2.y;
-    vecOut.y = vecIn1.z*vecIn2.x - vecIn1.x*vecIn2.z;
-    vecOut.z = vecIn1.x*vecIn2.y - vecIn1.y*vecIn2.x;
-    return vecOut;
-}
-
-// overload * operator to provide a vector scaler product
-Vector3f operator*(Vector3f vecIn1, float sclIn1)
-{
-    Vector3f vecOut;
-    vecOut.x = vecIn1.x * sclIn1;
-    vecOut.y = vecIn1.y * sclIn1;
-    vecOut.z = vecIn1.z * sclIn1;
-    return vecOut;
-}
-
-// overload * operator to provide a vector scaler product
-Vector3f operator*(float sclIn1, Vector3f vecIn1)
-{
-    Vector3f vecOut;
-    vecOut.x = vecIn1.x * sclIn1;
-    vecOut.y = vecIn1.y * sclIn1;
-    vecOut.z = vecIn1.z * sclIn1;
-    return vecOut;
-}
-
-void swap_var(float &d1, float &d2)
-{
-    float tmp = d1;
-    d1 = d2;
-    d2 = tmp;
-}
-
-void  UpdateStrapdownEquationsNED()
-{
-    static Vector3f  prevDelAng;
     Vector3f delVelNav;
     float q00;
     float q11;
@@ -172,33 +44,29 @@ void  UpdateStrapdownEquationsNED()
     float q12;
     float q13;
     float q23;
-    static Mat3f  Tbn;
-    static Mat3f  Tnb;
+    Mat3f Tbn;
+    Mat3f Tnb;
     float rotationMag;
-    float rotScaler;
     float qUpdated[4];
     float quatMag;
-    float quatMagInv;
-    float deltaQuat[4];
-    static float lastVelocity[3];
+    double deltaQuat[4];
     const Vector3f gravityNED = {0.0,0.0,GRAVITY_MSS};
-    
-    // Remove sensor bias errors
+
+// Remove sensor bias errors
     correctedDelAng.x = dAngIMU.x - states[10];
     correctedDelAng.y = dAngIMU.y - states[11];
     correctedDelAng.z = dAngIMU.z - states[12];
     dVelIMU.x = dVelIMU.x;
     dVelIMU.y = dVelIMU.y;
     dVelIMU.z = dVelIMU.z;
-    
-    // Save current measurements
-    prevDelAng = correctedDelAng;
-    
-    // Apply corrections for earths rotation rate and coning errors
-    // * and + operators have been overloaded
+
+// Save current measurements
+    Vector3f  prevDelAng = correctedDelAng;
+
+// Apply corrections for earths rotation rate and coning errors
+// * and + operators have been overloaded
     correctedDelAng   = correctedDelAng - Tnb*earthRateNED*dtIMU + 8.333333333333333e-2f*(prevDelAng % correctedDelAng);
-    
-    // Convert the rotation vector to its equivalent quaternion
+// Convert the rotation vector to its equivalent quaternion
     rotationMag = correctedDelAng.length();
     if (rotationMag < 1e-12f)
     {
@@ -210,31 +78,31 @@ void  UpdateStrapdownEquationsNED()
     else
     {
         deltaQuat[0] = cos(0.5f*rotationMag);
-        rotScaler = (sin(0.5f*rotationMag))/rotationMag;
+        double rotScaler = (sin(0.5f*rotationMag))/rotationMag;
         deltaQuat[1] = correctedDelAng.x*rotScaler;
         deltaQuat[2] = correctedDelAng.y*rotScaler;
         deltaQuat[3] = correctedDelAng.z*rotScaler;
     }
-    
-    // Update the quaternions by rotating from the previous attitude through
-    // the delta angle rotation quaternion
+
+// Update the quaternions by rotating from the previous attitude through
+// the delta angle rotation quaternion
     qUpdated[0] = states[0]*deltaQuat[0] - states[1]*deltaQuat[1] - states[2]*deltaQuat[2] - states[3]*deltaQuat[3];
     qUpdated[1] = states[0]*deltaQuat[1] + states[1]*deltaQuat[0] + states[2]*deltaQuat[3] - states[3]*deltaQuat[2];
     qUpdated[2] = states[0]*deltaQuat[2] + states[2]*deltaQuat[0] + states[3]*deltaQuat[1] - states[1]*deltaQuat[3];
     qUpdated[3] = states[0]*deltaQuat[3] + states[3]*deltaQuat[0] + states[1]*deltaQuat[2] - states[2]*deltaQuat[1];
-    
-    // Normalise the quaternions and update the quaternion states
-    quatMag = sqrt(sq(qUpdated[0]) + sq(qUpdated[1]) + sq(qUpdated[2]) + sq(qUpdated[3]));
+
+// Normalise the quaternions and update the quaternion states
+    quatMag = sqrtf(sq(qUpdated[0]) + sq(qUpdated[1]) + sq(qUpdated[2]) + sq(qUpdated[3]));
     if (quatMag > 1e-16f)
     {
-        quatMagInv = 1.0f/quatMag;
+        float quatMagInv = 1.0f/quatMag;
         states[0] = quatMagInv*qUpdated[0];
         states[1] = quatMagInv*qUpdated[1];
         states[2] = quatMagInv*qUpdated[2];
         states[3] = quatMagInv*qUpdated[3];
     }
-    
-    // Calculate the body to nav cosine matrix
+
+// Calculate the body to nav cosine matrix
     q00 = sq(states[0]);
     q11 = sq(states[1]);
     q22 = sq(states[2]);
@@ -245,7 +113,7 @@ void  UpdateStrapdownEquationsNED()
     q12 =  states[1]*states[2];
     q13 =  states[1]*states[3];
     q23 =  states[2]*states[3];
-    
+
     Tbn.x.x = q00 + q11 - q22 - q33;
     Tbn.y.y = q00 - q11 + q22 - q33;
     Tbn.z.z = q00 - q11 - q22 + q33;
@@ -255,45 +123,43 @@ void  UpdateStrapdownEquationsNED()
     Tbn.y.z = 2*(q23 - q01);
     Tbn.z.x = 2*(q13 - q02);
     Tbn.z.y = 2*(q23 + q01);
-    
+
     Tnb = Tbn.transpose();
-    
-    // transform body delta velocities to delta velocities in the nav frame
-    // * and + operators have been overloaded
+
+// transform body delta velocities to delta velocities in the nav frame
+// * and + operators have been overloaded
     //delVelNav = Tbn*dVelIMU + gravityNED*dtIMU;
     delVelNav.x = Tbn.x.x*dVelIMU.x + Tbn.x.y*dVelIMU.y + Tbn.x.z*dVelIMU.z + gravityNED.x*dtIMU;
     delVelNav.y = Tbn.y.x*dVelIMU.x + Tbn.y.y*dVelIMU.y + Tbn.y.z*dVelIMU.z + gravityNED.y*dtIMU;
     delVelNav.z = Tbn.z.x*dVelIMU.x + Tbn.z.y*dVelIMU.y + Tbn.z.z*dVelIMU.z + gravityNED.z*dtIMU;
-    
-    // calculate the magnitude of the nav acceleration (required for GPS
-    // variance estimation)
+
+// calculate the magnitude of the nav acceleration (required for GPS
+// variance estimation)
     accNavMag = delVelNav.length()/dtIMU;
-    
-    // If calculating position save previous velocity
+
+// If calculating position save previous velocity
+    float lastVelocity[3];
     lastVelocity[0] = states[4];
     lastVelocity[1] = states[5];
     lastVelocity[2] = states[6];
-    
-    // Sum delta velocities to get velocity
+
+// Sum delta velocities to get velocity
     states[4] = states[4] + delVelNav.x;
     states[5] = states[5] + delVelNav.y;
     states[6] = states[6] + delVelNav.z;
-    
-    // If calculating postions, do a trapezoidal integration for position
+
+// If calculating postions, do a trapezoidal integration for position
     states[7] = states[7] + 0.5f*(states[4] + lastVelocity[0])*dtIMU;
     states[8] = states[8] + 0.5f*(states[5] + lastVelocity[1])*dtIMU;
     states[9] = states[9] + 0.5f*(states[6] + lastVelocity[2])*dtIMU;
-    
+
+    // Constrain states (to protect against filter divergence)
+    //ConstrainStates();
 }
 
-void CovariancePrediction()
+void AttPosEKF::CovariancePrediction(float dt)
 {
     // scalars
-    float windVelSigma;
-    float dAngBiasSigma;
-    float dVelBiasSigma;
-    float magEarthSigma;
-    float magBodySigma;
     float daxCov;
     float dayCov;
     float dazCov;
@@ -313,17 +179,16 @@ void CovariancePrediction()
     float dax_b;
     float day_b;
     float daz_b;
-    
+
     // arrays
-    float processNoise[n_states];
+    float processNoise[21];
     float SF[14];
     float SG[8];
     float SQ[11];
-    float SPP[13];
-    float nextP[n_states][n_states];
-    
+    float SPP[13] = {0};
+    float nextP[21][21];
+
     // calculate covariance prediction process noise
-    const float yawVarScale = 1.0f;
     windVelSigma = dt*0.1f;
     dAngBiasSigma = dt*5.0e-7f;
     magEarthSigma = dt*3.0e-4f;
@@ -335,7 +200,7 @@ void CovariancePrediction()
     for (uint8_t i=15; i<=17; i++) processNoise[i] = magEarthSigma;
     for (uint8_t i=18; i<=20; i++) processNoise[i] = magBodySigma;
     for (uint8_t i= 0; i<=20; i++) processNoise[i] = sq(processNoise[i]);
-    
+
     // set variables used to calculate covariance growth
     dvx = summedDelVel.x;
     dvy = summedDelVel.y;
@@ -357,7 +222,7 @@ void CovariancePrediction()
     dvxCov = sq(dt*0.5f);
     dvyCov = sq(dt*0.5f);
     dvzCov = sq(dt*0.5f);
-    
+
     // Predicted covariance calculation
     SF[0] = 2*dvx*q1 + 2*dvy*q2 + 2*dvz*q3;
     SF[1] = 2*dvx*q3 + 2*dvy*q0 - 2*dvz*q1;
@@ -373,7 +238,7 @@ void CovariancePrediction()
     SF[11] = q3/2;
     SF[12] = 2*dvz*q0;
     SF[13] = 2*dvy*q1;
-    
+
     SG[0] = q0/2;
     SG[1] = sq(q3);
     SG[2] = sq(q2);
@@ -382,7 +247,7 @@ void CovariancePrediction()
     SG[5] = 2*q2*q3;
     SG[6] = 2*q1*q3;
     SG[7] = 2*q1*q2;
-    
+
     SQ[0] = dvzCov*(SG[5] - 2*q0*q1)*(SG[1] - SG[2] - SG[3] + SG[4]) - dvyCov*(SG[5] + 2*q0*q1)*(SG[1] - SG[2] + SG[3] - SG[4]) + dvxCov*(SG[6] - 2*q0*q2)*(SG[7] + 2*q0*q3);
     SQ[1] = dvzCov*(SG[6] + 2*q0*q2)*(SG[1] - SG[2] - SG[3] + SG[4]) - dvxCov*(SG[6] - 2*q0*q2)*(SG[1] + SG[2] - SG[3] - SG[4]) + dvyCov*(SG[5] + 2*q0*q1)*(SG[7] - 2*q0*q3);
     SQ[2] = dvzCov*(SG[5] - 2*q0*q1)*(SG[6] + 2*q0*q2) - dvyCov*(SG[7] - 2*q0*q3)*(SG[1] - SG[2] + SG[3] - SG[4]) - dvxCov*(SG[7] + 2*q0*q3)*(SG[1] + SG[2] - SG[3] - SG[4]);
@@ -394,7 +259,7 @@ void CovariancePrediction()
     SQ[8] = (dayCov*q2*q3)/4 - (daxCov*q1*SG[0])/2 - (dazCov*q2*q3)/4;
     SQ[9] = sq(SG[0]);
     SQ[10] = sq(q1);
-    
+
     SPP[0] = SF[12] + SF[13] - 2*dvx*q2;
     SPP[1] = 2*dvx*q0 - 2*dvy*q3 + 2*dvz*q2;
     SPP[2] = 2*dvx*q3 + 2*dvy*q0 - 2*dvz*q1;
@@ -403,7 +268,7 @@ void CovariancePrediction()
     SPP[5] = SF[9];
     SPP[6] = SF[7];
     SPP[7] = SF[8];
-    
+
     nextP[0][0] = P[0][0] + P[1][0]*SF[6] + P[2][0]*SPP[7] + P[3][0]*SPP[6] + P[10][0]*SPP[5] + P[11][0]*SPP[4] + P[12][0]*SPP[3] + (daxCov*SQ[10])/4 + SF[6]*(P[0][1] + P[1][1]*SF[6] + P[2][1]*SPP[7] + P[3][1]*SPP[6] + P[10][1]*SPP[5] + P[11][1]*SPP[4] + P[12][1]*SPP[3]) + SPP[7]*(P[0][2] + P[1][2]*SF[6] + P[2][2]*SPP[7] + P[3][2]*SPP[6] + P[10][2]*SPP[5] + P[11][2]*SPP[4] + P[12][2]*SPP[3]) + SPP[6]*(P[0][3] + P[1][3]*SF[6] + P[2][3]*SPP[7] + P[3][3]*SPP[6] + P[10][3]*SPP[5] + P[11][3]*SPP[4] + P[12][3]*SPP[3]) + SPP[5]*(P[0][10] + P[1][10]*SF[6] + P[2][10]*SPP[7] + P[3][10]*SPP[6] + P[10][10]*SPP[5] + P[11][10]*SPP[4] + P[12][10]*SPP[3]) + SPP[4]*(P[0][11] + P[1][11]*SF[6] + P[2][11]*SPP[7] + P[3][11]*SPP[6] + P[10][11]*SPP[5] + P[11][11]*SPP[4] + P[12][11]*SPP[3]) + SPP[3]*(P[0][12] + P[1][12]*SF[6] + P[2][12]*SPP[7] + P[3][12]*SPP[6] + P[10][12]*SPP[5] + P[11][12]*SPP[4] + P[12][12]*SPP[3]) + (dayCov*sq(q2))/4 + (dazCov*sq(q3))/4;
     nextP[0][1] = P[0][1] + SQ[8] + P[1][1]*SF[6] + P[2][1]*SPP[7] + P[3][1]*SPP[6] + P[10][1]*SPP[5] + P[11][1]*SPP[4] + P[12][1]*SPP[3] + SF[5]*(P[0][0] + P[1][0]*SF[6] + P[2][0]*SPP[7] + P[3][0]*SPP[6] + P[10][0]*SPP[5] + P[11][0]*SPP[4] + P[12][0]*SPP[3]) + SF[4]*(P[0][2] + P[1][2]*SF[6] + P[2][2]*SPP[7] + P[3][2]*SPP[6] + P[10][2]*SPP[5] + P[11][2]*SPP[4] + P[12][2]*SPP[3]) + SPP[7]*(P[0][3] + P[1][3]*SF[6] + P[2][3]*SPP[7] + P[3][3]*SPP[6] + P[10][3]*SPP[5] + P[11][3]*SPP[4] + P[12][3]*SPP[3]) + SPP[3]*(P[0][11] + P[1][11]*SF[6] + P[2][11]*SPP[7] + P[3][11]*SPP[6] + P[10][11]*SPP[5] + P[11][11]*SPP[4] + P[12][11]*SPP[3]) - SPP[4]*(P[0][12] + P[1][12]*SF[6] + P[2][12]*SPP[7] + P[3][12]*SPP[6] + P[10][12]*SPP[5] + P[11][12]*SPP[4] + P[12][12]*SPP[3]) - (q0*(P[0][10] + P[1][10]*SF[6] + P[2][10]*SPP[7] + P[3][10]*SPP[6] + P[10][10]*SPP[5] + P[11][10]*SPP[4] + P[12][10]*SPP[3]))/2;
     nextP[0][2] = P[0][2] + SQ[7] + P[1][2]*SF[6] + P[2][2]*SPP[7] + P[3][2]*SPP[6] + P[10][2]*SPP[5] + P[11][2]*SPP[4] + P[12][2]*SPP[3] + SF[3]*(P[0][0] + P[1][0]*SF[6] + P[2][0]*SPP[7] + P[3][0]*SPP[6] + P[10][0]*SPP[5] + P[11][0]*SPP[4] + P[12][0]*SPP[3]) + SF[5]*(P[0][3] + P[1][3]*SF[6] + P[2][3]*SPP[7] + P[3][3]*SPP[6] + P[10][3]*SPP[5] + P[11][3]*SPP[4] + P[12][3]*SPP[3]) + SPP[6]*(P[0][1] + P[1][1]*SF[6] + P[2][1]*SPP[7] + P[3][1]*SPP[6] + P[10][1]*SPP[5] + P[11][1]*SPP[4] + P[12][1]*SPP[3]) - SPP[3]*(P[0][10] + P[1][10]*SF[6] + P[2][10]*SPP[7] + P[3][10]*SPP[6] + P[10][10]*SPP[5] + P[11][10]*SPP[4] + P[12][10]*SPP[3]) + SPP[5]*(P[0][12] + P[1][12]*SF[6] + P[2][12]*SPP[7] + P[3][12]*SPP[6] + P[10][12]*SPP[5] + P[11][12]*SPP[4] + P[12][12]*SPP[3]) - (q0*(P[0][11] + P[1][11]*SF[6] + P[2][11]*SPP[7] + P[3][11]*SPP[6] + P[10][11]*SPP[5] + P[11][11]*SPP[4] + P[12][11]*SPP[3]))/2;
@@ -845,12 +710,12 @@ void CovariancePrediction()
     nextP[20][18] = P[20][18];
     nextP[20][19] = P[20][19];
     nextP[20][20] = P[20][20];
-    
-    for (uint8_t i=0; i< n_states; i++)
+
+    for (unsigned i = 0; i < n_states; i++)
     {
         nextP[i][i] = nextP[i][i] + processNoise[i];
     }
-    
+
     // If on ground or no magnetometer fitted, inhibit magnetometer bias updates by
     // setting the coresponding covariance terms to zero.
     if (onGround || !useCompass)
@@ -858,7 +723,7 @@ void CovariancePrediction()
         zeroRows(nextP,15,20);
         zeroCols(nextP,15,20);
     }
-    
+
     // If on ground or not using airspeed sensing, inhibit wind velocity
     // covariance growth.
     if (onGround || !useAirspeed)
@@ -866,7 +731,7 @@ void CovariancePrediction()
         zeroRows(nextP,13,14);
         zeroCols(nextP,13,14);
     }
-    
+
     // If the total position variance exceds 1E6 (1000m), then stop covariance
     // growth by setting the predicted to the previous values
     // This prevent an ill conditioned matrix from occurring for long periods
@@ -875,93 +740,113 @@ void CovariancePrediction()
     {
         for (uint8_t i=7; i<=8; i++)
         {
-            for (uint8_t j=0; j<=20; j++)
+            for (unsigned j = 0; j < n_states; j++)
             {
                 nextP[i][j] = P[i][j];
                 nextP[j][i] = P[j][i];
             }
         }
     }
-    
-    // Force symmetry on the covariance matrix to prevent ill-conditioning
-    // of the matrix which would cause the filter to blow-up
-    for (uint8_t i=0; i< n_states; i++) P[i][i] = nextP[i][i];
-    for (uint8_t i=1; i< n_states; i++)
-    {
-        for (uint8_t j=0; j<=i-1; j++)
-        {
-            P[i][j] = 0.5f*(nextP[i][j] + nextP[j][i]);
-            P[j][i] = P[i][j];
+
+    if (onGround || staticMode) {
+        // copy the portion of the variances we want to
+        // propagate
+        for (unsigned i = 0; i < 14; i++) {
+            P[i][i] = nextP[i][i];
+
+            // force symmetry for observable states
+            // force zero for non-observable states
+            for (unsigned i = 1; i < n_states; i++)
+            {
+                for (uint8_t j = 0; j < i; j++)
+                {
+                    if ((i > 12) || (j > 12)) {
+                        P[i][j] = 0.0f;
+                    } else {
+                        P[i][j] = 0.5f * (nextP[i][j] + nextP[j][i]);
+                    }
+                    P[j][i] = P[i][j];
+                }
+            }
         }
+
+    } else {
+
+        // Copy covariance
+        for (unsigned i = 0; i < n_states; i++) {
+            P[i][i] = nextP[i][i];
+        }
+
+        // force symmetry for observable states
+        for (unsigned i = 1; i < n_states; i++)
+        {
+            for (uint8_t j = 0; j < i; j++)
+            {
+                P[i][j] = 0.5f * (nextP[i][j] + nextP[j][i]);
+                P[j][i] = P[i][j];
+            }
+        }
+
     }
-    
-    //
+
+    ConstrainVariances();
 }
 
-void FuseVelposNED()
+void AttPosEKF::FuseVelposNED()
 {
-    
-    // declare variables used by fault isolation logic
+
+// declare variables used by fault isolation logic
     uint32_t gpsRetryTime = 30000; // time in msec before GPS fusion will be retried following innovation consistency failure
     uint32_t gpsRetryTimeNoTAS = 5000; // retry time if no TAS measurement available
     uint32_t hgtRetryTime = 5000; // height measurement retry time
     uint32_t horizRetryTime;
-    static uint32_t velFailTime;
-    static uint32_t posFailTime;
-    static uint32_t hgtFailTime;
-    bool velHealth;
-    bool posHealth;
-    bool hgtHealth;
-    bool velTimeout;
-    bool posTimeout;
-    bool hgtTimeout;
-    
-    // declare variables used to check measurement errors
-    float velInnov[3] = {0.0,0.0,0.0};
-    float posInnov[2] = {0.0,0.0};
-    float hgtInnov = 0.0;
-    
-    // declare variables used to control access to arrays
+
+// declare variables used to check measurement errors
+    float velInnov[3] = {0.0f,0.0f,0.0f};
+    float posInnov[2] = {0.0f,0.0f};
+    float hgtInnov = 0.0f;
+
+// declare variables used to control access to arrays
     bool fuseData[6] = {false,false,false,false,false,false};
     uint8_t stateIndex;
-    unsigned obsIndex;
-    unsigned indexLimit;
-    
-    // declare variables used by state and covariance update calculations
+    uint8_t obsIndex;
+    uint8_t indexLimit;
+
+// declare variables used by state and covariance update calculations
     float velErr;
     float posErr;
     float R_OBS[6];
     float observation[6];
     float SK;
     float quatMag;
-    
-    // Perform sequential fusion of GPS measurements. This assumes that the
-    // errors in the different velocity and position components are
-    // uncorrelated which is not true, however in the absence of covariance
-    // data from the GPS receiver it is the only assumption we can make
-    // so we might as well take advantage of the computational efficiencies
-    // associated with sequential fusion
+
+// Perform sequential fusion of GPS measurements. This assumes that the
+// errors in the different velocity and position components are
+// uncorrelated which is not true, however in the absence of covariance
+// data from the GPS receiver it is the only assumption we can make
+// so we might as well take advantage of the computational efficiencies
+// associated with sequential fusion
     if (fuseVelData || fusePosData || fuseHgtData)
     {
         // set the GPS data timeout depending on whether airspeed data is present
         if (useAirspeed) horizRetryTime = gpsRetryTime;
         else horizRetryTime = gpsRetryTimeNoTAS;
-        
+
         // Form the observation vector
         for (uint8_t i=0; i<=2; i++) observation[i] = velNED[i];
         for (uint8_t i=3; i<=4; i++) observation[i] = posNE[i-3];
         observation[5] = -(hgtMea);
-        
+
         // Estimate the GPS Velocity, GPS horiz position and height measurement variances.
-        velErr = 0.2*accNavMag; // additional error in GPS velocities caused by manoeuvring
-        posErr = 0.2*accNavMag; // additional error in GPS position caused by manoeuvring
+        velErr = 0.2f*accNavMag; // additional error in GPS velocities caused by manoeuvring
+        posErr = 0.2f*accNavMag; // additional error in GPS position caused by manoeuvring
         R_OBS[0] = 0.04f + sq(velErr);
         R_OBS[1] = R_OBS[0];
         R_OBS[2] = 0.08f + sq(velErr);
         R_OBS[3] = R_OBS[2];
         R_OBS[4] = 4.0f  + sq(posErr);
         R_OBS[5] = 4.0f;
-        
+
         // Set innovation variances to zero default
         for (uint8_t i = 0; i<=5; i++)
         {
@@ -980,16 +865,16 @@ void FuseVelposNED()
                 varInnovVelPos[i] = P[stateIndex][stateIndex] + R_OBS[i];
             }
             // apply a 5-sigma threshold
-            velHealth = (sq(velInnov[0]) + sq(velInnov[1]) + sq(velInnov[2])) < 25.0*(varInnovVelPos[0] + varInnovVelPos[1] + varInnovVelPos[2]);
-            velTimeout = (millis() - velFailTime) > horizRetryTime;
-            if (velHealth || velTimeout)
+            current_ekf_state.velHealth = (sq(velInnov[0]) + sq(velInnov[1]) + sq(velInnov[2])) < 25.0f * (varInnovVelPos[0] + varInnovVelPos[1] + varInnovVelPos[2]);
+            current_ekf_state.velTimeout = (millis() - current_ekf_state.velFailTime) > horizRetryTime;
+            if (current_ekf_state.velHealth || current_ekf_state.velTimeout)
             {
-                velHealth = true;
-                velFailTime = millis();
+                current_ekf_state.velHealth = true;
+                current_ekf_state.velFailTime = millis();
             }
             else
             {
-                velHealth = false;
+                current_ekf_state.velHealth = false;
             }
         }
         if (fusePosData)
@@ -1000,16 +885,16 @@ void FuseVelposNED()
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
             // apply a 10-sigma threshold
-            posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
-            posTimeout = (millis() - posFailTime) > horizRetryTime;
-            if (posHealth || posTimeout)
+            current_ekf_state.posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
+            current_ekf_state.posTimeout = (millis() - current_ekf_state.posFailTime) > horizRetryTime;
+            if (current_ekf_state.posHealth || current_ekf_state.posTimeout)
             {
-                posHealth = true;
-                posFailTime = millis();
+                current_ekf_state.posHealth = true;
+                current_ekf_state.posFailTime = millis();
             }
             else
             {
-                posHealth = false;
+                current_ekf_state.posHealth = false;
             }
         }
         // test height measurements
@@ -1018,37 +903,37 @@ void FuseVelposNED()
             hgtInnov = statesAtHgtTime[9] + hgtMea;
             varInnovVelPos[5] = P[9][9] + R_OBS[5];
             // apply a 10-sigma threshold
-            hgtHealth = sq(hgtInnov) < 100.0f*varInnovVelPos[5];
-            hgtTimeout = (millis() - hgtFailTime) > hgtRetryTime;
-            if (hgtHealth || hgtTimeout)
+            current_ekf_state.hgtHealth = sq(hgtInnov) < 100.0f*varInnovVelPos[5];
+            current_ekf_state.hgtTimeout = (millis() - current_ekf_state.hgtFailTime) > hgtRetryTime;
+            if (current_ekf_state.hgtHealth || current_ekf_state.hgtTimeout)
             {
-                hgtHealth = true;
-                hgtFailTime = millis();
+                current_ekf_state.hgtHealth = true;
+                current_ekf_state.hgtFailTime = millis();
             }
             else
             {
-                hgtHealth = false;
+                current_ekf_state.hgtHealth = false;
             }
         }
         // Set range for sequential fusion of velocity and position measurements depending
         // on which data is available and its health
-        if (fuseVelData && fusionModeGPS == 0 && velHealth)
+        if (fuseVelData && fusionModeGPS == 0 && current_ekf_state.velHealth)
         {
             fuseData[0] = true;
             fuseData[1] = true;
             fuseData[2] = true;
         }
-        if (fuseVelData && fusionModeGPS == 1 && velHealth)
+        if (fuseVelData && fusionModeGPS == 1 && current_ekf_state.velHealth)
         {
             fuseData[0] = true;
             fuseData[1] = true;
         }
-        if (fusePosData && fusionModeGPS <= 2 && posHealth)
+        if (fusePosData && fusionModeGPS <= 2 && current_ekf_state.posHealth)
         {
             fuseData[3] = true;
             fuseData[4] = true;
         }
-        if (fuseHgtData && hgtHealth)
+        if (fuseHgtData && current_ekf_state.hgtHealth)
         {
             fuseData[5] = true;
         }
@@ -1069,7 +954,7 @@ void FuseVelposNED()
                 stateIndex = 4 + obsIndex;
                 // Calculate the measurement innovation, using states from a
                 // different time coordinate if fusing height data
-                if (obsIndex <= 2)
+                if (obsIndex >= 0 && obsIndex <= 2)
                 {
                     innovVelPos[obsIndex] = statesAtVelTime[stateIndex] - observation[obsIndex];
                 }
@@ -1122,44 +1007,36 @@ void FuseVelposNED()
             }
         }
     }
+
+    ForceSymmetry();
+    ConstrainVariances();
+
+    //printf("velh: %s, posh: %s, hgth: %s\n", ((velHealth) ? "OK" : "FAIL"), ((posHealth) ? "OK" : "FAIL"), ((hgtHealth) ? "OK" : "FAIL"));
 }
 
-void FuseMagnetometer()
+void AttPosEKF::FuseMagnetometer()
 {
-    
-    static float q0 = 1.0;
-    static float q1 = 0.0;
-    static float q2 = 0.0;
-    static float q3 = 0.0;
-    static float magN = 0.0;
-    static float magE = 0.0;
-    static float magD = 0.0;
-    static float magXbias = 0.0;
-    static float magYbias = 0.0;
-    static float magZbias = 0.0;
-    static unsigned obsIndex;
+    unsigned &obsIndex = magstate.obsIndex;
     uint8_t indexLimit;
     float DCM[3][3] =
     {
-        {1.0,0.0,0.0} ,
-        {0.0,1.0,0.0} ,
-        {0.0,0.0,1.0}
+        {1.0f,0.0f,0.0f} ,
+        {0.0f,1.0f,0.0f} ,
+        {0.0f,0.0f,1.0f}
     };
-    static float MagPred[3] = {0.0,0.0,0.0};
-    static float R_MAG;
-    static float SH_MAG[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-    float H_MAG[n_states];
+    float MagPred[3] = {0.0f,0.0f,0.0f};
     float SK_MX[6];
     float SK_MY[5];
     float SK_MZ[6];
-    
-    // Perform sequential fusion of Magnetometer measurements.
-    // This assumes that the errors in the different components are
-    // uncorrelated which is not true, however in the absence of covariance
-    // data fit is the only assumption we can make
-    // so we might as well take advantage of the computational efficiencies
-    // associated with sequential fusion
-    if (useCompass && (fuseMagData || obsIndex == 1 || obsIndex == 2))
+    float SH_MAG[9] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+
+// Perform sequential fusion of Magnetometer measurements.
+// This assumes that the errors in the different components are
+// uncorrelated which is not true, however in the absence of covariance
+// data fit is the only assumption we can make
+// so we might as well take advantage of the computational efficiencies
+// associated with sequential fusion
+    if (useCompass && fuseMagData && (obsIndex < 3))
     {
         // Limit range of states modified when on ground
         if(!onGround)
@@ -1170,13 +1047,29 @@ void FuseMagnetometer()
         {
             indexLimit = 12;
         }
-        
+
+        static float q0 = 0.0f;
+        static float q1 = 0.0f;
+        static float q2 = 0.0f;
+        static float q3 = 1.0f;
+        static float magN = 0.4f;
+        static float magE = 0.0f;
+        static float magD = 0.3f;
+
+        static float R_MAG = 0.0025f;
+
+        float H_MAG[21] = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+
         // Sequential fusion of XYZ components to spread processing load across
         // three prediction time steps.
-        
+
         // Calculate observation jacobians and Kalman gains
         if (fuseMagData)
         {
+            static float magXbias = 0.0f;
+            static float magYbias = 0.0f;
+            static float magZbias = 0.0f;
+
             // Copy required states to local variable names
             q0       = statesAtMagMeasTime[0];
             q1       = statesAtMagMeasTime[1];
@@ -1188,7 +1081,7 @@ void FuseMagnetometer()
             magXbias = statesAtMagMeasTime[18];
             magYbias = statesAtMagMeasTime[19];
             magZbias = statesAtMagMeasTime[20];
-            
+
             // rotate predicted earth components into body axes and calculate
             // predicted measurments
             DCM[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
@@ -1203,10 +1096,10 @@ void FuseMagnetometer()
             MagPred[0] = DCM[0][0]*magN + DCM[0][1]*magE  + DCM[0][2]*magD + magXbias;
             MagPred[1] = DCM[1][0]*magN + DCM[1][1]*magE  + DCM[1][2]*magD + magYbias;
             MagPred[2] = DCM[2][0]*magN + DCM[2][1]*magE  + DCM[2][2]*magD + magZbias;
-            
+
             // scale magnetometer observation error with total angular rate
             R_MAG = 0.0025f + sq(0.05f*dAngIMU.length()/dtIMU);
-            
+
             // Calculate observation jacobians
             SH_MAG[0] = 2*magD*q3 + 2*magE*q2 + 2*magN*q1;
             SH_MAG[1] = 2*magD*q0 - 2*magE*q1 + 2*magN*q2;
@@ -1217,6 +1110,7 @@ void FuseMagnetometer()
             SH_MAG[6] = sq(q0);
             SH_MAG[7] = 2*magN*q0;
             SH_MAG[8] = 2*magE*q3;
+
             for (uint8_t i=0; i<=20; i++) H_MAG[i] = 0;
             H_MAG[0] = SH_MAG[7] + SH_MAG[8] - 2*magD*q2;
             H_MAG[1] = SH_MAG[0];
@@ -1225,8 +1119,8 @@ void FuseMagnetometer()
             H_MAG[15] = SH_MAG[5] - SH_MAG[4] - SH_MAG[3] + SH_MAG[6];
             H_MAG[16] = 2*q0*q3 + 2*q1*q2;
             H_MAG[17] = 2*q1*q3 - 2*q0*q2;
-            H_MAG[18] = 1;
-            
+            H_MAG[18] = 1.0f;
+
             // Calculate Kalman gain
             SK_MX[0] = 1/(P[18][18] + R_MAG + P[1][18]*SH_MAG[0] + P[3][18]*SH_MAG[2] - P[15][18]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) - (2*magD*q0 - 2*magE*q1 + 2*magN*q2)*(P[18][2] + P[1][2]*SH_MAG[0] + P[3][2]*SH_MAG[2] - P[15][2]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][2]*(2*q0*q3 + 2*q1*q2) - P[17][2]*(2*q0*q2 - 2*q1*q3) - P[2][2]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[18][0] + P[1][0]*SH_MAG[0] + P[3][0]*SH_MAG[2] - P[15][0]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][0]*(2*q0*q3 + 2*q1*q2) - P[17][0]*(2*q0*q2 - 2*q1*q3) - P[2][0]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[18][1] + P[1][1]*SH_MAG[0] + P[3][1]*SH_MAG[2] - P[15][1]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][1]*(2*q0*q3 + 2*q1*q2) - P[17][1]*(2*q0*q2 - 2*q1*q3) - P[2][1]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[2]*(P[18][3] + P[1][3]*SH_MAG[0] + P[3][3]*SH_MAG[2] - P[15][3]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][3]*(2*q0*q3 + 2*q1*q2) - P[17][3]*(2*q0*q2 - 2*q1*q3) - P[2][3]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6])*(P[18][15] + P[1][15]*SH_MAG[0] + P[3][15]*SH_MAG[2] - P[15][15]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][15]*(2*q0*q3 + 2*q1*q2) - P[17][15]*(2*q0*q2 - 2*q1*q3) - P[2][15]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[16][18]*(2*q0*q3 + 2*q1*q2) - P[17][18]*(2*q0*q2 - 2*q1*q3) - P[2][18]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + (2*q0*q3 + 2*q1*q2)*(P[18][16] + P[1][16]*SH_MAG[0] + P[3][16]*SH_MAG[2] - P[15][16]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][16]*(2*q0*q3 + 2*q1*q2) - P[17][16]*(2*q0*q2 - 2*q1*q3) - P[2][16]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q2 - 2*q1*q3)*(P[18][17] + P[1][17]*SH_MAG[0] + P[3][17]*SH_MAG[2] - P[15][17]*(SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6]) + P[16][17]*(2*q0*q3 + 2*q1*q2) - P[17][17]*(2*q0*q2 - 2*q1*q3) - P[2][17]*(2*magD*q0 - 2*magE*q1 + 2*magN*q2) + P[0][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[0][18]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MX[1] = SH_MAG[3] + SH_MAG[4] - SH_MAG[5] - SH_MAG[6];
@@ -1257,7 +1151,7 @@ void FuseMagnetometer()
             Kfusion[20] = SK_MX[0]*(P[20][18] + P[20][1]*SH_MAG[0] + P[20][3]*SH_MAG[2] + P[20][0]*SK_MX[3] - P[20][2]*SK_MX[2] - P[20][15]*SK_MX[1] + P[20][16]*SK_MX[5] - P[20][17]*SK_MX[4]);
             varInnovMag[0] = 1.0f/SK_MX[0];
             innovMag[0] = MagPred[0] - magData.x;
-            
+
             // reset the observation index to 0 (we start by fusing the X
             // measurement)
             obsIndex = 0;
@@ -1265,7 +1159,7 @@ void FuseMagnetometer()
         else if (obsIndex == 1) // we are now fusing the Y measurement
         {
             // Calculate observation jacobians
-            for (uint8_t i=0; i<=20; i++) H_MAG[i] = 0;
+            for (unsigned int i=0; i<n_states; i++) H_MAG[i] = 0;
             H_MAG[0] = SH_MAG[2];
             H_MAG[1] = SH_MAG[1];
             H_MAG[2] = SH_MAG[0];
@@ -1274,7 +1168,7 @@ void FuseMagnetometer()
             H_MAG[16] = SH_MAG[4] - SH_MAG[3] - SH_MAG[5] + SH_MAG[6];
             H_MAG[17] = 2*q0*q1 + 2*q2*q3;
             H_MAG[19] = 1;
-            
+
             // Calculate Kalman gain
             SK_MY[0] = 1/(P[19][19] + R_MAG + P[0][19]*SH_MAG[2] + P[1][19]*SH_MAG[1] + P[2][19]*SH_MAG[0] - P[16][19]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - (2*q0*q3 - 2*q1*q2)*(P[19][15] + P[0][15]*SH_MAG[2] + P[1][15]*SH_MAG[1] + P[2][15]*SH_MAG[0] - P[16][15]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][15]*(2*q0*q3 - 2*q1*q2) + P[17][15]*(2*q0*q1 + 2*q2*q3) - P[3][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (2*q0*q1 + 2*q2*q3)*(P[19][17] + P[0][17]*SH_MAG[2] + P[1][17]*SH_MAG[1] + P[2][17]*SH_MAG[0] - P[16][17]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][17]*(2*q0*q3 - 2*q1*q2) + P[17][17]*(2*q0*q1 + 2*q2*q3) - P[3][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[19][3] + P[0][3]*SH_MAG[2] + P[1][3]*SH_MAG[1] + P[2][3]*SH_MAG[0] - P[16][3]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][3]*(2*q0*q3 - 2*q1*q2) + P[17][3]*(2*q0*q1 + 2*q2*q3) - P[3][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[15][19]*(2*q0*q3 - 2*q1*q2) + P[17][19]*(2*q0*q1 + 2*q2*q3) + SH_MAG[2]*(P[19][0] + P[0][0]*SH_MAG[2] + P[1][0]*SH_MAG[1] + P[2][0]*SH_MAG[0] - P[16][0]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][0]*(2*q0*q3 - 2*q1*q2) + P[17][0]*(2*q0*q1 + 2*q2*q3) - P[3][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[19][1] + P[0][1]*SH_MAG[2] + P[1][1]*SH_MAG[1] + P[2][1]*SH_MAG[0] - P[16][1]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][1]*(2*q0*q3 - 2*q1*q2) + P[17][1]*(2*q0*q1 + 2*q2*q3) - P[3][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[19][2] + P[0][2]*SH_MAG[2] + P[1][2]*SH_MAG[1] + P[2][2]*SH_MAG[0] - P[16][2]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][2]*(2*q0*q3 - 2*q1*q2) + P[17][2]*(2*q0*q1 + 2*q2*q3) - P[3][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6])*(P[19][16] + P[0][16]*SH_MAG[2] + P[1][16]*SH_MAG[1] + P[2][16]*SH_MAG[0] - P[16][16]*(SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6]) - P[15][16]*(2*q0*q3 - 2*q1*q2) + P[17][16]*(2*q0*q1 + 2*q2*q3) - P[3][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - P[3][19]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MY[1] = SH_MAG[3] - SH_MAG[4] + SH_MAG[5] - SH_MAG[6];
@@ -1317,7 +1211,7 @@ void FuseMagnetometer()
             H_MAG[16] = 2*q2*q3 - 2*q0*q1;
             H_MAG[17] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
             H_MAG[20] = 1;
-            
+
             // Calculate Kalman gain
             SK_MZ[0] = 1/(P[20][20] + R_MAG + P[0][20]*SH_MAG[1] + P[3][20]*SH_MAG[0] + P[17][20]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) - (2*magD*q1 + 2*magE*q0 - 2*magN*q3)*(P[20][1] + P[0][1]*SH_MAG[1] + P[3][1]*SH_MAG[0] + P[17][1]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][1]*(2*q0*q2 + 2*q1*q3) - P[16][1]*(2*q0*q1 - 2*q2*q3) - P[1][1]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][1]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[7] + SH_MAG[8] - 2*magD*q2)*(P[20][2] + P[0][2]*SH_MAG[1] + P[3][2]*SH_MAG[0] + P[17][2]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][2]*(2*q0*q2 + 2*q1*q3) - P[16][2]*(2*q0*q1 - 2*q2*q3) - P[1][2]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][2]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[1]*(P[20][0] + P[0][0]*SH_MAG[1] + P[3][0]*SH_MAG[0] + P[17][0]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][0]*(2*q0*q2 + 2*q1*q3) - P[16][0]*(2*q0*q1 - 2*q2*q3) - P[1][0]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][0]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + SH_MAG[0]*(P[20][3] + P[0][3]*SH_MAG[1] + P[3][3]*SH_MAG[0] + P[17][3]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][3]*(2*q0*q2 + 2*q1*q3) - P[16][3]*(2*q0*q1 - 2*q2*q3) - P[1][3]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][3]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + (SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6])*(P[20][17] + P[0][17]*SH_MAG[1] + P[3][17]*SH_MAG[0] + P[17][17]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][17]*(2*q0*q2 + 2*q1*q3) - P[16][17]*(2*q0*q1 - 2*q2*q3) - P[1][17]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][17]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[15][20]*(2*q0*q2 + 2*q1*q3) - P[16][20]*(2*q0*q1 - 2*q2*q3) - P[1][20]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + (2*q0*q2 + 2*q1*q3)*(P[20][15] + P[0][15]*SH_MAG[1] + P[3][15]*SH_MAG[0] + P[17][15]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][15]*(2*q0*q2 + 2*q1*q3) - P[16][15]*(2*q0*q1 - 2*q2*q3) - P[1][15]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][15]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) - (2*q0*q1 - 2*q2*q3)*(P[20][16] + P[0][16]*SH_MAG[1] + P[3][16]*SH_MAG[0] + P[17][16]*(SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6]) + P[15][16]*(2*q0*q2 + 2*q1*q3) - P[16][16]*(2*q0*q1 - 2*q2*q3) - P[1][16]*(2*magD*q1 + 2*magE*q0 - 2*magN*q3) + P[2][16]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2)) + P[2][20]*(SH_MAG[7] + SH_MAG[8] - 2*magD*q2));
             SK_MZ[1] = SH_MAG[3] - SH_MAG[4] - SH_MAG[5] + SH_MAG[6];
@@ -1348,9 +1242,9 @@ void FuseMagnetometer()
             Kfusion[20] = SK_MZ[0]*(P[20][20] + P[20][0]*SH_MAG[1] + P[20][3]*SH_MAG[0] - P[20][1]*SK_MZ[2] + P[20][2]*SK_MZ[3] + P[20][17]*SK_MZ[1] + P[20][15]*SK_MZ[5] - P[20][16]*SK_MZ[4]);
             varInnovMag[2] = 1.0f/SK_MZ[0];
             innovMag[2] = MagPred[2] - magData.z;
-            
+
         }
-        
+
         // Check the innovation for consistency and don't fuse if > 5Sigma
         if ((innovMag[obsIndex]*innovMag[obsIndex]/varInnovMag[obsIndex]) < 25.0)
         {
@@ -1422,9 +1316,12 @@ void FuseMagnetometer()
         }
     }
     obsIndex = obsIndex + 1;
+
+    ForceSymmetry();
+    ConstrainVariances();
 }
 
-void FuseAirspeed()
+void AttPosEKF::FuseAirspeed()
 {
     float vn;
     float ve;
@@ -1433,38 +1330,37 @@ void FuseAirspeed()
     float vwe;
     const float R_TAS = 2.0f;
     float SH_TAS[3];
-    float SK_TAS;
-    float H_TAS[n_states];
-    float Kfusion[n_states];
+    float Kfusion[21];
     float VtasPred;
-    float quatMag;
-    
+
     // Copy required states to local variable names
     vn = statesAtVtasMeasTime[4];
     ve = statesAtVtasMeasTime[5];
     vd = statesAtVtasMeasTime[6];
     vwn = statesAtVtasMeasTime[13];
     vwe = statesAtVtasMeasTime[14];
-    
+
     // Need to check that it is flying before fusing airspeed data
     // Calculate the predicted airspeed
-    VtasPred = sqrt((ve - vwe)*(ve - vwe) + (vn - vwn)*(vn - vwn) + vd*vd);
+    VtasPred = sqrtf((ve - vwe)*(ve - vwe) + (vn - vwn)*(vn - vwn) + vd*vd);
     // Perform fusion of True Airspeed measurement
-    if (useAirspeed && fuseVtasData && (VtasPred > 1.0) && (VtasMeas > 8.0))
+    if (useAirspeed && fuseVtasData && (VtasPred > 1.0f) && (VtasMeas > 8.0f))
     {
         // Calculate observation jacobians
         SH_TAS[0] = 1/(sqrt(sq(ve - vwe) + sq(vn - vwn) + sq(vd)));
-        SH_TAS[1] = (SH_TAS[0]*(2*ve - 2*vwe))/2;
-        SH_TAS[2] = (SH_TAS[0]*(2*vn - 2*vwn))/2;
+        SH_TAS[1] = (SH_TAS[0]*(2.0f*ve - 2*vwe))/2.0f;
+        SH_TAS[2] = (SH_TAS[0]*(2.0f*vn - 2*vwn))/2.0f;
+        
+        float H_TAS[21];
         for (uint8_t i=0; i<=20; i++) H_TAS[i] = 0.0f;
         H_TAS[4] = SH_TAS[2];
         H_TAS[5] = SH_TAS[1];
         H_TAS[6] = vd*SH_TAS[0];
         H_TAS[13] = -SH_TAS[2];
         H_TAS[14] = -SH_TAS[1];
-        
+
         // Calculate Kalman gains
-        SK_TAS = 1.0f/(R_TAS + SH_TAS[2]*(P[4][4]*SH_TAS[2] + P[5][4]*SH_TAS[1] - P[13][4]*SH_TAS[2] - P[14][4]*SH_TAS[1] + P[6][4]*vd*SH_TAS[0]) + SH_TAS[1]*(P[4][5]*SH_TAS[2] + P[5][5]*SH_TAS[1] - P[13][5]*SH_TAS[2] - P[14][5]*SH_TAS[1] + P[6][5]*vd*SH_TAS[0]) - SH_TAS[2]*(P[4][13]*SH_TAS[2] + P[5][13]*SH_TAS[1] - P[13][13]*SH_TAS[2] - P[14][13]*SH_TAS[1] + P[6][13]*vd*SH_TAS[0]) - SH_TAS[1]*(P[4][14]*SH_TAS[2] + P[5][14]*SH_TAS[1] - P[13][14]*SH_TAS[2] - P[14][14]*SH_TAS[1] + P[6][14]*vd*SH_TAS[0]) + vd*SH_TAS[0]*(P[4][6]*SH_TAS[2] + P[5][6]*SH_TAS[1] - P[13][6]*SH_TAS[2] - P[14][6]*SH_TAS[1] + P[6][6]*vd*SH_TAS[0]));
+        float SK_TAS = 1.0f/(R_TAS + SH_TAS[2]*(P[4][4]*SH_TAS[2] + P[5][4]*SH_TAS[1] - P[13][4]*SH_TAS[2] - P[14][4]*SH_TAS[1] + P[6][4]*vd*SH_TAS[0]) + SH_TAS[1]*(P[4][5]*SH_TAS[2] + P[5][5]*SH_TAS[1] - P[13][5]*SH_TAS[2] - P[14][5]*SH_TAS[1] + P[6][5]*vd*SH_TAS[0]) - SH_TAS[2]*(P[4][13]*SH_TAS[2] + P[5][13]*SH_TAS[1] - P[13][13]*SH_TAS[2] - P[14][13]*SH_TAS[1] + P[6][13]*vd*SH_TAS[0]) - SH_TAS[1]*(P[4][14]*SH_TAS[2] + P[5][14]*SH_TAS[1] - P[13][14]*SH_TAS[2] - P[14][14]*SH_TAS[1] + P[6][14]*vd*SH_TAS[0]) + vd*SH_TAS[0]*(P[4][6]*SH_TAS[2] + P[5][6]*SH_TAS[1] - P[13][6]*SH_TAS[2] - P[14][6]*SH_TAS[1] + P[6][6]*vd*SH_TAS[0]));
         Kfusion[0] = SK_TAS*(P[0][4]*SH_TAS[2] - P[0][13]*SH_TAS[2] + P[0][5]*SH_TAS[1] - P[0][14]*SH_TAS[1] + P[0][6]*vd*SH_TAS[0]);
         Kfusion[1] = SK_TAS*(P[1][4]*SH_TAS[2] - P[1][13]*SH_TAS[2] + P[1][5]*SH_TAS[1] - P[1][14]*SH_TAS[1] + P[1][6]*vd*SH_TAS[0]);
         Kfusion[2] = SK_TAS*(P[2][4]*SH_TAS[2] - P[2][13]*SH_TAS[2] + P[2][5]*SH_TAS[1] - P[2][14]*SH_TAS[1] + P[2][6]*vd*SH_TAS[0]);
@@ -1487,7 +1383,7 @@ void FuseAirspeed()
         Kfusion[19] = SK_TAS*(P[19][4]*SH_TAS[2] - P[19][13]*SH_TAS[2] + P[19][5]*SH_TAS[1] - P[19][14]*SH_TAS[1] + P[19][6]*vd*SH_TAS[0]);
         Kfusion[20] = SK_TAS*(P[20][4]*SH_TAS[2] - P[20][13]*SH_TAS[2] + P[20][5]*SH_TAS[1] - P[20][14]*SH_TAS[1] + P[20][6]*vd*SH_TAS[0]);
         varInnovVtas = 1.0f/SK_TAS;
-        
+
         // Calculate the measurement innovation
         innovVtas = VtasPred - VtasMeas;
         // Check the innovation for consistency and don't fuse if > 5Sigma
@@ -1499,7 +1395,7 @@ void FuseAirspeed()
                 states[j] = states[j] - Kfusion[j] * innovVtas;
             }
             // normalise the quaternion states
-            quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
+            float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
             if (quatMag > 1e-12f)
             {
                 for (uint8_t j= 0; j<=3; j++)
@@ -1549,8 +1445,12 @@ void FuseAirspeed()
             }
         }
     }
+
+    ForceSymmetry();
+    ConstrainVariances();
 }
-void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last)
+
+void AttPosEKF::zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
     uint8_t col;
@@ -1563,7 +1463,7 @@ void zeroRows(float covMat[n_states][n_states], uint8_t first, uint8_t last)
     }
 }
 
-void zeroCols(float covMat[n_states][n_states], uint8_t first, uint8_t last)
+void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
     uint8_t col;
@@ -1576,49 +1476,95 @@ void zeroCols(float covMat[n_states][n_states], uint8_t first, uint8_t last)
     }
 }
 
-float sq(float valIn)
+float AttPosEKF::sq(float valIn)
 {
     return valIn*valIn;
 }
 
 // Store states in a history array along with time stamp
-void StoreStates()
+void AttPosEKF::StoreStates(uint64_t timestamp_ms)
 {
-    static uint8_t storeIndex = 0;
-    if (storeIndex == data_buffer_size) storeIndex = 0;
-    for (uint8_t i=0; i<=n_states; i++) storedStates[i][storeIndex] = states[i];
+    for (unsigned i=0; i<n_states; i++)
+        storedStates[i][storeIndex] = states[i];
+    statetimeStamp[storeIndex] = timestamp_ms;
+    storeIndex++;
+    if (storeIndex == data_buffer_size)
+        storeIndex = 0;
+}
+
+void AttPosEKF::ResetStoredStates()
+{
+    // reset all stored states
+    memset(&storedStates[0][0], 0, sizeof(storedStates));
+    memset(&statetimeStamp[0], 0, sizeof(statetimeStamp));
+
+    // reset store index to first
+    storeIndex = 0;
+
+    // overwrite all existing states
+    for (unsigned i = 0; i < n_states; i++) {
+        storedStates[i][storeIndex] = states[i];
+    }
+
     statetimeStamp[storeIndex] = millis();
-    storeIndex = storeIndex + 1;
+
+    // increment to next storage index
+    storeIndex++;
 }
 
 // Output the state vector stored at the time that best matches that specified by msec
-void RecallStates(float statesForFusion[n_states], uint32_t msec)
+int AttPosEKF::RecallStates(float statesForFusion[n_states], uint64_t msec)
 {
-    long int timeDelta;
-    long int bestTimeDelta = 200;
-    uint8_t storeIndex;
-    uint8_t bestStoreIndex = 0;
-    for (storeIndex=0; storeIndex < n_states; storeIndex++)
+    int ret = 0;
+
+    // int64_t bestTimeDelta = 200;
+    // unsigned bestStoreIndex = 0;
+    // for (unsigned storeIndex = 0; storeIndex < data_buffer_size; storeIndex++)
+    // {
+    //     // The time delta can also end up as negative number,
+    //     // since we might compare future to past or past to future
+    //     // therefore cast to int64.
+    //     int64_t timeDelta = (int64_t)msec - (int64_t)statetimeStamp[storeIndex];
+    //     if (timeDelta < 0) {
+    //         timeDelta = -timeDelta;
+    //     }
+
+    //     if (timeDelta < bestTimeDelta)
+    //     {
+    //         bestStoreIndex = storeIndex;
+    //         bestTimeDelta = timeDelta;
+    //     }
+    // }
+
+    // if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
+    // {
+    //     for (uint8_t i=0; i < n_states; i++) {
+    //         if (isfinite(storedStates[i][bestStoreIndex])) {
+    //             statesForFusion[i] = storedStates[i][bestStoreIndex];
+    //         } else if (isfinite(states[i])) {
+    //             statesForFusion[i] = states[i];
+    //         } else {
+    //             // There is not much we can do here, except reporting the error we just
+    //             // found.
+    //             ret++;
+    //         }
+    //     }
+    // }
+    // else // otherwise output current state
     {
-        timeDelta = msec - statetimeStamp[storeIndex];
-        if (timeDelta < 0) timeDelta = -timeDelta;
-        if (timeDelta < bestTimeDelta)
-        {
-            bestStoreIndex = storeIndex;
-            bestTimeDelta = timeDelta;
+        for (uint8_t i=0; i < n_states; i++) {
+            if (isfinite(states[i])) {
+                statesForFusion[i] = states[i];
+            } else {
+                ret++;
+            }
         }
     }
-    if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
-    {
-        for (uint8_t i=0; i < n_states; i++) statesForFusion[i] = storedStates[i][bestStoreIndex];
-    }
-    else // otherwise output current state
-    {
-        for (uint8_t i=0; i < n_states; i++) statesForFusion[i] = states[i];
-    }
+
+    return ret;
 }
 
-void quat2Tnb(Mat3f &Tnb, float quat[4])
+void AttPosEKF::quat2Tnb(Mat3f &Tnb, const float (&quat)[4])
 {
     // Calculate the nav to body cosine matrix
     float q00 = sq(quat[0]);
@@ -1643,7 +1589,7 @@ void quat2Tnb(Mat3f &Tnb, float quat[4])
     Tnb.y.z = 2*(q23 + q01);
 }
 
-void quat2Tbn(Mat3f &Tbn, float quat[4])
+void AttPosEKF::quat2Tbn(Mat3f &Tbn, const float (&quat)[4])
 {
     // Calculate the body to nav cosine matrix
     float q00 = sq(quat[0]);
@@ -1668,7 +1614,7 @@ void quat2Tbn(Mat3f &Tbn, float quat[4])
     Tbn.z.y = 2*(q23 + q01);
 }
 
-void eul2quat(float quat[4], float eul[3])
+void AttPosEKF::eul2quat(float (&quat)[4], const float (&eul)[3])
 {
     float u1 = cos(0.5f*eul[0]);
     float u2 = cos(0.5f*eul[1]);
@@ -1682,53 +1628,57 @@ void eul2quat(float quat[4], float eul[3])
     quat[3] = u1*u2*u6-u4*u5*u3;
 }
 
-void quat2eul(float y[3], float u[4])
+void AttPosEKF::quat2eul(float (&y)[3], const float (&u)[4])
 {
-    y[0] = atan2((2.0*(u[2]*u[3]+u[0]*u[1])) , (u[0]*u[0]-u[1]*u[1]-u[2]*u[2]+u[3]*u[3]));
-    y[1] = -asin(2.0*(u[1]*u[3]-u[0]*u[2]));
-    y[2] = atan2((2.0*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
+    y[0] = atan2f((2.0f*(u[2]*u[3]+u[0]*u[1])) , (u[0]*u[0]-u[1]*u[1]-u[2]*u[2]+u[3]*u[3]));
+    y[1] = -asinf(2.0f*(u[1]*u[3]-u[0]*u[2]));
+    y[2] = atan2f((2.0f*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
 }
 
-void calcvelNED(float velNED[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
+void AttPosEKF::calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
 {
-    velNED[0] = gpsGndSpd*cos(gpsCourse);
-    velNED[1] = gpsGndSpd*sin(gpsCourse);
+    velNED[0] = gpsGndSpd*cosf(gpsCourse);
+    velNED[1] = gpsGndSpd*sinf(gpsCourse);
     velNED[2] = gpsVelD;
 }
 
-void calcposNED(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
+void AttPosEKF::calcposNED(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
 {
     posNED[0] = earthRadius * (lat - latRef);
     posNED[1] = earthRadius * cos(latRef) * (lon - lonRef);
     posNED[2] = -(hgt - hgtRef);
 }
 
-void calcLLH(float posNED[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
+void AttPosEKF::calcLLH(float (&posNED)[3], float lat, float lon, float hgt, float latRef, float lonRef, float hgtRef)
 {
     lat = latRef + posNED[0] * earthRadiusInv;
     lon = lonRef + posNED[1] * earthRadiusInv / cos(latRef);
     hgt = hgtRef - posNED[2];
 }
 
-void OnGroundCheck()
+void AttPosEKF::OnGroundCheck()
 {
     onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0f) && (VtasMeas < 8.0f));
+    if (staticMode) {
+        staticMode = !(GPSstatus > GPS_FIX_2D);
+    }
 }
 
-void calcEarthRateNED(Vector3f &omega, float latitude)
+void AttPosEKF::calcEarthRateNED(Vector3f &omega, float latitude)
 {
     //Define Earth rotation vector in the NED navigation frame
-    omega.x  = earthRate*cos(latitude);
-    omega.y  = 0.0;
-    omega.z  = -earthRate*sin(latitude);
+    omega.x  = earthRate*cosf(latitude);
+    omega.y  = 0.0f;
+    omega.z  = -earthRate*sinf(latitude);
 }
 
-void CovarianceInit()
+void AttPosEKF::CovarianceInit()
 {
     // Calculate the initial covariance matrix P
-    P[1][1]   = 0.25f*sq(1.0f*deg2rad);
-    P[2][2]   = 0.25f*sq(1.0f*deg2rad);
-    P[3][3]   = 0.25f*sq(10.0f*deg2rad);
+    P[0][0]   = 0.25f * sq(1.0f*deg2rad);
+    P[1][1]   = 0.25f * sq(1.0f*deg2rad);
+    P[2][2]   = 0.25f * sq(1.0f*deg2rad);
+    P[3][3]   = 0.25f * sq(10.0f*deg2rad);
     P[4][4]   = sq(0.7);
     P[5][5]   = P[4][4];
     P[6][6]   = sq(0.7);
@@ -1748,9 +1698,339 @@ void CovarianceInit()
     P[20][20] = P[18][18];
 }
 
+float AttPosEKF::ConstrainFloat(float val, float min, float max)
+{
+    float ret;
+
+    if (val > max) {
+        ret = max;
+    } else if (val < min) {
+        ret = min;
+    } else {
+        ret = val;
+    }
+
+    return ret;
+}
+
+void AttPosEKF::ConstrainVariances()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // State vector:
+    // 0-3: quaternions (q0, q1, q2, q3)
+    // 4-6: Velocity - m/sec (North, East, Down)
+    // 7-9: Position - m (North, East, Down)
+    // 10-12: Delta Angle bias - rad (X,Y,Z)
+    // 13-14: Wind Vector  - m/sec (North,East)
+    // 15-17: Earth Magnetic Field Vector - gauss (North, East, Down)
+    // 18-20: Body Magnetic Field Vector - gauss (X,Y,Z)
+
+    // Constrain quaternion variances
+    for (unsigned i = 0; i < 4; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+    // Constrain velocitie variances
+    for (unsigned i = 4; i < 7; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e3f);
+    }
+
+    // Constrain position variances
+    for (unsigned i = 7; i < 10; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e6f);
+    }
+
+    // Angle bias variances
+    for (unsigned i = 10; i < 13; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, sq(0.175f * dtIMU));
+    }
+
+    // Wind velocity variances
+    for (unsigned i = 13; i < 15; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0e3f);
+    }
+
+    // Earth magnetic field variances
+    for (unsigned i = 15; i < 18; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+    // Body magnetic field variances
+    for (unsigned i = 18; i < 21; i++) {
+        P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
+    }
+
+}
+
+void AttPosEKF::ConstrainStates()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // State vector:
+    // 0-3: quaternions (q0, q1, q2, q3)
+    // 4-6: Velocity - m/sec (North, East, Down)
+    // 7-9: Position - m (North, East, Down)
+    // 10-12: Delta Angle bias - rad (X,Y,Z)
+    // 13-14: Wind Vector  - m/sec (North,East)
+    // 15-17: Earth Magnetic Field Vector - gauss (North, East, Down)
+    // 18-20: Body Magnetic Field Vector - gauss (X,Y,Z)
 
 
-void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float *initQuat)
+    // Constrain quaternion
+    for (unsigned i = 0; i < 4; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0f, 1.0f);
+    }
+
+    // Constrain velocities to what GPS can do for us
+    for (unsigned i = 4; i < 7; i++) {
+        states[i] = ConstrainFloat(states[i], -5.0e2f, 5.0e2f);
+    }
+
+    // Constrain position to a reasonable vehicle range (in meters)
+    for (unsigned i = 7; i < 9; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0e6f, 1.0e6f);
+    }
+
+    // Constrain altitude
+    states[9] = ConstrainFloat(states[9], -4.0e4f, 1.0e4f);
+
+    // Angle bias limit - set to 8 degrees / sec
+    for (unsigned i = 10; i < 13; i++) {
+        states[i] = ConstrainFloat(states[i], -0.12f * dtIMU, 0.12f * dtIMU);
+    }
+
+    // Wind velocity limits - assume 120 m/s max velocity
+    for (unsigned i = 13; i < 15; i++) {
+        states[i] = ConstrainFloat(states[i], -120.0f, 120.0f);
+    }
+
+    // Earth magnetic field limits (in Gauss)
+    for (unsigned i = 15; i < 18; i++) {
+        states[i] = ConstrainFloat(states[i], -1.0f, 1.0f);
+    }
+
+    // Body magnetic field variances (in Gauss).
+    // the max offset should be in this range.
+    for (unsigned i = 18; i < 21; i++) {
+        states[i] = ConstrainFloat(states[i], -0.5f, 0.5f);
+    }
+
+}
+
+void AttPosEKF::ForceSymmetry()
+{
+    if (!numericalProtection) {
+        return;
+    }
+
+    // Force symmetry on the covariance matrix to prevent ill-conditioning
+    // of the matrix which would cause the filter to blow-up
+    for (unsigned i = 1; i < n_states; i++)
+    {
+        for (uint8_t j = 0; j < i; j++)
+        {
+            P[i][j] = 0.5f * (P[i][j] + P[j][i]);
+            P[j][i] = P[i][j];
+
+            if ((fabsf(P[i][j]) > EKF_COVARIANCE_DIVERGED) ||
+                (fabsf(P[j][i]) > EKF_COVARIANCE_DIVERGED)) {
+                // XXX divergence report error
+                printf("FILTER RESET DUE TO COVARIANCE BOUNDS\n");
+                InitializeDynamic(velNED, magDeclination);
+                return;
+            }
+
+            float symmetric = 0.5f * (P[i][j] + P[j][i]);
+            if (symmetric == 0.)
+            P[i][j] = symmetric;
+            P[j][i] = symmetric;
+        }
+    }
+}
+
+bool AttPosEKF::FilterHealthy()
+{
+    if (!statesInitialised) {
+        return false;
+    }
+
+    // XXX Check state vector for NaNs and ill-conditioning
+
+    // Check if any of the major inputs timed out
+    if (current_ekf_state.posTimeout || current_ekf_state.velTimeout || current_ekf_state.hgtTimeout) {
+        return false;
+    }
+
+    // Nothing fired, return ok.
+    return true;
+}
+
+/**
+ * Reset the filter position states
+ *
+ * This resets the position to the last GPS measurement
+ * or to zero in case of static position.
+ */
+void AttPosEKF::ResetPosition(void)
+{
+    if (staticMode) {
+        states[7] = 0;
+        states[8] = 0;
+    } else if (GPSstatus >= GPS_FIX_3D) {
+
+        // reset the states from the GPS measurements
+        states[7] = posNE[0];
+        states[8] = posNE[1];
+    }
+}
+
+/**
+ * Reset the height state.
+ *
+ * This resets the height state with the last altitude measurements
+ */
+void AttPosEKF::ResetHeight(void)
+{
+    // write to the state vector
+    states[9]   = -hgtMea;
+}
+
+/**
+ * Reset the velocity state.
+ */
+void AttPosEKF::ResetVelocity(void)
+{
+    if (staticMode) {
+        states[4] = 0.0f;
+        states[5] = 0.0f;
+        states[6] = 0.0f;
+    } else if (GPSstatus >= GPS_FIX_3D) {
+
+        states[4]  = velNED[0]; // north velocity from last reading
+        states[5]  = velNED[1]; // east velocity from last reading
+        states[6]  = velNED[2]; // down velocity from last reading
+    }
+}
+
+
+void AttPosEKF::FillErrorReport(struct ekf_status_report *err)
+{
+    for (int i = 0; i < n_states; i++)
+    {
+        err->states[i] = states[i];
+    }
+
+    err->n_states = n_states;
+
+    err->velHealth = current_ekf_state.velHealth;
+    err->posHealth = current_ekf_state.posHealth;
+    err->hgtHealth = current_ekf_state.hgtHealth;
+    err->velTimeout = current_ekf_state.velTimeout;
+    err->posTimeout = current_ekf_state.posTimeout;
+    err->hgtTimeout = current_ekf_state.hgtTimeout;
+}
+
+bool AttPosEKF::StatesNaN(struct ekf_status_report *err_report) {
+    bool err = false;
+
+    // check all states and covariance matrices
+    for (unsigned i = 0; i < n_states; i++) {
+        for (unsigned j = 0; j < n_states; j++) {
+            if (!isfinite(KH[i][j])) {
+
+                err_report->covarianceNaN = true;
+                err = true;
+            } //  intermediate result used for covariance updates
+            if (!isfinite(KHP[i][j])) {
+
+                err_report->covarianceNaN = true;
+                err = true;
+            } // intermediate result used for covariance updates
+            if (!isfinite(P[i][j])) {
+
+                err_report->covarianceNaN = true;
+                err = true;
+            } // covariance matrix
+        }
+
+        if (!isfinite(Kfusion[i])) {
+
+            err_report->kalmanGainsNaN = true;
+            err = true;
+        } // Kalman gains
+
+        if (!isfinite(states[i])) {
+
+            err_report->statesNaN = true;
+            err = true;
+        } // state matrix
+    }
+
+    if (err) {
+        FillErrorReport(err_report);
+    }
+
+    return err;
+
+}
+
+/**
+ * Check the filter inputs and bound its operational state
+ *
+ * This check will reset the filter states if required
+ * due to a failure of consistency or timeout checks.
+ * it should be run after the measurement data has been
+ * updated, but before any of the fusion steps are
+ * executed.
+ */
+int AttPosEKF::CheckAndBound()
+{
+
+    // Store the old filter state
+    bool currStaticMode = staticMode;
+
+    // Reset the filter if the states went NaN
+    if (StatesNaN(&last_ekf_error)) {
+
+        InitializeDynamic(velNED, magDeclination);
+
+        return 1;
+    }
+
+    // Reset the filter if the IMU data is too old
+    if (dtIMU > 0.2f) {
+
+        ResetVelocity();
+        ResetPosition();
+        ResetHeight();
+        ResetStoredStates();
+
+        // that's all we can do here, return
+        return 2;
+    }
+
+    // Check if we're on ground - this also sets static mode.
+    OnGroundCheck();
+
+    // Check if we switched between states
+    if (currStaticMode != staticMode) {
+        ResetVelocity();
+        ResetPosition();
+        ResetHeight();
+        ResetStoredStates();
+
+        return 3;
+    }
+
+    return 0;
+}
+
+void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float declination, float *initQuat)
 {
     float initialRoll, initialPitch;
     float cosRoll, sinRoll, cosPitch, sinPitch;
@@ -1770,6 +2050,8 @@ void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, fl
     magY = my * cosRoll - mz * sinRoll;
 
     initialHdg = atan2f(-magY, magX);
+    /* true heading is the mag heading minus declination */
+    initialHdg += declination;
 
     cosRoll = cosf(initialRoll * 0.5f);
     sinRoll = sinf(initialRoll * 0.5f);
@@ -1786,13 +2068,21 @@ void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, fl
     initQuat[3] = cosRoll * cosPitch * sinHeading - sinRoll * sinPitch * cosHeading;
 }
 
-void InitialiseFilter()
+void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
 {
+
+    // Clear the init flag
+    statesInitialised = false;
+
+    magDeclination = declination;
+
+    ZeroVariables();
+
     // Calculate initial filter quaternion states from raw measurements
     float initQuat[4];
     Vector3f initMagXYZ;
     initMagXYZ   = magData - magBias;
-    AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, initQuat);
+    AttitudeInit(accel.x, accel.y, accel.z, initMagXYZ.x, initMagXYZ.y, initMagXYZ.z, magDeclination, initQuat);
 
     // Calculate initial Tbn matrix and rotate Mag measurements into NED
     // to set initial NED magnetic field states
@@ -1804,14 +2094,7 @@ void InitialiseFilter()
     initMagNED.y = DCM.y.x*initMagXYZ.x + DCM.y.y*initMagXYZ.y + DCM.y.z*initMagXYZ.z;
     initMagNED.z = DCM.z.x*initMagXYZ.x + DCM.z.y*initMagXYZ.y + DCM.z.z*initMagXYZ.z;
 
-    // calculate initial velocities
-    float initvelNED[3];
-    calcvelNED(initvelNED, gpsCourse, gpsGndSpd, gpsVelD);
 
-    //store initial lat,long and height
-    latRef = gpsLat;
-    lonRef = gpsLon;
-    hgtRef = gpsHgt;
 
     // write to state vector
     for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
@@ -1839,5 +2122,60 @@ void InitialiseFilter()
     summedDelVel.x = 0.0f;
     summedDelVel.y = 0.0f;
     summedDelVel.z = 0.0f;
-    dt = 0.0f;
+}
+
+void AttPosEKF::InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination)
+{
+    //store initial lat,long and height
+    latRef = referenceLat;
+    lonRef = referenceLon;
+    hgtRef = referenceHgt;
+
+    memset(&last_ekf_error, 0, sizeof(last_ekf_error));
+
+    // we are at reference altitude, so measurement must be zero
+    hgtMea = 0.0f;
+    posNE[0] = 0.0f;
+    posNE[1] = 0.0f;
+
+    // the baro offset must be this difference now
+    baroHgtOffset = baroHgt - referenceHgt;
+
+    InitializeDynamic(initvelNED, declination);
+}
+
+void AttPosEKF::ZeroVariables()
+{
+    // Do the data structure init
+    for (unsigned i = 0; i < n_states; i++) {
+        for (unsigned j = 0; j < n_states; j++) {
+            KH[i][j] = 0.0f; //  intermediate result used for covariance updates
+            KHP[i][j] = 0.0f; // intermediate result used for covariance updates
+            P[i][j] = 0.0f; // covariance matrix
+        }
+
+        Kfusion[i] = 0.0f; // Kalman gains
+        states[i] = 0.0f; // state matrix
+    }
+
+    for (unsigned i = 0; i < data_buffer_size; i++) {
+
+        for (unsigned j = 0; j < n_states; j++) {
+            storedStates[j][i] = 0.0f;
+        }
+
+        statetimeStamp[i] = 0;
+    }
+
+    memset(&current_ekf_state, 0, sizeof(current_ekf_state));
+}
+
+void AttPosEKF::GetFilterState(struct ekf_status_report *state)
+{
+    memcpy(state, &current_ekf_state, sizeof(*state));
+}
+
+void AttPosEKF::GetLastErrorState(struct ekf_status_report *last_error)
+{
+    memcpy(last_error, &last_ekf_error, sizeof(*last_error));
 }
