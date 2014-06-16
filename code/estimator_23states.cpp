@@ -1693,10 +1693,12 @@ void AttPosEKF::FuseRangeFinder()
         SK_RNG[5] = SH_RNG[2];
         Kfusion[22] = SK_RNG[0]*(P[22][9]*SH_RNG[3] - P[22][22]*SH_RNG[3] + P[22][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[22][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[22][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[22][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
 
+        // Calculate the innovation variance for data logging
+        varInnovRng = 1.0f/SK_RNG[0];
+
         // Calculate the measurement innovation
         rngPred = (ptd - pd)/cosRngTilt;
         innovRng = rngPred - rngMea;
-        //printf("mea=%5.1f, pred=%5.1f, pd=%5.1f, ptd=%5.2f\n", rngMea, rngPred, pd, ptd);
 
         // Check the innovation for consistency and don't fuse if > 5Sigma
         if ((innovRng*innovRng*SK_RNG[0]) < 25)

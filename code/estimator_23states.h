@@ -149,6 +149,7 @@ public:
     float innovVtas; // innovation output
     float innovRng; ///< Range finder innovation
     float varInnovVtas; // innovation variance output
+    float varInnovRng; // range finder innovation variance
     float VtasMeas; // true airspeed measurement (m/s)
     float magDeclination;       ///< magnetic declination
     double latRef; // WGS-84 latitude of reference point (rad)

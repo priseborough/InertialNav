@@ -108,6 +108,7 @@ FILE * pRefPosVelOutFile;
 FILE * pVelPosFuseFile;
 FILE * pMagFuseFile;
 FILE * pTasFuseFile;
+FILE * pRngFuseFile;
 FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
@@ -174,6 +175,7 @@ int main()
     pVelPosFuseFile = open_with_exit ("VelPosFuse.txt","w");
     pMagFuseFile = open_with_exit ("MagFuse.txt","w");
     pTasFuseFile = open_with_exit ("TasFuse.txt","w");
+    pRngFuseFile = open_with_exit ("RngFuse.txt","w");
     pGpsRawINFile = fopen ("GPSraw.txt","r");
     pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
     validationOutFile = fopen("ValidationOut.txt", "w");
@@ -752,6 +754,7 @@ void WriteFilterOutput()
         fprintf(pVelPosFuseFile," %e %e", _ekf->innovVelPos[i], _ekf->varInnovVelPos[i]);
     }
     fprintf(pVelPosFuseFile,"\n");
+
     // magnetometer innovations and innovation variances
     fprintf(pMagFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=2; i++)
@@ -759,10 +762,16 @@ void WriteFilterOutput()
         fprintf(pMagFuseFile," %e %e", _ekf->innovMag[i], _ekf->varInnovMag[i]);
     }
     fprintf(pMagFuseFile,"\n");
+
     // airspeed innovation and innovation variance
     fprintf(pTasFuseFile," %e", float(IMUmsec*0.001f));
     fprintf(pTasFuseFile," %e %e", _ekf->innovVtas, _ekf->varInnovVtas);
     fprintf(pTasFuseFile,"\n");
+
+    // range finder innovation and innovation variance
+    fprintf(pRngFuseFile," %e", float(IMUmsec*0.001f));
+    fprintf(pRngFuseFile," %e %e", _ekf->innovRng, _ekf->varInnovRng);
+    fprintf(pRngFuseFile,"\n");
 
 }
 
