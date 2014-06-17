@@ -1,4 +1,3 @@
-
 #include "estimator_23states.h"
 
 #include <stdint.h>
@@ -16,6 +15,8 @@ void readAirData();
 
 void readRngData();
 
+void readOptFlowData();
+
 void readAhrsData();
 
 void readTimingData();
@@ -26,6 +27,8 @@ void WriteFilterOutput();
 
 void CloseFiles();
 
+float ConstrainFloat(float val, float min, float max);
+
 bool endOfData = false; //boolean set to true when all files have returned data
 
 // Estimated time delays (msec)
@@ -35,6 +38,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
+uint32_t msecOptFlowDelay = 230;
 
 // IMU input data variables
 float imuIn;
@@ -77,6 +81,7 @@ float Veas;
 bool newAdsData = false;
 bool newDataGps = false;
 bool newRngData = false;
+bool newOptFlowData = false;
 
 float onboardTimestamp = 0;
 uint32_t onboardMsec = 0;
@@ -112,6 +117,7 @@ FILE * pVelPosFuseFile;
 FILE * pMagFuseFile;
 FILE * pTasFuseFile;
 FILE * pRngFuseFile;
+FILE * pOptFlowFuseFile;
 FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
@@ -179,6 +185,7 @@ int main()
     pMagFuseFile = open_with_exit ("MagFuse.txt","w");
     pTasFuseFile = open_with_exit ("TasFuse.txt","w");
     pRngFuseFile = open_with_exit ("RngFuse.txt","w");
+    pOptFlowFuseFile = open_with_exit ("OptFlowFuse.txt","w");
     pGpsRawINFile = fopen ("GPSraw.txt","r");
     pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
     validationOutFile = fopen("ValidationOut.txt", "w");
@@ -200,6 +207,7 @@ int main()
         // read test data from files for next timestamp
         readIMUData();
         readGpsData();
+        readOptFlowData();
         readMagData();
         readAirData();
         readRngData();
@@ -236,7 +244,7 @@ int main()
                 // Run the strapdown INS equations every IMU update
                 _ekf->UpdateStrapdownEquationsNED();
                 #if 1
-                // debug code - could be turned into a filter mnitoring/watchdog function
+                // debug code - could be turned into a filter monitoring/watchdog function
                 float tempQuat[4];
                 for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
                 _ekf->quat2eul(eulerEst, tempQuat);
@@ -299,6 +307,20 @@ int main()
             {
                 _ekf->fuseVelData = false;
                 _ekf->fusePosData = false;
+            }
+
+            // Fuse Optical Flow Measurements
+            if (newOptFlowData && _ekf->statesInitialised)
+            {
+                // recall states stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->fuseOptFlowData = true;
+                _ekf->FuseOptFlow();
+                _ekf->FuseOptFlow();
+            }
+            else
+            {
+                _ekf->fuseOptFlowData = false;
             }
 
             if (newAdsData && _ekf->statesInitialised)
@@ -559,6 +581,81 @@ void readGpsData()
     }
 }
 
+void readOptFlowData()
+{
+    // currently synthesize optical flow measurements from GPS velocities and estimated angles
+    if (newDataGps) {
+        float q0 = 0.0f;
+        float q1 = 0.0f;
+        float q2 = 0.0f;
+        float q3 = 1.0f;
+        Vector3f relVelSensor;
+        // Transformation matrix from nav to body axes
+        Mat3f Tnb;
+        // Transformation matrix from body to sensor axes
+        // assume camera is aligned with Z body axis plus a misalignment
+        // defined by 3 small angles about X, Y and Z body axis
+        Mat3f Tbs;
+        // Transformation matrix from navigation to sensor axes
+        Mat3f Tns;
+        // Copy required states to local variable names
+        q0       = _ekf->statesAtVelTime[0];
+        q1       = _ekf->statesAtVelTime[1];
+        q2       = _ekf->statesAtVelTime[2];
+        q3       = _ekf->statesAtVelTime[3];
+
+        // Define rotation from body to sensor axes
+        Tbs.x.y =  _ekf->a3;
+        Tbs.y.x = -_ekf->a3;
+        Tbs.x.z = -_ekf->a2;
+        Tbs.z.x =  _ekf->a2;
+        Tbs.y.z =  _ekf->a1;
+        Tbs.z.y = -_ekf->a1;
+
+        // calculate rotation from NED to body axes
+        float q00 = q0*q0;
+        float q11 = q1*q1;
+        float q22 = q2*q2;
+        float q33 = q3*q3;
+        float q01 = q0 * q1;
+        float q02 = q0 * q2;
+        float q03 = q0 * q3;
+        float q12 = q1 * q2;
+        float q13 = q1 * q3;
+        float q23 = q2 * q3;
+        Tnb.x.x = q00 + q11 - q22 - q33;
+        Tnb.y.y = q00 - q11 + q22 - q33;
+        Tnb.z.z = q00 - q11 - q22 + q33;
+        Tnb.y.x = 2*(q12 - q03);
+        Tnb.z.x = 2*(q13 + q02);
+        Tnb.x.y = 2*(q12 + q03);
+        Tnb.z.y = 2*(q23 - q01);
+        Tnb.x.z = 2*(q13 - q02);
+        Tnb.y.z = 2*(q23 + q01);
+
+        // calculate transformation from NED to sensor axes
+        Tns = Tbs*Tnb;
+
+        // calculate range from ground plain to centre of sensor fov assuming flat earth
+        float range = ConstrainFloat(_ekf->rngMea,0.5f,100.0f);
+
+        // calculate relative velocity in sensor frame
+        Vector3f temp;
+        temp.x=_ekf->velNED[0];
+        temp.y=_ekf->velNED[1];
+        temp.z=_ekf->velNED[2];
+        relVelSensor = Tns*temp;
+
+        // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
+        _ekf->losData[0] =  relVelSensor.y/range;
+        _ekf->losData[1] = -relVelSensor.x/range;
+
+        newOptFlowData = true;
+    } else {
+        newOptFlowData = false;
+    }
+}
+
 void readMagData()
 {
     // wind data forward to one update past current IMU data time
@@ -790,6 +887,13 @@ void WriteFilterOutput()
     fprintf(pRngFuseFile," %e %e", _ekf->innovRng, _ekf->varInnovRng);
     fprintf(pRngFuseFile,"\n");
 
+    // optical flow innovation and innovation variance
+    fprintf(pOptFlowFuseFile," %e", float(IMUmsec*0.001f));
+    for (uint8_t i=0; i<=1; i++)
+    {
+        fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
+    }
+    fprintf(pOptFlowFuseFile,"\n");
 }
 
 void readTimingData()
@@ -834,4 +938,24 @@ void CloseFiles()
     fclose (validationOutFile);
     fclose (pOnboardPosVelOutFile);
     fclose (pOnboardFile);
+}
+
+float ConstrainFloat(float val, float min, float max)
+{
+    float ret;
+    if (val > max) {
+        ret = max;
+        ekf_debug("> max: %8.4f, val: %8.4f", (double)max, (double)val);
+    } else if (val < min) {
+        ret = min;
+        ekf_debug("< min: %8.4f, val: %8.4f", (double)min, (double)val);
+    } else {
+        ret = val;
+    }
+
+    if (!isfinite(val)) {
+        ekf_debug("constrain: non-finite!");
+    }
+
+    return ret;
 }
