@@ -1672,7 +1672,7 @@ void AttPosEKF::FuseRangeFinder()
     // Need to check that our range finder tilt angle is less than 30 degrees and we are using range finder data
     SH_RNG[4] = sin(rngFinderPitch);
     cosRngTilt = - Tbn.z.x * SH_RNG[4] + Tbn.z.z * cos(rngFinderPitch);
-    if (useRangeFinder && cosRngTilt > 0.87f)
+    if (useRangeFinder && fuseRngData && cosRngTilt > 0.87f)
     {
         // Calculate observation jacobian and Kalman gain ignoring all states other than the terrain offset
         // This prevents the range finder measurement modifying any of the other filter states and significantly reduces computations

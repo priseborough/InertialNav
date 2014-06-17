@@ -14,6 +14,8 @@ void readMagData();
 
 void readAirData();
 
+void readRngData();
+
 void readAhrsData();
 
 void readTimingData();
@@ -74,6 +76,7 @@ uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
 bool newDataGps = false;
+bool newRngData = false;
 
 float onboardTimestamp = 0;
 uint32_t onboardMsec = 0;
@@ -199,6 +202,7 @@ int main()
         readGpsData();
         readMagData();
         readAirData();
+        readRngData();
         readAhrsData();
         readOnboardData();
         if (IMUmsec > msecEndTime || endOfData)
@@ -306,10 +310,15 @@ int main()
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 _ekf->FuseVelposNED();
+            }
+            else
+            {
+                _ekf->fuseHgtData = false;
+            }
 
-                // Fudge a fusion of range finder data using measurements synthesised from baro alt
-                //TODO - use logged rangefinder data
-                _ekf->rngMea = (_ekf->hgtMea + 2.0f) / _ekf->Tbn.z.z;
+            // Fuse RangeFinder Measurements
+            if (newRngData && _ekf->statesInitialised)
+            {
                 // recall states stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
                 _ekf->fuseRngData = true;
@@ -317,7 +326,6 @@ int main()
             }
             else
             {
-                _ekf->fuseHgtData = false;
                 _ekf->fuseRngData = false;
             }
 
@@ -611,7 +619,6 @@ void readAirData()
             ADSmsec = tempAdsPrev[1];
             _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
             _ekf->baroHgt = tempAdsPrev[8];
-            _ekf->rngMea = (_ekf->baroHgt + 5.0f) / _ekf->Tbn.z.z;
         } else {
             break;
         }
@@ -627,6 +634,16 @@ void readAirData()
     }
 }
 
+void readRngData()
+{
+    // Currently synthesise a terrain measurement that is 5 m below the baro alt
+    if (newAdsData) {
+        _ekf->rngMea = (_ekf->baroHgt  - _ekf->hgtRef - _ekf->baroHgtOffset + 5.0f) / _ekf->Tbn.z.z;
+        newRngData = true;
+    } else {
+        newRngData = false;
+    }
+}
 
 void readOnboardData()
 {
