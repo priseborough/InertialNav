@@ -211,9 +211,9 @@ int main(int argc, char *argv[])
         if (resetTests) {
 
             // Trigger a NaN reset after 25% of the log
-            if (!timeoutTested && (IMUmsec > (msecEndTime - msecStartTime) / 4)) {
-                _ekf->states[0] = 0 / 0;
-                _ekf->states[9] = 0 / 0;
+            if (!nanTested && (IMUmsec > (msecEndTime - msecStartTime) / 4)) {
+                _ekf->states[0] = 0.0f / 0.0f;
+                _ekf->states[9] = 0.0f / 0.0f;
                 nanTested = true;
                 printf("WARNING: TRIGGERING NAN STATE ON PURPOSE!\n");
             }
