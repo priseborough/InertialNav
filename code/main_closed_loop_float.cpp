@@ -155,7 +155,7 @@ int printstates() {
     return 0;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     // Instantiate EKF
     _ekf = new AttPosEKF();
@@ -190,15 +190,55 @@ int main()
 
     float dt = 0.0f; // time lapsed since last covariance prediction
 
+    bool resetTests = false;
+
+    // Test resets
+    if (argc > 1 && (strcmp(argv[1], "reset") == 0)) {
+        resetTests = true;
+    }
+
+    bool timeoutTested = false;
+    bool nanTested = false;
+
     while (true) {
 
         // read test data from files for next timestamp
-        readIMUData();
-        readGpsData();
-        readMagData();
-        readAirData();
-        readAhrsData();
-        readOnboardData();
+
+        unsigned nreads = 1;
+
+        // Decide wether to perform any reset tests
+
+        if (resetTests) {
+
+            // Trigger a NaN reset after 25% of the log
+            if (!timeoutTested && (IMUmsec > (msecEndTime - msecStartTime) / 4)) {
+                _ekf->states[0] = 0 / 0;
+                _ekf->states[9] = 0 / 0;
+                nanTested = true;
+                printf("WARNING: TRIGGERING NAN STATE ON PURPOSE!\n");
+            }
+
+            // Trigger a timeout at half the log
+            if (!timeoutTested && (IMUmsec > (msecEndTime - msecStartTime) / 2)) {
+                nreads = 20;
+                timeoutTested = true;
+                printf("WARNING: TRIGGERING SENSOR TIMEOUT ON PURPOSE!\n");
+            }
+        }
+
+        // Supporting multiple reads at once to support timeout simulation.
+
+        uint64_t IMUmsecPrev = IMUmsec;
+        for (unsigned i = 0; i < nreads; i++) {
+            readIMUData();
+            readGpsData();
+            readMagData();
+            readAirData();
+            readAhrsData();
+            readOnboardData();
+        }
+        _ekf->dtIMU     = 0.001f*(IMUmsec - IMUmsecPrev);
+
         if (IMUmsec > msecEndTime || endOfData)
         {
             printf("Reached end at %8.4f seconds (end of logfile reached: %s)", IMUmsec/1000.0f, (endOfData) ? "YES" : "NO");
@@ -400,9 +440,6 @@ int main()
             // debug output
             //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
             WriteFilterOutput();
-
-            _ekf->onGround = false;
-
 
             // State vector:
             // 0-3: quaternions (q0, q1, q2, q3)
