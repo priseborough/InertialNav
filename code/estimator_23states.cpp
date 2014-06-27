@@ -35,8 +35,15 @@ AttPosEKF::AttPosEKF()
     magDeclination = 0.0f;
     dAngIMU.zero();
     dVelIMU.zero();
-    ekfDiverged = false;
+    velNED[0] = 0.0f;
+    velNED[1] = 0.0f;
+    velNED[2] = 0.0f;
+    accelGPSNED[0] = 0.0f;
+    accelGPSNED[1] = 0.0f;
+    accelGPSNED[2] = 0.0f;
     delAngTotal.zero();
+    ekfDiverged = false;
+    lastReset = 0;
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
     ZeroVariables();
@@ -918,9 +925,9 @@ void AttPosEKF::FuseVelposNED()
 {
 
 // declare variables used by fault isolation logic
-    uint32_t gpsRetryTime = 30000; // time in msec before GPS fusion will be retried following innovation consistency failure
-    uint32_t gpsRetryTimeNoTAS = 5000; // retry time if no TAS measurement available
-    uint32_t hgtRetryTime = 5000; // height measurement retry time
+    uint32_t gpsRetryTime = 3000; // time in msec before GPS fusion will be retried following innovation consistency failure
+    uint32_t gpsRetryTimeNoTAS = 500; // retry time if no TAS measurement available
+    uint32_t hgtRetryTime = 500; // height measurement retry time
     uint32_t horizRetryTime;
 
 // declare variables used to check measurement errors
@@ -2318,11 +2325,20 @@ int AttPosEKF::CheckAndBound()
     // Store the old filter state
     bool currStaticMode = staticMode;
 
+    // Limit reset rate to 5 Hz to allow the filter
+    // to settle
+    if (millis() - lastReset < 200) {
+        return 0;
+    }
+
     if (ekfDiverged) {
         ekfDiverged = false;
     }
 
     int ret = 0;
+
+    // Check if we're on ground - this also sets static mode.
+    OnGroundCheck();
 
     // Reset the filter if the states went NaN
     if (StatesNaN(&last_ekf_error)) {
@@ -2344,9 +2360,6 @@ int AttPosEKF::CheckAndBound()
         // that's all we can do here, return
         ret = 2;
     }
-
-    // Check if we're on ground - this also sets static mode.
-    OnGroundCheck();
 
     // Check if we switched between states
     if (currStaticMode != staticMode) {
@@ -2385,6 +2398,7 @@ int AttPosEKF::CheckAndBound()
 
     if (ret) {
         ekfDiverged = true;
+        lastReset = millis();
     }
 
     return ret;
@@ -2438,7 +2452,6 @@ void AttPosEKF::AttitudeInit(float ax, float ay, float az, float mx, float my, f
 
 void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
 {
-
     ZeroVariables();
 
     // Fill variables with valid data
@@ -2475,17 +2488,13 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
     magstate.R_MAG = sq(magMeasurementSigma);
     magstate.DCM = DCM;
 
-    // Calculate position from gps measurement
-    float posNEDInit[3] = {0.0f, 0.0f, 0.0f}; // North, East Down position (m)
-    calcposNED(posNEDInit, gpsLat, gpsLon, gpsHgt, latRef, lonRef, hgtRef);
-
     // write to state vector
     for (uint8_t j=0; j<=3; j++) states[j] = initQuat[j]; // quaternions
     for (uint8_t j=4; j<=6; j++) states[j] = initvelNED[j-4]; // velocities
     // positions:
-    states[7] = posNEDInit[0];
-    states[8] = posNEDInit[1];
-    states[9] = posNEDInit[2];
+    states[7] = posNE[0];
+    states[8] = posNE[1];
+    states[9] = -hgtMea;
     for (uint8_t j=10; j<=15; j++) states[j] = 0.0f; // dAngBias, dVelBias, windVel
     states[16] = initMagNED.x; // Magnetic Field North
     states[17] = initMagNED.y; // Magnetic Field East
@@ -2517,10 +2526,12 @@ void AttPosEKF::InitialiseFilter(float (&initvelNED)[3], double referenceLat, do
     hgtRef = referenceHgt;
     refSet = true;
 
-    // we are at reference altitude, so measurement must be zero
-    hgtMea = 0.0f;
+    // we are at reference position, so measurement must be zero
     posNE[0] = 0.0f;
     posNE[1] = 0.0f;
+
+    // we are at an unknown, possibly non-zero altitude - so altitude
+    // is not reset (hgtMea)
 
     // the baro offset must be this difference now
     baroHgtOffset = baroHgt - referenceHgt;
@@ -2576,6 +2587,7 @@ void AttPosEKF::GetFilterState(struct ekf_status_report *state)
     for (unsigned i = 0; i < n_states; i++) {
         current_ekf_state.states[i] = states[i];
     }
+    current_ekf_state.n_states = n_states;
 
     memcpy(state, &current_ekf_state, sizeof(*state));
 }
