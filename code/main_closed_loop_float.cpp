@@ -386,10 +386,12 @@ int main(int argc, char *argv[])
                 _ekf->fuseVtasData = false;
             }
 
+            struct ekf_status_report ekf_report;
+
             /*
              *    CHECK IF THE INPUT DATA IS SANE
              */
-            int check = _ekf->CheckAndBound();
+            int check = _ekf->CheckAndBound(&ekf_report);
 
             switch (check) {
                 case 0:
@@ -435,6 +437,22 @@ int main(int argc, char *argv[])
 
             if (check) {
                 printf("RESET OCCURED AT %d milliseconds\n", (int)IMUmsec);
+
+                if (!ekf_report.velHealth || !ekf_report.posHealth || !ekf_report.hgtHealth || ekf_report.gyroOffsetsExcessive) {
+                printf("health: VEL:%s POS:%s HGT:%s OFFS:%s\n",
+                    ((ekf_report.velHealth) ? "OK" : "ERR"),
+                    ((ekf_report.posHealth) ? "OK" : "ERR"),
+                    ((ekf_report.hgtHealth) ? "OK" : "ERR"),
+                    ((!ekf_report.gyroOffsetsExcessive) ? "OK" : "ERR"));
+                }
+
+                if (ekf_report.velTimeout || ekf_report.posTimeout || ekf_report.hgtTimeout || ekf_report.imuTimeout) {
+                    printf("timeout: %s%s%s%s\n",
+                        ((ekf_report.velTimeout) ? "VEL " : ""),
+                        ((ekf_report.posTimeout) ? "POS " : ""),
+                        ((ekf_report.hgtTimeout) ? "HGT " : ""),
+                        ((ekf_report.imuTimeout) ? "IMU " : ""));
+                }
             }
 
             // debug output
