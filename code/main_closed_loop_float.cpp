@@ -1,4 +1,3 @@
-
 #include "estimator_23states.h"
 
 #include <stdint.h>
@@ -14,6 +13,10 @@ void readMagData();
 
 void readAirData();
 
+void readRngData();
+
+void readOptFlowData();
+
 void readAhrsData();
 
 void readTimingData();
@@ -24,6 +27,8 @@ void WriteFilterOutput();
 
 void CloseFiles();
 
+float ConstrainFloat(float val, float min, float max);
+
 bool endOfData = false; //boolean set to true when all files have returned data
 
 // Estimated time delays (msec)
@@ -33,6 +38,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
+uint32_t msecOptFlowDelay = 230;
 
 // IMU input data variables
 float imuIn;
@@ -74,6 +80,8 @@ uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
 bool newDataGps = false;
+bool newRngData = false;
+bool newOptFlowData = false;
 
 float onboardTimestamp = 0;
 uint32_t onboardMsec = 0;
@@ -108,6 +116,8 @@ FILE * pRefPosVelOutFile;
 FILE * pVelPosFuseFile;
 FILE * pMagFuseFile;
 FILE * pTasFuseFile;
+FILE * pRngFuseFile;
+FILE * pOptFlowFuseFile;
 FILE * pTimeFile;
 FILE * pGpsRawOUTFile;
 FILE * pGpsRawINFile;
@@ -174,6 +184,8 @@ int main(int argc, char *argv[])
     pVelPosFuseFile = open_with_exit ("VelPosFuse.txt","w");
     pMagFuseFile = open_with_exit ("MagFuse.txt","w");
     pTasFuseFile = open_with_exit ("TasFuse.txt","w");
+    pRngFuseFile = open_with_exit ("RngFuse.txt","w");
+    pOptFlowFuseFile = open_with_exit ("OptFlowFuse.txt","w");
     pGpsRawINFile = fopen ("GPSraw.txt","r");
     pGpsRawOUTFile = open_with_exit ("GPSrawOut.txt","w");
     validationOutFile = fopen("ValidationOut.txt", "w");
@@ -203,7 +215,6 @@ int main(int argc, char *argv[])
     while (true) {
 
         // read test data from files for next timestamp
-
         unsigned nreads = 1;
 
         // Decide wether to perform any reset tests
@@ -227,16 +238,24 @@ int main(int argc, char *argv[])
         }
 
         // Supporting multiple reads at once to support timeout simulation.
+        // The default is however to only read one dataset at a time
 
+        // We need to re-do the dtIMU calculation here so that
+        // dtIMU correctly skips if we skip readings.
         uint64_t IMUmsecPrev = IMUmsec;
         for (unsigned i = 0; i < nreads; i++) {
             readIMUData();
             readGpsData();
+            readOptFlowData();
             readMagData();
             readAirData();
+            readRngData();
             readAhrsData();
             readOnboardData();
         }
+
+        // Apply dtIMU here after 1 or more reads, simulating skipped sensor
+        // readings if desired.
         _ekf->dtIMU     = 0.001f*(IMUmsec - IMUmsecPrev);
 
         if (IMUmsec > msecEndTime || endOfData)
@@ -270,7 +289,7 @@ int main(int argc, char *argv[])
                 // Run the strapdown INS equations every IMU update
                 _ekf->UpdateStrapdownEquationsNED();
                 #if 1
-                // debug code - could be turned into a filter mnitoring/watchdog function
+                // debug code - could be turned into a filter monitoring/watchdog function
                 float tempQuat[4];
                 for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
                 _ekf->quat2eul(eulerEst, tempQuat);
@@ -335,6 +354,20 @@ int main(int argc, char *argv[])
                 _ekf->fusePosData = false;
             }
 
+            // Fuse Optical Flow Measurements
+            if (newOptFlowData && _ekf->statesInitialised)
+            {
+                // recall states stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->fuseOptFlowData = true;
+                _ekf->FuseOptFlow();
+                _ekf->FuseOptFlow();
+            }
+            else
+            {
+                _ekf->fuseOptFlowData = false;
+            }
+
             if (newAdsData && _ekf->statesInitialised)
             {
                 // Could use a blend of GPS and baro alt data if desired
@@ -344,10 +377,15 @@ int main(int argc, char *argv[])
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 _ekf->FuseVelposNED();
+            }
+            else
+            {
+                _ekf->fuseHgtData = false;
+            }
 
-                // Fudge a fusion of range finder data using measurements synthesised from baro alt
-                //TODO - use logged rangefinder data
-                _ekf->rngMea = (_ekf->hgtMea + 2.0f) / _ekf->Tbn.z.z;
+            // Fuse RangeFinder Measurements
+            if (newRngData && _ekf->statesInitialised)
+            {
                 // recall states stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
                 _ekf->fuseRngData = true;
@@ -355,7 +393,6 @@ int main(int argc, char *argv[])
             }
             else
             {
-                _ekf->fuseHgtData = false;
                 _ekf->fuseRngData = false;
             }
 
@@ -604,6 +641,81 @@ void readGpsData()
     }
 }
 
+void readOptFlowData()
+{
+    // currently synthesize optical flow measurements from GPS velocities and estimated angles
+    if (newDataGps) {
+        float q0 = 0.0f;
+        float q1 = 0.0f;
+        float q2 = 0.0f;
+        float q3 = 1.0f;
+        Vector3f relVelSensor;
+        // Transformation matrix from nav to body axes
+        Mat3f Tnb;
+        // Transformation matrix from body to sensor axes
+        // assume camera is aligned with Z body axis plus a misalignment
+        // defined by 3 small angles about X, Y and Z body axis
+        Mat3f Tbs;
+        // Transformation matrix from navigation to sensor axes
+        Mat3f Tns;
+        // Copy required states to local variable names
+        q0       = _ekf->statesAtVelTime[0];
+        q1       = _ekf->statesAtVelTime[1];
+        q2       = _ekf->statesAtVelTime[2];
+        q3       = _ekf->statesAtVelTime[3];
+
+        // Define rotation from body to sensor axes
+        Tbs.x.y =  _ekf->a3;
+        Tbs.y.x = -_ekf->a3;
+        Tbs.x.z = -_ekf->a2;
+        Tbs.z.x =  _ekf->a2;
+        Tbs.y.z =  _ekf->a1;
+        Tbs.z.y = -_ekf->a1;
+
+        // calculate rotation from NED to body axes
+        float q00 = q0*q0;
+        float q11 = q1*q1;
+        float q22 = q2*q2;
+        float q33 = q3*q3;
+        float q01 = q0 * q1;
+        float q02 = q0 * q2;
+        float q03 = q0 * q3;
+        float q12 = q1 * q2;
+        float q13 = q1 * q3;
+        float q23 = q2 * q3;
+        Tnb.x.x = q00 + q11 - q22 - q33;
+        Tnb.y.y = q00 - q11 + q22 - q33;
+        Tnb.z.z = q00 - q11 - q22 + q33;
+        Tnb.y.x = 2*(q12 - q03);
+        Tnb.z.x = 2*(q13 + q02);
+        Tnb.x.y = 2*(q12 + q03);
+        Tnb.z.y = 2*(q23 - q01);
+        Tnb.x.z = 2*(q13 - q02);
+        Tnb.y.z = 2*(q23 + q01);
+
+        // calculate transformation from NED to sensor axes
+        Tns = Tbs*Tnb;
+
+        // calculate range from ground plain to centre of sensor fov assuming flat earth
+        float range = ConstrainFloat(_ekf->rngMea,0.5f,100.0f);
+
+        // calculate relative velocity in sensor frame
+        Vector3f temp;
+        temp.x=_ekf->velNED[0];
+        temp.y=_ekf->velNED[1];
+        temp.z=_ekf->velNED[2];
+        relVelSensor = Tns*temp;
+
+        // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
+        _ekf->losData[0] =  relVelSensor.y/range;
+        _ekf->losData[1] = -relVelSensor.x/range;
+
+        newOptFlowData = true;
+    } else {
+        newOptFlowData = false;
+    }
+}
+
 void readMagData()
 {
     // wind data forward to one update past current IMU data time
@@ -664,7 +776,6 @@ void readAirData()
             ADSmsec = tempAdsPrev[1];
             _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
             _ekf->baroHgt = tempAdsPrev[8];
-            _ekf->rngMea = (_ekf->baroHgt + 5.0f) / _ekf->Tbn.z.z;
         } else {
             break;
         }
@@ -680,6 +791,16 @@ void readAirData()
     }
 }
 
+void readRngData()
+{
+    // Currently synthesise a terrain measurement that is 5 m below the baro alt
+    if (newAdsData) {
+        _ekf->rngMea = (_ekf->baroHgt  - _ekf->hgtRef - _ekf->baroHgtOffset + 5.0f) / _ekf->Tbn.z.z;
+        newRngData = true;
+    } else {
+        newRngData = false;
+    }
+}
 
 void readOnboardData()
 {
@@ -807,6 +928,7 @@ void WriteFilterOutput()
         fprintf(pVelPosFuseFile," %e %e", _ekf->innovVelPos[i], _ekf->varInnovVelPos[i]);
     }
     fprintf(pVelPosFuseFile,"\n");
+
     // magnetometer innovations and innovation variances
     fprintf(pMagFuseFile," %e", float(IMUmsec*0.001f));
     for (uint8_t i=0; i<=2; i++)
@@ -814,11 +936,24 @@ void WriteFilterOutput()
         fprintf(pMagFuseFile," %e %e", _ekf->innovMag[i], _ekf->varInnovMag[i]);
     }
     fprintf(pMagFuseFile,"\n");
+
     // airspeed innovation and innovation variance
     fprintf(pTasFuseFile," %e", float(IMUmsec*0.001f));
     fprintf(pTasFuseFile," %e %e", _ekf->innovVtas, _ekf->varInnovVtas);
     fprintf(pTasFuseFile,"\n");
 
+    // range finder innovation and innovation variance
+    fprintf(pRngFuseFile," %e", float(IMUmsec*0.001f));
+    fprintf(pRngFuseFile," %e %e", _ekf->innovRng, _ekf->varInnovRng);
+    fprintf(pRngFuseFile,"\n");
+
+    // optical flow innovation and innovation variance
+    fprintf(pOptFlowFuseFile," %e", float(IMUmsec*0.001f));
+    for (uint8_t i=0; i<=1; i++)
+    {
+        fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
+    }
+    fprintf(pOptFlowFuseFile,"\n");
 }
 
 void readTimingData()
@@ -863,4 +998,24 @@ void CloseFiles()
     fclose (validationOutFile);
     fclose (pOnboardPosVelOutFile);
     fclose (pOnboardFile);
+}
+
+float ConstrainFloat(float val, float min, float max)
+{
+    float ret;
+    if (val > max) {
+        ret = max;
+        ekf_debug("> max: %8.4f, val: %8.4f", (double)max, (double)val);
+    } else if (val < min) {
+        ret = min;
+        ekf_debug("< min: %8.4f, val: %8.4f", (double)min, (double)val);
+    } else {
+        ret = val;
+    }
+
+    if (!isfinite(val)) {
+        ekf_debug("constrain: non-finite!");
+    }
+
+    return ret;
 }

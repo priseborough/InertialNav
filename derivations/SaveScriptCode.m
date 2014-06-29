@@ -351,12 +351,12 @@ if exist('SH_LOS','var')
     fprintf(fid,'\n');
     [nRow,nCol] = size(H_LOS);
     fprintf(fid,'\n');
-    fprintf(fid,'H_LOSX = zeros(1,%d);\n',nCol);
+    fprintf(fid,'H_LOS = zeros(1,%d);\n',nCol);
     for colIndex = 1:nCol
         string = char(H_LOS(1,colIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
-            fprintf(fid,'H_LOSX(%d) = %s;\n',colIndex,string);
+            fprintf(fid,'H_LOS(%d) = %s;\n',colIndex,string);
         end
     end
     fprintf(fid,'\n');
@@ -364,12 +364,12 @@ if exist('SH_LOS','var')
     fprintf(fid,'\n');
     [nRow,nCol] = size(H_LOS);
     fprintf(fid,'\n');
-    fprintf(fid,'H_LOSY = zeros(1,%d);\n',nCol);
+    fprintf(fid,'H_LOS = zeros(1,%d);\n',nCol);
     for colIndex = 1:nCol
         string = char(H_LOS(2,colIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
-            fprintf(fid,'H_LOSY(%d) = %s;\n',colIndex,string);
+            fprintf(fid,'H_LOS(%d) = %s;\n',colIndex,string);
         end
     end
     

@@ -230,7 +230,7 @@ range = ((ptd - pd)/Tsn(3,3));
 relVelBody = transpose(Tsn)*[vn;ve;vd];
 % divide by range to get predicted angular LOS rates relative to X and Y
 % axes
-losRateX =  relVelBody(2)/range;
+losRateX = +relVelBody(2)/range;
 losRateY = -relVelBody(1)/range;
 
 H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
@@ -242,6 +242,7 @@ K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS);
 K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
 K_LOS = [K_LOSX,K_LOSY];
 [K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
+[SK_LOS,SKK_LOS]=OptimiseAlgebra(SK_LOS,'SKK_LOS');
 
 %% derive equations for fusion of laser range finder measurement
 
