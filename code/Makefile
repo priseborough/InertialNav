@@ -1,6 +1,22 @@
 
 CC=g++
-CFLAGS=-I. -D__EXPORT="" -Dnullptr="0"
+CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
+			   -fno-strength-reduce \
+			   -fomit-frame-pointer \
+   			   -funsafe-math-optimizations \
+   			   -Wall \
+			   -Wextra \
+			   -Wshadow \
+			   -Wfloat-equal \
+			   -Wframe-larger-than=1024 \
+			   -Wpointer-arith \
+			   -Wmissing-declarations \
+			   -Wpacked \
+			   -Wno-unused-parameter \
+			   -Werror=format-security \
+			   -Werror=array-bounds \
+			   -Wfatal-errors \
+			   -Wno-missing-field-initializers
 
 ODIR=obj
 LDIR =../lib
