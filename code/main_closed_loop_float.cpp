@@ -437,6 +437,17 @@ int main(int argc, char *argv[])
                 case 1:
                 {
                     printf("NaN in states, resetting\n");
+                    printf("fail states: ");
+                    for (unsigned i = 0; i < ekf_report.n_states; i++) {
+                        printf("%f ",ekf_report.states[i]);
+                    }
+                    printf("\n");
+
+                    printf("states after reset: ");
+                    for (unsigned i = 0; i < ekf_report.n_states; i++) {
+                        printf("%f ",_ekf->states[i]);
+                    }
+                    printf("\n");
                     break;
                 }
                 case 2:
