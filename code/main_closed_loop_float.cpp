@@ -626,7 +626,7 @@ void readGpsData()
             }
         }
 
-        if (!endOfData && (tempGps[1] == 3))
+        if (!endOfData && (tempGps[1] > 2) /* 3 or more */)
         {
             GPStimestamp  = tempGps[0];
             GPSmsec = tempGpsPrev[2];
