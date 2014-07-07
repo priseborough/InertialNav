@@ -1742,7 +1742,6 @@ void AttPosEKF::FuseOptFlow()
     static float vd = 0.0f;
     static float pd = 0.0f;
     static float ptd = 0.0f;
-    static Vector3f delAng;
     static float R_LOS = 0.01f;
     static float losPred[2];
 
@@ -1819,9 +1818,6 @@ void AttPosEKF::FuseOptFlow()
 
             // calculate relative velocity in sensor frame
             relVelSensor = Tns*velNED_local;
-
-            // calculate delta angles in sensor axes
-            Vector3f delAngRel = Tbs*delAng;
 
             // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
             losPred[0] =  relVelSensor.y/range;
