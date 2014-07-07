@@ -264,7 +264,7 @@ static void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, flo
 
 void calcposNED(float (&posNED)[3], double lat, double lon, float hgt, double latRef, double lonRef, float hgtRef);
 
-static void calcLLH(float (&posNED)[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef);
+static void calcLLH(float posNED[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef);
 
 static void quat2Tnb(Mat3f &Tnb, const float (&quat)[4]);
 
