@@ -8,91 +8,107 @@ fileName = strcat('SymbolicOutput',int2str(nStates),'.txt');
 fid = fopen(fileName,'wt');
 
 %% Write equation for state transition matrix
-fprintf(fid,'SF = zeros(%d,1);\n',numel(SF));
-for rowIndex = 1:numel(SF)
-    string = char(SF(rowIndex,1));
-    fprintf(fid,'SF(%d) = %s;\n',rowIndex,string);
+if exist('SF','var')
+    
+    fprintf(fid,'SF = zeros(%d,1);\n',numel(SF));
+    for rowIndex = 1:numel(SF)
+        string = char(SF(rowIndex,1));
+        fprintf(fid,'SF(%d) = %s;\n',rowIndex,string);
+    end
+    
+    % fprintf(fid,'\n');
+    % fprintf(fid,'F = zeros(%d,%d);\n',nStates,nStates);
+    % for rowIndex = 1:nStates
+    %     for colIndex = 1:nStates
+    %         string = char(F(rowIndex,colIndex));
+    %         % don't write out a zero-assignment
+    %         if ~strcmpi(string,'0')
+    %             fprintf(fid,'F(%d,%d) = %s;\n',rowIndex,colIndex,string);
+    %         end
+    %     end
+    % end
+    % fprintf(fid,'\n');
+    
 end
-
-% fprintf(fid,'\n');
-% fprintf(fid,'F = zeros(%d,%d);\n',nStates,nStates);
-% for rowIndex = 1:nStates
-%     for colIndex = 1:nStates
-%         string = char(F(rowIndex,colIndex));
-%         % don't write out a zero-assignment
-%         if ~strcmpi(string,'0')
-%             fprintf(fid,'F(%d,%d) = %s;\n',rowIndex,colIndex,string);
-%         end
-%     end
-% end
-% fprintf(fid,'\n');
-
 %% Write equations for control influence (disturbance) matrix
-fprintf(fid,'\n');
-fprintf(fid,'SG = zeros(%d,1);\n',numel(SG));
-for rowIndex = 1:numel(SG)
-    string = char(SG(rowIndex,1));
-    fprintf(fid,'SG(%d) = %s;\n',rowIndex,string);
+if exist('SG','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SG = zeros(%d,1);\n',numel(SG));
+    for rowIndex = 1:numel(SG)
+        string = char(SG(rowIndex,1));
+        fprintf(fid,'SG(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    % fprintf(fid,'\n');
+    % fprintf(fid,'G = zeros(%d,%d);\n',nStates,numel([da;dv]));
+    % for rowIndex = 1:nStates
+    %     for colIndex = 1:numel([da;dv])
+    %         string = char(G(rowIndex,colIndex));
+    %         % don't write out a zero-assignment
+    %         if ~strcmpi(string,'0')
+    %             fprintf(fid,'G(%d,%d) = %s;\n',rowIndex,colIndex,string);
+    %         end
+    %     end
+    % end
+    % fprintf(fid,'\n');
+    
 end
-fprintf(fid,'\n');
-
-% fprintf(fid,'\n');
-% fprintf(fid,'G = zeros(%d,%d);\n',nStates,numel([da;dv]));
-% for rowIndex = 1:nStates
-%     for colIndex = 1:numel([da;dv])
-%         string = char(G(rowIndex,colIndex));
-%         % don't write out a zero-assignment
-%         if ~strcmpi(string,'0')
-%             fprintf(fid,'G(%d,%d) = %s;\n',rowIndex,colIndex,string);
-%         end
-%     end
-% end
-% fprintf(fid,'\n');
-
 %% Write equations for state error matrix
-fprintf(fid,'\n');
-fprintf(fid,'SQ = zeros(%d,1);\n',numel(SQ));
-for rowIndex = 1:numel(SQ)
-    string = char(SQ(rowIndex,1));
-    fprintf(fid,'SQ(%d) = %s;\n',rowIndex,string);
+if exist('SQ','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SQ = zeros(%d,1);\n',numel(SQ));
+    for rowIndex = 1:numel(SQ)
+        string = char(SQ(rowIndex,1));
+        fprintf(fid,'SQ(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    % fprintf(fid,'\n');
+    % fprintf(fid,'Q = zeros(%d,%d);\n',nStates,nStates);
+    % for rowIndex = 1:nStates
+    %     for colIndex = 1:nStates
+    %         string = char(Q(rowIndex,colIndex));
+    %         % don't write out a zero-assignment
+    %         if ~strcmpi(string,'0')
+    %             fprintf(fid,'Q(%d,%d) = %s;\n',rowIndex,colIndex,string);
+    %         end
+    %     end
+    % end
+    % fprintf(fid,'\n');
+    
 end
-fprintf(fid,'\n');
-
-% fprintf(fid,'\n');
-% fprintf(fid,'Q = zeros(%d,%d);\n',nStates,nStates);
-% for rowIndex = 1:nStates
-%     for colIndex = 1:nStates
-%         string = char(Q(rowIndex,colIndex));
-%         % don't write out a zero-assignment
-%         if ~strcmpi(string,'0')
-%             fprintf(fid,'Q(%d,%d) = %s;\n',rowIndex,colIndex,string);
-%         end
-%     end
-% end
-% fprintf(fid,'\n');
-
 %% Write equations for covariance prediction
-fprintf(fid,'\n');
-fprintf(fid,'SPP = zeros(%d,1);\n',numel(SPP));
-for rowIndex = 1:numel(SPP)
-    string = char(SPP(rowIndex,1));
-    fprintf(fid,'SPP(%d) = %s;\n',rowIndex,string);
+if exist('SPP','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SPP = zeros(%d,1);\n',numel(SPP));
+    for rowIndex = 1:numel(SPP)
+        string = char(SPP(rowIndex,1));
+        fprintf(fid,'SPP(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
 end
-fprintf(fid,'\n');
 
-fprintf(fid,'\n');
-fprintf(fid,'nextP = zeros(%d,%d);\n',nStates,nStates);
-for rowIndex = 1:nStates
-    for colIndex = 1:nStates
-        string = char(PP(rowIndex,colIndex));
-        % don't write out a zero-assignment
-        if ~strcmpi(string,'0')
-            fprintf(fid,'nextP(%d,%d) = %s;\n',rowIndex,colIndex,string);
+if exist('nextP','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'nextP = zeros(%d,%d);\n',nStates,nStates);
+    for rowIndex = 1:nStates
+        for colIndex = 1:nStates
+            string = char(PP(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'nextP(%d,%d) = %s;\n',rowIndex,colIndex,string);
+            end
         end
     end
+    fprintf(fid,'\n');
+    
 end
-fprintf(fid,'\n');
-
 %% Write equations for velocity and position data fusion
 if exist('H_VP','var')
     
