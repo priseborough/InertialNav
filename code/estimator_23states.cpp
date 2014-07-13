@@ -1897,9 +1897,8 @@ void AttPosEKF::FuseOptFlow()
             varInnovOptFlow[0] = 1.0f/SK_LOS[0];
             innovOptFlow[0] = losPred[0] - losData[0];
 
-            // reset the observation index to 0 (we start by fusing the X
-            // measurement)
-            obsIndex = 0;
+            // set the observation index to 1 to fuse the y component next time round and reset the commence fusion flag
+            obsIndex = 1;
             fuseOptFlowData = false;
         }
         else if (obsIndex == 1) // we are now fusing the Y measurement
@@ -1943,6 +1942,10 @@ void AttPosEKF::FuseOptFlow()
             Kfusion[22] = SK_LOS[1]*(P[22][0]*SKK_LOS[10] - P[22][3]*SKK_LOS[13] + P[22][1]*SKK_LOS[11] + P[22][2]*SKK_LOS[12] - P[22][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[22][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[22][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
             varInnovOptFlow[1] = 1.0f/SK_LOS[1];
             innovOptFlow[1] = losPred[1] - losData[1];
+
+            // reset the observation index
+            obsIndex = 0;
+            fuseOptFlowData = false;
         }
 
         // Check the innovation for consistency and don't fuse if > 3Sigma
@@ -2004,10 +2007,9 @@ void AttPosEKF::FuseOptFlow()
                 P[i][j] = P[i][j] - KHP[i][j];
             }
         }
+        ForceSymmetry();
+        ConstrainVariances();
     }
-    obsIndex = obsIndex + 1;
-    ForceSymmetry();
-    ConstrainVariances();
 }
 
 void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
