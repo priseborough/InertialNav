@@ -80,6 +80,7 @@ public:
         airspeedMeasurementSigma = 1.4f;
         gyroProcessNoise = 1.4544411e-2f;
         accelProcessNoise = 0.5f;
+
     }
 
     struct mag_state_struct {
@@ -134,7 +135,7 @@ public:
     Vector3f lastGyroOffset;    // Last gyro offset
     Vector3f delAngTotal;
 
-    Mat3f Tbn; // transformation matrix from body to NED coordinates
+    Mat3f Tbn; // transformation matrix from body to NED coordinatesFuseOptFlow
     Mat3f Tnb; // transformation amtrix from NED to body coordinates
 
     Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
@@ -213,6 +214,11 @@ public:
 
     unsigned storeIndex;
 
+    // Optical Flow error estimation
+    float optFlowCov[6][6]; // state covariance matrix from optical flow error estimation EKF
+    float optFlowStates[6]; // states from optical flow error estimation EKF
+    float innovOptFlowErrEst[2]; // optical flow observation innovations from error estimation EKF
+    float varInnovOptFlowErrEst[2]; // optical flow observation variances from error estimation EKF
 
 void  UpdateStrapdownEquationsNED();
 
@@ -228,6 +234,8 @@ void FuseRangeFinder();
 
 void FuseOptFlow();
 
+void OptFlowErrEKF();
+
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 
 void zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
@@ -241,7 +249,7 @@ void StoreStates(uint64_t timestamp_ms);
  * Recall the state vector.
  *
  * Recalls the vector stored at closest time to the one specified by msec
- *
+ *FuseOptFlow
  * @return zero on success, integer indicating the number of invalid states on failure.
  *         Does only copy valid states, if the statesForFusion vector was initialized
  *         correctly by the caller, the result can be safely used, but is a mixture

@@ -2012,6 +2012,211 @@ void AttPosEKF::FuseOptFlow()
     }
 }
 
+void AttPosEKF::OptFlowErrEKF()
+{
+    Vector3f vel; // velocity of sensor relative to ground in NED axes
+    Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
+    Mat3f T_bs; // transformation from body to sensor axes
+    Mat3f T_nb;   // transformation from nav to body axes
+    Mat3f T_ns; // transformation from nav to sensor axes
+    float range; // range from camera to centre of image
+    float dtIMUinv; // inverse of IMU time step
+    Vector3f omega; // angular rate vector in body axes
+    Vector3f omegaSensor; // angular rate vector in sensor axes
+    float losPred[2]; // predicted optical flow angular rate measurements
+    float SH_OPT[2]; // intermediate results for observation jacobian
+    float H_OPT[2][6]; //observation jacobian
+    float SK_OPT[7]; // intermediate results for Kalman gains
+    float K_OPT[2][6]; // Kalman gains
+    float q0; // quaternion at optical flow measurement time
+    float q1; // quaternion at optical flow measurement time
+    float q2; // quaternion at optical flow measurement time
+    float q3; // quaternion at optical flow measurement time
+    float pd; // flight vehicle vertical position at optical flow measurement time
+    float ptd; // terrain vertical position at optical flow measurement time
+    float Kopt; // focal length scale factor
+    float R_OPT = 0.1; // optical flow LOS rate variance (rad^2) TODO should make this a function of the opt flow quality measure
+
+    // Perform sequential fusion of optical flow measurements only when in the air
+    float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
+    bool validHeight = heightAboveGndEst > 0.5f && heightAboveGndEst < 50.0f;
+    bool validTilt = Tnb.z.z > 0.866f;
+    if (useOpticalFlow && fuseOptFlowData && !onGround && validTilt && validHeight)
+    {
+        // Copy required states to local variable names
+        q0             = statesAtOptFlowTime[0];
+        q1             = statesAtOptFlowTime[1];
+        q2             = statesAtOptFlowTime[2];
+        q3             = statesAtOptFlowTime[3];
+        vel.x          = statesAtOptFlowTime[4];
+        vel.y          = statesAtOptFlowTime[5];
+        vel.z          = statesAtOptFlowTime[6];
+        pd             = statesAtOptFlowTime[9];
+        ptd            = statesAtOptFlowTime[22];
+        Kopt           = optFlowStates[0];
+        a1             = optFlowStates[1];
+        a2             = optFlowStates[2];
+        a3             = optFlowStates[3];
+        T_bs.x.y       =  optFlowStates[3];
+        T_bs.y.x       = -optFlowStates[3];
+        T_bs.x.z       = -optFlowStates[2];
+        T_bs.z.x       =  optFlowStates[2];
+        T_bs.y.z       =  optFlowStates[1];
+        T_bs.z.y       = -optFlowStates[1];
+
+        // increment state variances with a small value to keep the estimation alive
+        for (uint8_t i = 0; i < 6; i++) {
+            optFlowCov[i][i] += 1e-8;
+        }
+
+        // calculate angular rate in sensor axes
+        dtIMUinv    = 1.0f/dtIMU;
+        omega       = correctedDelAng*dtIMUinv;
+        omegaSensor = T_bs*omega;
+
+        // calculate rotation from NED to body axes
+        float q00 = sq(q0);
+        float q11 = sq(q1);
+        float q22 = sq(q2);
+        float q33 = sq(q3);
+        float q01 = q0 * q1;
+        float q02 = q0 * q2;
+        float q03 = q0 * q3;
+        float q12 = q1 * q2;
+        float q13 = q1 * q3;
+        float q23 = q2 * q3;
+        T_nb.x.x = q00 + q11 - q22 - q33;
+        T_nb.y.y = q00 - q11 + q22 - q33;
+        T_nb.z.z = q00 - q11 - q22 + q33;
+        T_nb.y.x = 2*(q12 - q03);
+        T_nb.z.x = 2*(q13 + q02);
+        T_nb.x.y = 2*(q12 + q03);
+        T_nb.z.y = 2*(q23 - q01);
+        T_nb.x.z = 2*(q13 - q02);
+        T_nb.y.z = 2*(q23 + q01);
+
+        // calculate transformation from NED to sensor axes
+        T_ns = T_bs*T_nb;
+
+        // estimate range to centre of image
+        range = ConstrainFloat(((ptd - pd)/T_ns.z.z),0.5f,100.0f);
+
+        // calculate relative velocity in sensor frame
+        relVelSensor = T_ns*vel;
+
+        // divide velocity by range, subtract body rates and apply scale factor to
+        // get predicted sensed angular optical rates relative to X and Y sensor axes
+        // apply motion compensation with bias errors
+        losPred[0] =  Kopt*( relVelSensor.y/range - omegaSensor.x) + (omegaSensor.x + optFlowStates[4]);
+        losPred[1] =  Kopt*(-relVelSensor.x/range - omegaSensor.y) + (omegaSensor.y + optFlowStates[5]);
+
+        // calculate innovations
+        innovOptFlowErrEst[0] = losPred[0] - losData[0];
+        innovOptFlowErrEst[1] = losPred[1] - losData[1];
+
+        //printf("relVelSensor.x=%5.1f, relVelSensor.y=%5.1f\n", relVelSensor.x, relVelSensor.y);
+
+        // Calculate observation jacobians
+        SH_OPT[0] = (Kopt*(T_nb.z.y*vel.y + T_nb.z.z*vel.z + T_nb.z.x*vel.x))/range;
+        SH_OPT[1] = 1/range;
+
+        H_OPT[0][0] = SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - omega.x + optFlowStates[2]*omega.z - optFlowStates[3]*omega.y;
+        H_OPT[0][1] = SH_OPT[0];
+        H_OPT[0][2] = Kopt*omega.z - omega.z;
+        H_OPT[0][3] = omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x));
+        H_OPT[0][4] = 1;
+        H_OPT[1][5] = 0;
+
+        H_OPT[1][0] = optFlowStates[3]*omega.x - SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) - optFlowStates[1]*omega.z - omega.y;
+        H_OPT[1][1] = omega.z - Kopt*omega.z;
+        H_OPT[1][2] = SH_OPT[0];
+        H_OPT[1][3] = Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x)) - omega.x;
+        H_OPT[0][4] = 0;
+        H_OPT[1][5] = 1;
+
+        // calculate Kalman gains
+        SK_OPT[0] = 1/(optFlowCov[5][5] + R_OPT + optFlowCov[2][5]*SH_OPT[0] - optFlowCov[0][5]*(omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x) - (omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x)))*(optFlowCov[5][3] + optFlowCov[2][3]*SH_OPT[0] - optFlowCov[0][3]*(omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x) - optFlowCov[3][3]*(omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x))) + optFlowCov[1][3]*(omega.z - Kopt*omega.z)) + (omega.z - Kopt*omega.z)*(optFlowCov[5][1] + optFlowCov[2][1]*SH_OPT[0] - optFlowCov[0][1]*(omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x) - optFlowCov[3][1]*(omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x))) + optFlowCov[1][1]*(omega.z - Kopt*omega.z)) - optFlowCov[3][5]*(omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x))) + SH_OPT[0]*(optFlowCov[5][2] + optFlowCov[2][2]*SH_OPT[0] - optFlowCov[0][2]*(omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x) - optFlowCov[3][2]*(omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x))) + optFlowCov[1][2]*(omega.z - Kopt*omega.z)) - (omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x)*(optFlowCov[5][0] + optFlowCov[2][0]*SH_OPT[0] - optFlowCov[0][0]*(omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x) - optFlowCov[3][0]*(omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x))) + optFlowCov[1][0]*(omega.z - Kopt*omega.z)) + optFlowCov[1][5]*(omega.z - Kopt*omega.z));
+        SK_OPT[1] = 1/(optFlowCov[4][4] + R_OPT + optFlowCov[1][4]*SH_OPT[0] - optFlowCov[0][4]*(omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y) + (omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x)))*(optFlowCov[4][3] + optFlowCov[1][3]*SH_OPT[0] - optFlowCov[0][3]*(omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y) + optFlowCov[3][3]*(omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x))) - optFlowCov[2][3]*(omega.z - Kopt*omega.z)) - (omega.z - Kopt*omega.z)*(optFlowCov[4][2] + optFlowCov[1][2]*SH_OPT[0] - optFlowCov[0][2]*(omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y) + optFlowCov[3][2]*(omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x))) - optFlowCov[2][2]*(omega.z - Kopt*omega.z)) + optFlowCov[3][4]*(omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x))) + SH_OPT[0]*(optFlowCov[4][1] + optFlowCov[1][1]*SH_OPT[0] - optFlowCov[0][1]*(omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y) + optFlowCov[3][1]*(omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x))) - optFlowCov[2][1]*(omega.z - Kopt*omega.z)) - (omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y)*(optFlowCov[4][0] + optFlowCov[1][0]*SH_OPT[0] - optFlowCov[0][0]*(omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y) + optFlowCov[3][0]*(omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x))) - optFlowCov[2][0]*(omega.z - Kopt*omega.z)) - optFlowCov[2][4]*(omega.z - Kopt*omega.z));
+        SK_OPT[2] = omega.x - SH_OPT[1]*(vel.y*(T_nb.y.y - T_nb.x.y*optFlowStates[3] + T_nb.z.y*optFlowStates[1]) + vel.z*(T_nb.y.z - T_nb.x.z*optFlowStates[3] + T_nb.z.z*optFlowStates[1]) + vel.x*(T_nb.y.x - T_nb.x.x*optFlowStates[3] + T_nb.z.x*optFlowStates[1])) - optFlowStates[2]*omega.z + optFlowStates[3]*omega.y;
+        SK_OPT[3] = omega.y + SH_OPT[1]*(vel.y*(T_nb.x.y + T_nb.y.y*optFlowStates[3] - T_nb.z.y*optFlowStates[2]) + vel.z*(T_nb.x.z + T_nb.y.z*optFlowStates[3] - T_nb.z.z*optFlowStates[2]) + vel.x*(T_nb.x.x + T_nb.y.x*optFlowStates[3] - T_nb.z.x*optFlowStates[2])) + optFlowStates[1]*omega.z - optFlowStates[3]*omega.x;
+        SK_OPT[4] = omega.x - Kopt*(omega.x - SH_OPT[1]*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x));
+        SK_OPT[5] = omega.y - Kopt*(omega.y + SH_OPT[1]*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x));
+        SK_OPT[6] = omega.z - Kopt*omega.z;
+
+        K_OPT[0][0] = SK_OPT[1]*(optFlowCov[0][4] + optFlowCov[0][1]*SH_OPT[0] - optFlowCov[0][0]*SK_OPT[2] - optFlowCov[0][2]*SK_OPT[6] + optFlowCov[0][3]*SK_OPT[5]);
+        K_OPT[0][1] = SK_OPT[1]*(optFlowCov[1][4] + optFlowCov[1][1]*SH_OPT[0] - optFlowCov[1][0]*SK_OPT[2] - optFlowCov[1][2]*SK_OPT[6] + optFlowCov[1][3]*SK_OPT[5]);
+        K_OPT[0][2] = SK_OPT[1]*(optFlowCov[2][4] + optFlowCov[2][1]*SH_OPT[0] - optFlowCov[2][0]*SK_OPT[2] - optFlowCov[2][2]*SK_OPT[6] + optFlowCov[2][3]*SK_OPT[5]);
+        K_OPT[0][3] = SK_OPT[1]*(optFlowCov[3][4] + optFlowCov[3][1]*SH_OPT[0] - optFlowCov[3][0]*SK_OPT[2] - optFlowCov[3][2]*SK_OPT[6] + optFlowCov[3][3]*SK_OPT[5]);
+        K_OPT[0][4] = SK_OPT[1]*(optFlowCov[4][4] + optFlowCov[4][1]*SH_OPT[0] - optFlowCov[4][0]*SK_OPT[2] - optFlowCov[4][2]*SK_OPT[6] + optFlowCov[4][3]*SK_OPT[5]);
+        K_OPT[0][5] = SK_OPT[1]*(optFlowCov[5][4] + optFlowCov[5][1]*SH_OPT[0] - optFlowCov[5][0]*SK_OPT[2] - optFlowCov[5][2]*SK_OPT[6] + optFlowCov[5][3]*SK_OPT[5]);
+
+        K_OPT[1][0] = SK_OPT[0]*(optFlowCov[0][5] + optFlowCov[0][2]*SH_OPT[0] - optFlowCov[0][0]*SK_OPT[3] + optFlowCov[0][1]*SK_OPT[6] - optFlowCov[0][3]*SK_OPT[4]);
+        K_OPT[1][1] = SK_OPT[0]*(optFlowCov[1][5] + optFlowCov[1][2]*SH_OPT[0] - optFlowCov[1][0]*SK_OPT[3] + optFlowCov[1][1]*SK_OPT[6] - optFlowCov[1][3]*SK_OPT[4]);
+        K_OPT[1][2] = SK_OPT[0]*(optFlowCov[2][5] + optFlowCov[2][2]*SH_OPT[0] - optFlowCov[2][0]*SK_OPT[3] + optFlowCov[2][1]*SK_OPT[6] - optFlowCov[2][3]*SK_OPT[4]);
+        K_OPT[1][3] = SK_OPT[0]*(optFlowCov[3][5] + optFlowCov[3][2]*SH_OPT[0] - optFlowCov[3][0]*SK_OPT[3] + optFlowCov[3][1]*SK_OPT[6] - optFlowCov[3][3]*SK_OPT[4]);
+        K_OPT[1][4] = SK_OPT[0]*(optFlowCov[4][5] + optFlowCov[4][2]*SH_OPT[0] - optFlowCov[4][0]*SK_OPT[3] + optFlowCov[4][1]*SK_OPT[6] - optFlowCov[4][3]*SK_OPT[4]);
+        K_OPT[1][5] = SK_OPT[0]*(optFlowCov[5][5] + optFlowCov[5][2]*SH_OPT[0] - optFlowCov[5][0]*SK_OPT[3] + optFlowCov[5][1]*SK_OPT[6] - optFlowCov[5][3]*SK_OPT[4]);
+
+        // calculate innovation variances
+        varInnovOptFlowErrEst[0] = 1.0f/SK_OPT[1];
+        varInnovOptFlowErrEst[1] = 1.0f/SK_OPT[0];
+
+        // Check the innovation for consistency and don't fuse if > 3Sigma
+        for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
+            if ((innovOptFlowErrEst[obsIndex]*innovOptFlowErrEst[obsIndex]/varInnovOptFlowErrEst[obsIndex]) < 9.0f) {
+                // correct the state vector
+                for (uint8_t i = 0; i < 6; i++)
+                {
+                    optFlowStates[i] = optFlowStates[i] - K_OPT[obsIndex][i] * innovOptFlowErrEst[obsIndex];
+                }
+                // correct the covariance P = (I - K*H)*P
+                for (uint8_t i = 0; i < 6; i++)
+                {
+                    for (uint8_t j = 0; j <= 6; j++)
+                    {
+                        KH[i][j] = K_OPT[obsIndex][i] * H_OPT[obsIndex][j];
+                    }
+                }
+                for (uint8_t i = 0; i < 6; i++)
+                {
+                    for (uint8_t j = 0; j < 6; j++)
+                    {
+                        KHP[i][j] = 0.0f;
+                        for (uint8_t k = 0; k <= 6; k++)
+                        {
+                            KHP[i][j] = KHP[i][j] + KH[i][k] * optFlowCov[k][j];
+                        }
+                    }
+                }
+                for (uint8_t i = 0; i <  6; i++)
+                {
+                    for (uint8_t j = 0; j <  6; j++)
+                    {
+                        optFlowCov[i][j] = optFlowCov[i][j] - KHP[i][j];
+                    }
+                }
+                // Force symmetry on the covariance matrix to prevent ill-conditioning
+                // of the matrix which would cause the filter to blow-up
+                for (uint8_t i = 1; i < 6; i++)
+                {
+                    for (uint8_t j = 0; j < i; j++)
+                    {
+                        float symmetric = 0.5f * (optFlowCov[i][j] + optFlowCov[j][i]);
+                        optFlowCov[i][j] = symmetric;
+                        optFlowCov[j][i] = symmetric;
+                    }
+                }
+                // prevent the state variances from becoming negative
+                for (uint8_t i = 0; i < 6; i++) {
+                    if (optFlowCov[i][i] < 0.0f) {
+                        optFlowCov[i][i] = 0.0f;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
@@ -2266,6 +2471,14 @@ void AttPosEKF::CovarianceInit()
     P[20][20] = P[19][19];
     P[21][21] = P[19][19];
     P[22][22] = sq(0.5f);
+
+    // reset optical flow error state variances
+    optFlowCov[0][0] = 0.1f; // focal length scale factor variance
+    optFlowCov[1][1] = 0.0025f; // roll misalignment variance
+    optFlowCov[2][2] = 0.0025f; // pitch misalignment variance
+    optFlowCov[3][3] = 0.0025f; // yaw misalignment variance
+    optFlowCov[4][4] = 0.0003f; // roll rate bias variance
+    optFlowCov[5][5] = 0.0003f; // pitch rate bias variance
 }
 
 float AttPosEKF::ConstrainFloat(float val, float min, float max)
@@ -2869,6 +3082,10 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
     ResetPosition();
     ResetHeight();
 
+    // initialise optical flow error states
+    optFlowStates[0] = 1.0f; // scale factor
+    for (uint8_t j=1; j<=5; j++) optFlowStates[j] = 0.0f;
+
     statesInitialised = true;
 
     // initialise the covariance matrix
@@ -2917,6 +3134,14 @@ void AttPosEKF::ZeroVariables()
 
         Kfusion[i] = 0.0f; // Kalman gains
         states[i] = 0.0f; // state matrix
+    }
+
+    // Zero the sates and covariances used for PX4Flow error estimation
+    for (unsigned i = 0; i < 6; i++) {
+        for (unsigned j = 0; j < 6; j++) {
+            optFlowCov[i][j] = 0.0f; // covariance matrix
+        }
+        optFlowStates[i] = 0.0f; // state matrix
     }
 
     correctedDelAng.zero();
