@@ -124,6 +124,7 @@ public:
     float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
     float statesAtRngTime[n_states]; // filter states at the effective measurement time
     float statesAtOptFlowTime[n_states]; // States at the effective optical flow measurement time
+    float omegaAtOptFlowTime[3]; // angular rates at the effective optical flow measurement time
 
     Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
     Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
@@ -142,6 +143,7 @@ public:
     Vector3f dVelIMU;
     Vector3f dAngIMU;
     float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
+    float dtIMUinv; // inverse IMU time step (1/sec)
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output
@@ -215,10 +217,20 @@ public:
     unsigned storeIndex;
 
     // Optical Flow error estimation
+    float storedOmega[3][data_buffer_size]; // angular rate vector stored for the last 50 time steps used by optical flow eror estimators
+
+    // Focal length scale factor, misalignment and rate bias estimation
     float optFlowCov[6][6]; // state covariance matrix from optical flow error estimation EKF
     float optFlowStates[6]; // states from optical flow error estimation EKF
     float innovOptFlowErrEst[2]; // optical flow observation innovations from error estimation EKF
     float varInnovOptFlowErrEst[2]; // optical flow observation variances from error estimation EKF
+
+    // Focal length scale factor estimation
+    float fScaleFactor; // optical flow sensor focal length scale factor
+    float fScaleFactorVar; // optical flow sensor focal length scale factor variance
+    float fScaleFactorObsInnov[2]; // optical flow observation innovations from focal length scale factor estimator
+    float fScaleFactorObsInnovVar[2]; // innovation variance for optical flow observations from focal length scale factor estimator
+
 
 void  UpdateStrapdownEquationsNED();
 
@@ -235,6 +247,8 @@ void FuseRangeFinder();
 void FuseOptFlow();
 
 void OptFlowErrEKF();
+
+void FocalLengthScaleFactorEKF();
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 
@@ -257,6 +271,8 @@ void StoreStates(uint64_t timestamp_ms);
  *         value.
  */
 int RecallStates(float *statesForFusion, uint64_t msec);
+
+int RecallOmega(float *omegaForFusion, uint64_t msec);
 
 void ResetStoredStates();
 

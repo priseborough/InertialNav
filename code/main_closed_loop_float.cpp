@@ -257,6 +257,7 @@ int main(int argc, char *argv[])
         // Apply dtIMU here after 1 or more reads, simulating skipped sensor
         // readings if desired.
         _ekf->dtIMU     = 0.001f*(IMUmsec - IMUmsecPrev);
+        _ekf->dtIMUinv  = 1.0f / _ekf->dtIMU;
 
         if (IMUmsec > msecEndTime || endOfData)
         {
@@ -357,8 +358,9 @@ int main(int argc, char *argv[])
             // Fuse Optical Flow Measurements
             if (newOptFlowData && _ekf->statesInitialised)
             {
-                // recall states stored at time of measurement after adjusting for delays
+                // recall states and angular rates stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
                 _ekf->fuseOptFlowData = true;
                 _ekf->FuseOptFlow();
                 _ekf->FuseOptFlow();

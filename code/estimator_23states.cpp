@@ -2020,7 +2020,6 @@ void AttPosEKF::OptFlowErrEKF()
     Mat3f T_nb;   // transformation from nav to body axes
     Mat3f T_ns; // transformation from nav to sensor axes
     float range; // range from camera to centre of image
-    float dtIMUinv; // inverse of IMU time step
     Vector3f omega; // angular rate vector in body axes
     Vector3f omegaSensor; // angular rate vector in sensor axes
     float losPred[2]; // predicted optical flow angular rate measurements
@@ -2070,8 +2069,9 @@ void AttPosEKF::OptFlowErrEKF()
         }
 
         // calculate angular rate in sensor axes
-        dtIMUinv    = 1.0f/dtIMU;
-        omega       = correctedDelAng*dtIMUinv;
+        omega.x       = omegaAtOptFlowTime[0];
+        omega.y       = omegaAtOptFlowTime[1];
+        omega.z       = omegaAtOptFlowTime[2];
         omegaSensor = T_bs*omega;
 
         // calculate rotation from NED to body axes
@@ -2217,6 +2217,118 @@ void AttPosEKF::OptFlowErrEKF()
     }
 }
 
+/*
+Estimation of optical flow sensor focal length scale factor using a single state EKF
+*/
+void AttPosEKF::FocalLengthScaleFactorEKF()
+{
+    Vector3f vel; // velocity of sensor relative to ground in NED axes
+    Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
+    Mat3f T_nb;   // transformation from nav to body axes
+    float range; // range from camera to centre of image
+    float losPred[2]; // predicted optical flow angular rate measurements
+    float SH_OPT; // intermediate results for observation jacobian
+    float H_OPT[2]; //observation jacobian
+    float SK_OPT[2]; // intermediate results for Kalman gains
+    float K_OPT[2]; // Kalman gains
+    float q0; // quaternion at optical flow measurement time
+    float q1; // quaternion at optical flow measurement time
+    float q2; // quaternion at optical flow measurement time
+    float q3; // quaternion at optical flow measurement time
+    float pd; // flight vehicle vertical position at optical flow measurement time
+    float ptd; // terrain vertical position at optical flow measurement time
+    float R_OPT = 0.1; // optical flow LOS rate variance (rad^2) TODO should make this a function of the opt flow quality measure
+
+    // Perform sequential fusion of optical flow measurements only when in the air
+    float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
+    bool validHeight = heightAboveGndEst > 0.5f && heightAboveGndEst < 50.0f;
+    bool validTilt = Tnb.z.z > 0.866f;
+    if (useOpticalFlow && fuseOptFlowData && !onGround && validTilt && validHeight)
+    {
+        // Copy required states to local variable names
+        q0             = statesAtOptFlowTime[0];
+        q1             = statesAtOptFlowTime[1];
+        q2             = statesAtOptFlowTime[2];
+        q3             = statesAtOptFlowTime[3];
+        vel.x          = statesAtOptFlowTime[4];
+        vel.y          = statesAtOptFlowTime[5];
+        vel.z          = statesAtOptFlowTime[6];
+        pd             = statesAtOptFlowTime[9];
+        ptd            = statesAtOptFlowTime[22];
+
+        // increment state variance with a small value to keep the estimation alive
+        fScaleFactorVar += 1e-8;
+
+        // calculate rotation from NED to body axes
+        float q00 = sq(q0);
+        float q11 = sq(q1);
+        float q22 = sq(q2);
+        float q33 = sq(q3);
+        float q01 = q0 * q1;
+        float q02 = q0 * q2;
+        float q03 = q0 * q3;
+        float q12 = q1 * q2;
+        float q13 = q1 * q3;
+        float q23 = q2 * q3;
+        T_nb.x.x = q00 + q11 - q22 - q33;
+        T_nb.y.y = q00 - q11 + q22 - q33;
+        T_nb.z.z = q00 - q11 - q22 + q33;
+        T_nb.y.x = 2*(q12 - q03);
+        T_nb.z.x = 2*(q13 + q02);
+        T_nb.x.y = 2*(q12 + q03);
+        T_nb.z.y = 2*(q23 - q01);
+        T_nb.x.z = 2*(q13 - q02);
+        T_nb.y.z = 2*(q23 + q01);
+
+        // estimate range to centre of image
+        range = ConstrainFloat(((ptd - pd)/T_nb.z.z),0.5f,100.0f);
+
+        // calculate relative velocity in sensor frame
+        relVelSensor = T_nb*vel;
+
+        // divide velocity by range, subtract body rates and apply scale factor to
+        // get predicted sensed angular optical rates relative to X and Y sensor axes
+        // apply motion compensation with bias errors
+        losPred[0] =  fScaleFactor*( relVelSensor.y/range - omegaAtOptFlowTime[0]);
+        losPred[1] =  fScaleFactor*(-relVelSensor.x/range - omegaAtOptFlowTime[1]);
+
+        // calculate innovations
+        fScaleFactorObsInnov[0] = losPred[0] - losData[0];
+        fScaleFactorObsInnov[1] = losPred[1] - losData[1];
+
+        //printf("relVelSensor.x=%5.1f, relVelSensor.y=%5.1f\n", relVelSensor.x, relVelSensor.y);
+
+        // calculate observation jacobians
+        SH_OPT = 1/range;
+        H_OPT[0] = SH_OPT*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x) - omegaAtOptFlowTime[0];
+        H_OPT[1] = - omegaAtOptFlowTime[1] - SH_OPT*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x);
+
+        // calculate innovation variances
+        SK_OPT[0] = omegaAtOptFlowTime[0] - SH_OPT*(T_nb.y.y*vel.y + T_nb.y.z*vel.z + T_nb.y.x*vel.x);
+        SK_OPT[1] = omegaAtOptFlowTime[1] + SH_OPT*(T_nb.x.y*vel.y + T_nb.x.z*vel.z + T_nb.x.x*vel.x);
+        fScaleFactorObsInnovVar[0] = (R_OPT + fScaleFactorVar*sq(SK_OPT[0]));
+        fScaleFactorObsInnovVar[1] = (R_OPT + fScaleFactorVar*sq(SK_OPT[1]));
+
+        // calculate Kalman gains
+        K_OPT[0] = -(fScaleFactorVar*SK_OPT[0])/fScaleFactorObsInnovVar[0];
+        K_OPT[1] = -(fScaleFactorVar*SK_OPT[1])/fScaleFactorObsInnovVar[1];
+
+        // Check the innovation for consistency and don't fuse if > 3Sigma
+        for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
+            if ((fScaleFactorObsInnov[obsIndex]*fScaleFactorObsInnov[obsIndex]/fScaleFactorObsInnovVar[obsIndex]) < 9.0f) {
+                // correct the state
+                fScaleFactor = fScaleFactor - K_OPT[obsIndex] * fScaleFactorObsInnov[obsIndex];
+                // correct the state variance
+                fScaleFactorVar = fScaleFactorVar - K_OPT[obsIndex] * H_OPT[obsIndex] * fScaleFactorVar;
+                // prevent the state variance from becoming negative
+                if (fScaleFactorVar < 0.0f) {
+                    fScaleFactorVar = 0.0f;
+                }
+            }
+        }
+    }
+}
+
 void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
@@ -2240,6 +2352,9 @@ void AttPosEKF::StoreStates(uint64_t timestamp_ms)
 {
     for (unsigned i=0; i<n_states; i++)
         storedStates[i][storeIndex] = states[i];
+    storedOmega[0][storeIndex] = correctedDelAng.x*dtIMUinv;
+    storedOmega[1][storeIndex] = correctedDelAng.y*dtIMUinv;
+    storedOmega[2][storeIndex] = correctedDelAng.z*dtIMUinv;
     statetimeStamp[storeIndex] = timestamp_ms;
     storeIndex++;
     if (storeIndex == data_buffer_size)
@@ -2250,15 +2365,11 @@ void AttPosEKF::ResetStoredStates()
 {
     // reset all stored states
     memset(&storedStates[0][0], 0, sizeof(storedStates));
+    memset(&storedOmega[0][0], 0, sizeof(storedOmega));
     memset(&statetimeStamp[0], 0, sizeof(statetimeStamp));
 
     // reset store index to first
     storeIndex = 0;
-
-    // overwrite all existing states
-    for (unsigned i = 0; i < n_states; i++) {
-        storedStates[i][storeIndex] = states[i];
-    }
 
     statetimeStamp[storeIndex] = millis();
 
@@ -2314,6 +2425,46 @@ int AttPosEKF::RecallStates(float* statesForFusion, uint64_t msec)
                 ret++;
             }
         }
+    }
+
+    return ret;
+}
+
+int AttPosEKF::RecallOmega(float* omegaForFusion, uint64_t msec)
+{
+    int ret = 0;
+
+    int64_t bestTimeDelta = 200;
+    unsigned bestStoreIndex = 0;
+    for (unsigned storeIndexLocal = 0; storeIndexLocal < data_buffer_size; storeIndexLocal++)
+    {
+        // Work around a GCC compiler bug - we know 64bit support on ARM is
+        // sketchy in GCC.
+        uint64_t timeDelta;
+
+        if (msec > statetimeStamp[storeIndexLocal]) {
+            timeDelta = msec - statetimeStamp[storeIndexLocal];
+        } else {
+            timeDelta = statetimeStamp[storeIndexLocal] - msec;
+        }
+
+        if (timeDelta < (uint64_t)bestTimeDelta)
+        {
+            bestStoreIndex = storeIndexLocal;
+            bestTimeDelta = timeDelta;
+        }
+    }
+    if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
+    {
+        for (unsigned i=0; i < 3; i++) {
+            omegaForFusion[i] = storedOmega[i][bestStoreIndex];
+        }
+    }
+    else // otherwise output current state
+    {
+        omegaForFusion[0] = correctedDelAng.x * dtIMUinv;
+        omegaForFusion[1] = correctedDelAng.y * dtIMUinv;
+        omegaForFusion[2] = correctedDelAng.z * dtIMUinv;
     }
 
     return ret;
@@ -2473,12 +2624,14 @@ void AttPosEKF::CovarianceInit()
     P[22][22] = sq(0.5f);
 
     // reset optical flow error state variances
-    optFlowCov[0][0] = 0.1f; // focal length scale factor variance
+    optFlowCov[0][0] = 0.01f; // focal length scale factor variance
     optFlowCov[1][1] = 0.0025f; // roll misalignment variance
     optFlowCov[2][2] = 0.0025f; // pitch misalignment variance
     optFlowCov[3][3] = 0.0025f; // yaw misalignment variance
     optFlowCov[4][4] = 0.0003f; // roll rate bias variance
     optFlowCov[5][5] = 0.0003f; // pitch rate bias variance
+
+    fScaleFactorVar = 0.01f; // focal length scale factor variance
 }
 
 float AttPosEKF::ConstrainFloat(float val, float min, float max)
@@ -3082,9 +3235,12 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
     ResetPosition();
     ResetHeight();
 
-    // initialise optical flow error states
+    // initialise optical flow error estimator states
     optFlowStates[0] = 1.0f; // scale factor
     for (uint8_t j=1; j<=5; j++) optFlowStates[j] = 0.0f;
+
+    // initialise focal length scale factor estimator states
+    fScaleFactor = 1.0f;
 
     statesInitialised = true;
 
@@ -3136,13 +3292,17 @@ void AttPosEKF::ZeroVariables()
         states[i] = 0.0f; // state matrix
     }
 
-    // Zero the sates and covariances used for PX4Flow error estimation
+    // Zero the states and covariances used for PX4Flow error estimator
     for (unsigned i = 0; i < 6; i++) {
         for (unsigned j = 0; j < 6; j++) {
             optFlowCov[i][j] = 0.0f; // covariance matrix
         }
         optFlowStates[i] = 0.0f; // state matrix
     }
+    optFlowStates[0] = 1.0f; // scale factor estimate starts at unity
+
+    // initialise the variables for the focal length scale factor to unity
+    fScaleFactor = 1.0f;
 
     correctedDelAng.zero();
     summedDelAng.zero();
