@@ -23,6 +23,10 @@ void readTimingData();
 
 void readOnboardData();
 
+void readFlowData();
+
+void readDistData();
+
 void WriteFilterOutput();
 
 void CloseFiles();
@@ -94,6 +98,32 @@ float onboardLat;
 float onboardLon;
 float onboardHgt;
 
+uint32_t flowMsec = 0;
+uint32_t lastFlowMsec = 0;
+bool newFlowData = false;
+
+float flowTimestamp;      // in seconds
+float flowRawPixelX;       // in pixels
+float flowRawPixelY;       // in pixels
+float flowDistance;        // in meters
+float flowQuality;   // distance normalized between 0 and 1
+float flowSensorId;        // sensor ID
+
+float flowRadX;
+float flowRadY;
+
+float flowRawGroundSpeedX;
+float flowRawGroundSpeedY;
+
+uint32_t distMsec = 0;
+uint32_t lastDistMsec = 0;
+bool newDistData = false;
+
+float distTimestamp;
+float distValid;
+float distGroundDistance;
+float distLastValidReading;
+
 // input data timing
 uint64_t msecAlignTime;
 uint64_t msecStartTime;
@@ -124,6 +154,9 @@ FILE * pGpsRawINFile;
 FILE * validationOutFile;
 FILE * pOnboardPosVelOutFile;
 FILE * pOnboardFile;
+FILE * pInFlowFile;
+FILE * pInDistFile;
+FILE * pOutFlowFile;
 
 FILE * open_with_exit(const char* filename, const char* flags)
 {
@@ -192,6 +225,10 @@ int main(int argc, char *argv[])
     pOnboardFile = fopen ("GPOSonboard.txt","r");
     pOnboardPosVelOutFile = open_with_exit ("OnboardVelPosDataOut.txt","w");
 
+    pInFlowFile = fopen ("FLOW.txt","r");
+    pInDistFile = fopen ("DIST.txt","r");
+    pOutFlowFile = fopen ("FlowRawOut.txt","w");
+
     printf("Filter start\n");
 
     memset(gpsRaw, 0, sizeof(gpsRaw));
@@ -249,9 +286,10 @@ int main(int argc, char *argv[])
             readOptFlowData();
             readMagData();
             readAirData();
-            readRngData();
             readAhrsData();
             readOnboardData();
+            readFlowData();
+            readDistData();
         }
 
         // Apply dtIMU here after 1 or more reads, simulating skipped sensor
@@ -317,6 +355,35 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // Fuse Flow Measurements
+            if (newFlowData && _ekf->statesInitialised)
+            {
+
+                // 0.00711424167
+
+                flowRadX = -flowRawPixelX * 0.018f;
+                flowRadY = -flowRawPixelY * 0.018f;
+
+                float bx = (flowRadX - _ekf->angRate.x) * distLastValidReading * 1.1f;
+                float by = (flowRadY - _ekf->angRate.y) * distLastValidReading * 1.1f;
+
+                float tempQuat[4];
+                float euler[3];
+                for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
+                _ekf->quat2eul(euler, tempQuat);
+
+                flowRawGroundSpeedY = cos(euler[2]) * bx + -sin(euler[2]) * by;
+                flowRawGroundSpeedX = -(sin(euler[2]) * bx + cos(euler[2]) * by);
+            }
+
+            // Fuse Ground distance Measurements
+            if (newDistData && _ekf->statesInitialised)
+            {
+                if (distValid > 0.0f) {
+                    distLastValidReading = distGroundDistance;
+                }
+            }
+
             // Fuse GPS Measurements
             if (newDataGps && _ekf->statesInitialised)
             {
@@ -335,7 +402,6 @@ int main(int argc, char *argv[])
 
                 if (pOnboardFile > 0) {
                     _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
-
                 }
 
                 _ekf->posNE[0] = posNED[0];
@@ -835,6 +901,7 @@ void readOnboardData()
         if (!endOfData)
         {
             onboardTimestamp  = tempOnboard[0];
+            onboardMsec = tempOnboard[0];
             onboardLat = deg2rad*tempOnboard[1];
             onboardLon = deg2rad*tempOnboard[2] - pi;
             onboardHgt = tempOnboard[3];
@@ -885,6 +952,83 @@ void readAhrsData()
     }
 }
 
+void readFlowData()
+{
+    if (pInFlowFile <= 0)
+        return;
+
+    float temp[6];
+
+    // read in current value
+    while (flowTimestamp <= IMUtimestamp)
+    {
+        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
+        {
+            float in;
+            if (fscanf(pInFlowFile, "%f", &in) != EOF) temp[j] = in;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            // timestamp, rawx, rawy, distance, quality, sensor id
+            flowTimestamp  = temp[0];       // in milliseconds
+            flowRawPixelX = temp[1];        // in pixels
+            flowRawPixelY = temp[2];        // in pixels
+            flowDistance = temp[3];         // in meters
+            flowQuality = temp[4] / 255;    // distance normalized between 0 and 1
+            flowSensorId = temp[5];         // sensor ID
+
+            flowMsec = temp[0];
+        }
+    }
+    if (flowMsec > lastFlowMsec)
+    {
+        lastFlowMsec = flowMsec;
+        newFlowData = true;
+    }
+    else
+    {
+        newFlowData = false;
+    }
+}
+
+void readDistData()
+{
+    if (pInDistFile <= 0)
+        return;
+
+    float temp[3];
+
+    // read in current value
+    while (distTimestamp <= IMUtimestamp)
+    {
+        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
+        {
+            float in;
+            if (fscanf(pInDistFile, "%f", &in) != EOF) temp[j] = in;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            // timestamp, distance, flags
+            distTimestamp  = temp[0];       // in milliseconds
+            distGroundDistance = temp[1];   // in meters
+            distValid = (temp[2] > 0.0f);   // reading is valid
+
+            distMsec = temp[0];
+        }
+    }
+    if (distMsec > lastDistMsec)
+    {
+        lastDistMsec = distMsec;
+        newDistData = true;
+    }
+    else
+    {
+        newDistData = false;
+    }
+}
+
 void WriteFilterOutput()
 {
 
@@ -923,6 +1067,9 @@ void WriteFilterOutput()
     fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     // printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     fprintf(pOnboardPosVelOutFile,"\n");
+
+    fprintf(pOutFlowFile, " %e", float(IMUmsec*0.001f));
+    fprintf(pOutFlowFile, " %e %e %e %e %e %e %e %e %e\n", flowRadX, flowRadY, _ekf->angRate.x, _ekf->angRate.y, flowRawGroundSpeedX, flowRawGroundSpeedY, gpsRaw[4], gpsRaw[5], distLastValidReading);
 
     // raw GPS outputs
     fprintf(pGpsRawOUTFile," %e", float(IMUmsec*0.001f));

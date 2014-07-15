@@ -48,3 +48,4 @@ plots:
 	python plot_position.py &
 	python plot_states.py &
 	python plot_velocity.py &
+	python plot_flow.py &

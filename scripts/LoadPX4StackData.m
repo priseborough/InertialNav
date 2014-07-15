@@ -7,7 +7,7 @@ close all;
 load('m_10_48_56.mat');
 
 mintime = 0;
-maxtime = 150;
+maxtime = 360;
 
 i = 1;
 prune_start_time = IMU.data(1,1)
