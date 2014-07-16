@@ -69,7 +69,7 @@ public:
         dVelBiasSigma = 1e-4f;
         magEarthSigma = 3.0e-4f;
         magBodySigma  = 3.0e-4f;
-        gndHgtSigma  = 0.02f; // assume 2% terrain gradient 1-sigma
+        gndHgtSigma  = 0.1f; // assume 10% terrain gradient 1-sigma
 
         vneSigma = 0.2f;
         vdSigma = 0.3f;
@@ -158,7 +158,8 @@ public:
     float innovMag[3]; // innovation output
     float varInnovMag[3]; // innovation variance output
     Vector3f magData; // magnetometer flux radings in X,Y,Z body axes
-    float losData[2]; // optical flow LOS rate measurements (rad/sec)
+    float flowRadXYcomp[2]; // motion compensated optical flow angular rates(rad/sec)
+    float flowRadXY[2]; // raw (non motion compensated) optical flow angular rates (rad/sec)
     float innovVtas; // innovation output
     float innovRng; ///< Range finder innovation
     float innovOptFlow[2]; // optical flow LOS innovations (rad/sec)

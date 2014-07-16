@@ -15,8 +15,6 @@ void readAirData();
 
 void readRngData();
 
-void readOptFlowData();
-
 void readAhrsData();
 
 void readTimingData();
@@ -42,7 +40,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
-uint32_t msecOptFlowDelay = 230;
+uint32_t msecOptFlowDelay = 0;
 
 // IMU input data variables
 float imuIn;
@@ -283,7 +281,6 @@ int main(int argc, char *argv[])
         for (unsigned i = 0; i < nreads; i++) {
             readIMUData();
             readGpsData();
-            readOptFlowData();
             readMagData();
             readAirData();
             readAhrsData();
@@ -364,16 +361,35 @@ int main(int argc, char *argv[])
                 flowRadX = -flowRawPixelX * 0.018f;
                 flowRadY = -flowRawPixelY * 0.018f;
 
-                float bx = (flowRadX - _ekf->angRate.x) * distLastValidReading * 1.1f;
-                float by = (flowRadY - _ekf->angRate.y) * distLastValidReading * 1.1f;
+                // calculate motion compensated angular flow rates used for fusion in the main nav filter
+                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor - _ekf->angRate.x;
+                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor - _ekf->angRate.y;
 
+                // these flow rates are not motion compensated and are used for focal length scale factor estimation
+                _ekf->flowRadXY[0] = flowRadX;
+                _ekf->flowRadXY[1] = flowRadY;
+
+                // recall states and angular rates stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+
+                // perform optical flow fusion
+                _ekf->fuseOptFlowData = true;
+                _ekf->FocalLengthScaleFactorEKF();
+                _ekf->FuseOptFlow();
+                _ekf->fuseOptFlowData = false;
+
+                // estimate speed over ground for cross-check of data (debugging only)
                 float tempQuat[4];
                 float euler[3];
                 for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
                 _ekf->quat2eul(euler, tempQuat);
-
+                float bx = (flowRadX - _ekf->angRate.x) * distLastValidReading;
+                float by = (flowRadY - _ekf->angRate.y) * distLastValidReading;
                 flowRawGroundSpeedY = cos(euler[2]) * bx + -sin(euler[2]) * by;
                 flowRawGroundSpeedX = -(sin(euler[2]) * bx + cos(euler[2]) * by);
+            } else {
+                _ekf->fuseOptFlowData = false;
             }
 
             // Fuse Ground distance Measurements
@@ -381,6 +397,11 @@ int main(int argc, char *argv[])
             {
                 if (distValid > 0.0f) {
                     distLastValidReading = distGroundDistance;
+                    _ekf->rngMea = distGroundDistance;
+                    _ekf->fuseRngData = true;
+                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+                    _ekf->FuseRangeFinder();
+                    _ekf->fuseRngData = false;
                 }
             }
 
@@ -421,21 +442,6 @@ int main(int argc, char *argv[])
                 _ekf->fusePosData = false;
             }
 
-            // Fuse Optical Flow Measurements
-            if (newOptFlowData && _ekf->statesInitialised)
-            {
-                // recall states and angular rates stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                _ekf->fuseOptFlowData = true;
-                _ekf->FuseOptFlow();
-                _ekf->FuseOptFlow();
-            }
-            else
-            {
-                _ekf->fuseOptFlowData = false;
-            }
-
             if (newAdsData && _ekf->statesInitialised)
             {
                 // Could use a blend of GPS and baro alt data if desired
@@ -449,19 +455,6 @@ int main(int argc, char *argv[])
             else
             {
                 _ekf->fuseHgtData = false;
-            }
-
-            // Fuse RangeFinder Measurements
-            if (newRngData && _ekf->statesInitialised)
-            {
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-                _ekf->fuseRngData = true;
-                _ekf->FuseRangeFinder();
-            }
-            else
-            {
-                _ekf->fuseRngData = false;
             }
 
             // Fuse Magnetometer Measurements
@@ -720,81 +713,6 @@ void readGpsData()
     }
 }
 
-void readOptFlowData()
-{
-    // currently synthesize optical flow measurements from GPS velocities and estimated angles
-    if (newDataGps) {
-        float q0 = 0.0f;
-        float q1 = 0.0f;
-        float q2 = 0.0f;
-        float q3 = 1.0f;
-        Vector3f relVelSensor;
-        // Transformation matrix from nav to body axes
-        Mat3f Tnb;
-        // Transformation matrix from body to sensor axes
-        // assume camera is aligned with Z body axis plus a misalignment
-        // defined by 3 small angles about X, Y and Z body axis
-        Mat3f Tbs;
-        // Transformation matrix from navigation to sensor axes
-        Mat3f Tns;
-        // Copy required states to local variable names
-        q0       = _ekf->statesAtVelTime[0];
-        q1       = _ekf->statesAtVelTime[1];
-        q2       = _ekf->statesAtVelTime[2];
-        q3       = _ekf->statesAtVelTime[3];
-
-        // Define rotation from body to sensor axes
-        Tbs.x.y =  _ekf->a3;
-        Tbs.y.x = -_ekf->a3;
-        Tbs.x.z = -_ekf->a2;
-        Tbs.z.x =  _ekf->a2;
-        Tbs.y.z =  _ekf->a1;
-        Tbs.z.y = -_ekf->a1;
-
-        // calculate rotation from NED to body axes
-        float q00 = q0*q0;
-        float q11 = q1*q1;
-        float q22 = q2*q2;
-        float q33 = q3*q3;
-        float q01 = q0 * q1;
-        float q02 = q0 * q2;
-        float q03 = q0 * q3;
-        float q12 = q1 * q2;
-        float q13 = q1 * q3;
-        float q23 = q2 * q3;
-        Tnb.x.x = q00 + q11 - q22 - q33;
-        Tnb.y.y = q00 - q11 + q22 - q33;
-        Tnb.z.z = q00 - q11 - q22 + q33;
-        Tnb.y.x = 2*(q12 - q03);
-        Tnb.z.x = 2*(q13 + q02);
-        Tnb.x.y = 2*(q12 + q03);
-        Tnb.z.y = 2*(q23 - q01);
-        Tnb.x.z = 2*(q13 - q02);
-        Tnb.y.z = 2*(q23 + q01);
-
-        // calculate transformation from NED to sensor axes
-        Tns = Tbs*Tnb;
-
-        // calculate range from ground plain to centre of sensor fov assuming flat earth
-        float range = ConstrainFloat(_ekf->rngMea,0.5f,100.0f);
-
-        // calculate relative velocity in sensor frame
-        Vector3f temp;
-        temp.x=_ekf->velNED[0];
-        temp.y=_ekf->velNED[1];
-        temp.z=_ekf->velNED[2];
-        relVelSensor = Tns*temp;
-
-        // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
-        _ekf->losData[0] =  relVelSensor.y/range;
-        _ekf->losData[1] = -relVelSensor.x/range;
-
-        newOptFlowData = true;
-    } else {
-        newOptFlowData = false;
-    }
-}
-
 void readMagData()
 {
     // wind data forward to one update past current IMU data time
@@ -867,17 +785,6 @@ void readAirData()
     else
     {
         newAdsData = false;
-    }
-}
-
-void readRngData()
-{
-    // Currently synthesise a terrain measurement that is 5 m below the baro alt
-    if (newAdsData) {
-        _ekf->rngMea = (_ekf->baroHgt  - _ekf->hgtRef - _ekf->baroHgtOffset + 5.0f) / _ekf->Tbn.z.z;
-        newRngData = true;
-    } else {
-        newRngData = false;
     }
 }
 
