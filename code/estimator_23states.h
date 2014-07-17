@@ -69,7 +69,7 @@ public:
         dVelBiasSigma = 1e-4f;
         magEarthSigma = 3.0e-4f;
         magBodySigma  = 3.0e-4f;
-        gndHgtSigma  = 0.1f; // assume 10% terrain gradient 1-sigma
+        gndHgtSigma  = 0.05f; // terrain gradient 1-sigma
 
         vneSigma = 0.2f;
         vdSigma = 0.3f;
@@ -220,12 +220,6 @@ public:
     // Optical Flow error estimation
     float storedOmega[3][data_buffer_size]; // angular rate vector stored for the last 50 time steps used by optical flow eror estimators
 
-    // Focal length scale factor, misalignment and rate bias estimation
-    float optFlowCov[6][6]; // state covariance matrix from optical flow error estimation EKF
-    float optFlowStates[6]; // states from optical flow error estimation EKF
-    float innovOptFlowErrEst[2]; // optical flow observation innovations from error estimation EKF
-    float varInnovOptFlowErrEst[2]; // optical flow observation variances from error estimation EKF
-
     // Focal length scale factor estimation
     float fScaleFactor; // optical flow sensor focal length scale factor
     float fScaleFactorVar; // optical flow sensor focal length scale factor variance
@@ -246,8 +240,6 @@ void FuseAirspeed();
 void FuseRangeFinder();
 
 void FuseOptFlow();
-
-void OptFlowErrEKF();
 
 void FocalLengthScaleFactorEKF();
 

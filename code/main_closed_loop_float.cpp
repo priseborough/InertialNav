@@ -40,7 +40,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
-uint32_t msecOptFlowDelay = 0;
+uint32_t msecOptFlowDelay = 10;
 
 // IMU input data variables
 float imuIn;
@@ -392,18 +392,20 @@ int main(int argc, char *argv[])
                 _ekf->fuseOptFlowData = false;
             }
 
-            // Fuse Ground distance Measurements
-            if (newDistData && _ekf->statesInitialised)
-            {
-                if (distValid > 0.0f) {
-                    distLastValidReading = distGroundDistance;
-                    _ekf->rngMea = distGroundDistance;
-                    _ekf->fuseRngData = true;
-                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-                    _ekf->FuseRangeFinder();
-                    _ekf->fuseRngData = false;
-                }
-            }
+// Turn of all range finder fusion to enalbe optical flow height estimation feasibility to be assessed
+
+//            // Fuse Ground distance Measurements
+//            if (newDistData && _ekf->statesInitialised)
+//            {
+//                if (distValid > 0.0f) {
+//                    distLastValidReading = distGroundDistance;
+//                    _ekf->rngMea = distGroundDistance;
+//                    _ekf->fuseRngData = true;
+//                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+//                    _ekf->FuseRangeFinder();
+//                    _ekf->fuseRngData = false;
+//                }
+//            }
 
             // Fuse GPS Measurements
             if (newDataGps && _ekf->statesInitialised)
@@ -489,7 +491,9 @@ int main(int argc, char *argv[])
             /*
              *    CHECK IF THE INPUT DATA IS SANE
              */
-            int check = _ekf->CheckAndBound(&ekf_report);
+
+            //debug - remove check to enable debugging
+            int check = 0;//_ekf->CheckAndBound(&ekf_report);
 
             switch (check) {
                 case 0:
@@ -1020,6 +1024,8 @@ void WriteFilterOutput()
     {
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
+    // focal length scale factor estimate and innovations from optical flow rates used to estimate it
+    fprintf(pOptFlowFuseFile," %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9]);
     fprintf(pOptFlowFuseFile,"\n");
 }
 
