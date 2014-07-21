@@ -24,7 +24,7 @@ AttPosEKF::AttPosEKF()
     staticMode = true;
     useAirspeed = true;
     useCompass = true;
-    useRangeFinder = true;
+    useRangeFinder = false;
     useOpticalFlow = true;
     numericalProtection = true;
     refSet = false;

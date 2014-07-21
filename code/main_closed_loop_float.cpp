@@ -353,13 +353,11 @@ int main(int argc, char *argv[])
             }
 
             // Fuse Flow Measurements
-            if (newFlowData && _ekf->statesInitialised)
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow)
             {
 
-                // 0.00711424167
-
-                flowRadX = -flowRawPixelX * 0.018f;
-                flowRadY = -flowRawPixelY * 0.018f;
+                flowRadX = -flowRawPixelX * 0.04f;
+                flowRadY = -flowRawPixelY * 0.04f;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
                 _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor - _ekf->angRate.x;
@@ -392,20 +390,18 @@ int main(int argc, char *argv[])
                 _ekf->fuseOptFlowData = false;
             }
 
-// Turn of all range finder fusion to enalbe optical flow height estimation feasibility to be assessed
-
-//            // Fuse Ground distance Measurements
-//            if (newDistData && _ekf->statesInitialised)
-//            {
-//                if (distValid > 0.0f) {
-//                    distLastValidReading = distGroundDistance;
-//                    _ekf->rngMea = distGroundDistance;
-//                    _ekf->fuseRngData = true;
-//                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-//                    _ekf->FuseRangeFinder();
-//                    _ekf->fuseRngData = false;
-//                }
-//            }
+            // Fuse Ground distance Measurements
+            if (newDistData && _ekf->statesInitialised && _ekf->useRangeFinder)
+            {
+                if (distValid > 0.0f) {
+                    distLastValidReading = distGroundDistance;
+                    _ekf->rngMea = distGroundDistance;
+                    _ekf->fuseRngData = true;
+                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+                    _ekf->FuseRangeFinder();
+                    _ekf->fuseRngData = false;
+                }
+            }
 
             // Fuse GPS Measurements
             if (newDataGps && _ekf->statesInitialised)
@@ -1025,7 +1021,7 @@ void WriteFilterOutput()
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
     // focal length scale factor estimate and innovations from optical flow rates used to estimate it
-    fprintf(pOptFlowFuseFile," %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9]);
+    fprintf(pOptFlowFuseFile," %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance);
     fprintf(pOptFlowFuseFile,"\n");
 }
 
