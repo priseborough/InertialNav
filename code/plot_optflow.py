@@ -7,7 +7,7 @@ import numpy as np
 import math
 
 data = np.genfromtxt('OptFlowFuse.txt', delimiter=' ', skip_header=1,
-        skip_footer=1, names=['time', 'ILOSX', 'VLOSX', 'ILOSY', 'VLOSY' , 'fscale', 'ISCALEX', 'ISCALEY', 'HAGL', 'RNG'])
+        skip_footer=1, names=['time', 'ILOSX', 'VLOSX', 'ILOSY', 'VLOSY' , 'fscale', 'ISCALEX', 'ISCALEY', 'HAGL', 'RNG' , 'HGT'])
 
 figOptFlow = plt.figure()
 
@@ -46,6 +46,7 @@ ax3 = figOptScale.add_subplot(313)
 ax3.set_xlabel('time (s)')
 ax3.set_ylabel('HAGL, LRF (m)')
 ax3.plot(data['time'], data['HAGL'], color='b')
+ax3.plot(data['time'], data['HGT'], color='g')
 ax3.plot(data['time'], data['RNG'], color='r')
 
 plt.show()

@@ -292,7 +292,6 @@ int main(int argc, char *argv[])
         // Apply dtIMU here after 1 or more reads, simulating skipped sensor
         // readings if desired.
         _ekf->dtIMU     = 0.001f*(IMUmsec - IMUmsecPrev);
-        _ekf->dtIMUinv  = 1.0f / _ekf->dtIMU;
 
         if (IMUmsec > msecEndTime || endOfData)
         {
@@ -352,8 +351,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Fuse Flow Measurements
-            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow)
+            // For planes we only fuse flow measurements when in the air
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.7f && !_ekf->onGround)
             {
 
                 flowRadX = -flowRawPixelX * 0.04f;
@@ -425,6 +424,7 @@ int main(int argc, char *argv[])
 
                 _ekf->posNE[0] = posNED[0];
                 _ekf->posNE[1] = posNED[1];
+
                  // set fusion flags
                 _ekf->fuseVelData = true;
                 _ekf->fusePosData = true;
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
             }
 
             // Fuse Magnetometer Measurements
-            if (newDataMag && _ekf->statesInitialised)
+            if (newDataMag && _ekf->statesInitialised && _ekf->useCompass)
             {
                 _ekf->fuseMagData = true;
                 _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
             }
 
             // Fuse Airspeed Measurements
-            if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
+            if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f && _ekf->useAirspeed)
             {
                 _ekf->fuseVtasData = true;
                 _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
@@ -1021,7 +1021,7 @@ void WriteFilterOutput()
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
     // focal length scale factor estimate and innovations from optical flow rates used to estimate it
-    fprintf(pOptFlowFuseFile," %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance);
+    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance, - _ekf->states[9]);
     fprintf(pOptFlowFuseFile,"\n");
 }
 

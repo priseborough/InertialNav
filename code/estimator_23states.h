@@ -143,7 +143,6 @@ public:
     Vector3f dVelIMU;
     Vector3f dAngIMU;
     float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
-    float dtIMUinv; // inverse IMU time step (1/sec)
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output

@@ -1766,9 +1766,9 @@ void AttPosEKF::FuseOptFlow()
 
     // Perform sequential fusion of optical flow measurements only when in the air
     float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
-    bool validHeight = heightAboveGndEst > 5.0f && heightAboveGndEst < 100.0f;
+    bool validHeight = heightAboveGndEst > 3.0f;
     bool validTilt = Tnb.z.z > 0.866f;
-    if (useOpticalFlow && fuseOptFlowData && !onGround && validTilt && validHeight)
+    if (useOpticalFlow && fuseOptFlowData && validTilt && validHeight)
     {
         // Sequential fusion of XY components.
 
@@ -2261,9 +2261,9 @@ int AttPosEKF::RecallOmega(float* omegaForFusion, uint64_t msec)
     }
     else // otherwise output current state
     {
-        omegaForFusion[0] = correctedDelAng.x * dtIMUinv;
-        omegaForFusion[1] = correctedDelAng.y * dtIMUinv;
-        omegaForFusion[2] = correctedDelAng.z * dtIMUinv;
+        omegaForFusion[0] = angRate.x;
+        omegaForFusion[1] = angRate.y;
+        omegaForFusion[2] = angRate.z;
     }
 
     return ret;
