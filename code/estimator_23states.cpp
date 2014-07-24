@@ -2022,7 +2022,7 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
     Mat3f T_nb;   // transformation from nav to body axes
     float range; // range from camera to centre of image
     float losPred[2]; // predicted optical flow angular rate measurements
-    float SH_OPT[3]; // intermediate results for observation jacobian
+    float SH_OPT[11]; // intermediate results for observation jacobian
     float H_OPT[2]; //observation jacobian
     float SK_OPT[3]; // intermediate results for Kalman gains
     float K_OPT[2]; // Kalman gains
@@ -2030,8 +2030,6 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
     float q1; // quaternion at optical flow measurement time
     float q2; // quaternion at optical flow measurement time
     float q3; // quaternion at optical flow measurement time
-    float pd; // flight vehicle vertical position at optical flow measurement time
-    float ptd; // terrain vertical position at optical flow measurement time
     float R_OPT = 0.1; // optical flow LOS rate variance (rad^2) TODO should make this a function of the opt flow quality measure
 
     // Perform sequential fusion of optical flow measurements only when in the air and flying level
@@ -2048,8 +2046,6 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
         vel.x          = statesAtOptFlowTime[4];
         vel.y          = statesAtOptFlowTime[5];
         vel.z          = statesAtOptFlowTime[6];
-        pd             = statesAtOptFlowTime[9];
-        ptd            = statesAtOptFlowTime[22];
 
         // increment state variance with a small value to keep the estimation alive
         fScaleFactorVar += 1e-9;
@@ -2076,7 +2072,7 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
         T_nb.y.z = 2*(q23 + q01);
 
         // estimate range to centre of image
-        range = (statesAtOptFlowTime[22] - statesAtOptFlowTime[9])/T_nb.z.z;
+        range = heightAboveGndEst/T_nb.z.z;
 
         // calculate relative velocity in sensor frame
         relVelSensor = T_nb*vel;
@@ -2096,13 +2092,21 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
         SH_OPT[0] = sq(q2);
         SH_OPT[1] = 2*q0*q3;
         SH_OPT[2] = 1/range;
-        H_OPT[0] = SH_OPT[2]*(vel.z*(2*q0*q1 + 2*q2*q3) + vel.y*(SH_OPT[0] + sq(q0) - sq(q1) - sq(q3)) - vel.x*(SH_OPT[1] - 2*q1*q2));
-        H_OPT[1] = SH_OPT[2]*(vel.z*(2*q0*q2 - 2*q1*q3) + vel.x*(SH_OPT[0] - sq(q0) - sq(q1) + sq(q3)) - vel.y*(SH_OPT[1] + 2*q1*q2));
+        SH_OPT[3] = sq(q0);
+        SH_OPT[4] = sq(q1);
+        SH_OPT[5] = sq(q3);
+        SH_OPT[6] = (SH_OPT[0] + SH_OPT[3] - SH_OPT[4] - SH_OPT[5]);
+        SH_OPT[7] = (SH_OPT[0] - SH_OPT[3] - SH_OPT[4] + SH_OPT[5]);
+        SH_OPT[8] = (2*q0*q1 + 2*q2*q3);
+        SH_OPT[9] = (2*q0*q2 - 2*q1*q3);
+        SH_OPT[10]= 2*q1*q2;
+        SK_OPT[0] = vel.z*SH_OPT[9] + vel.x*SH_OPT[7] - vel.y*(SH_OPT[1] + SH_OPT[10]);
+        SK_OPT[1] = vel.z*SH_OPT[8] + vel.y*SH_OPT[6] - vel.x*(SH_OPT[1] - SH_OPT[10]);
+        SK_OPT[2] = sq(SH_OPT[2]);
+        H_OPT[0] = SH_OPT[2]*SK_OPT[1];
+        H_OPT[1] = SH_OPT[2]*SK_OPT[0];
 
         // calculate innovation variances
-        SK_OPT[0] = vel.z*(2*q0*q2 - 2*q1*q3) + vel.x*(SH_OPT[0] - sq(q0) - sq(q1) + sq(q3)) - vel.y*(SH_OPT[1] + 2*q1*q2);
-        SK_OPT[1] = vel.z*(2*q0*q1 + 2*q2*q3) + vel.y*(SH_OPT[0] + sq(q0) - sq(q1) - sq(q3)) - vel.x*(SH_OPT[1] - 2*q1*q2);
-        SK_OPT[2] = sq(SH_OPT[2]);
         fScaleFactorObsInnovVar[0] = (R_OPT + fScaleFactorVar*sq(SK_OPT[1])*SK_OPT[2]);
         fScaleFactorObsInnovVar[1] = (R_OPT + fScaleFactorVar*sq(SK_OPT[0])*SK_OPT[2]);
 
