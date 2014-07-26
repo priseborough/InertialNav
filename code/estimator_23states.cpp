@@ -19,12 +19,13 @@ AttPosEKF::AttPosEKF()
     fusePosData = false;
     fuseHgtData = false;
     fuseMagData = false;
-    fuseVtasData = false;
+    fuseVtasData = true;
     onGround = true;
     staticMode = true;
+    useGPS = true;
     useAirspeed = true;
     useCompass = true;
-    useRangeFinder = false;
+    useRangeFinder = true;
     useOpticalFlow = true;
     numericalProtection = true;
     refSet = false;
@@ -1742,7 +1743,7 @@ void AttPosEKF::FuseOptFlow()
     static float vd = 0.0f;
     static float pd = 0.0f;
     static float ptd = 0.0f;
-    static float R_LOS = 0.1f;
+    static float R_LOS = 0.5f;
     static float losPred[2];
 
     // Transformation matrix from nav to body axes
@@ -1764,11 +1765,11 @@ void AttPosEKF::FuseOptFlow()
     Vector3f velNED_local;
     Vector3f relVelSensor;
 
-    // Perform sequential fusion of optical flow measurements only when in the air
+    // Perform sequential fusion of optical flow measurements only with valid tilt and height
     float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
-    bool validHeight = heightAboveGndEst > 3.0f;
-    bool validTilt = Tnb.z.z > 0.866f;
-    if (useOpticalFlow && fuseOptFlowData && validTilt && validHeight)
+    bool validHeight = heightAboveGndEst > 0.5f;
+    bool validTilt = Tnb.z.z > 0.7f;
+    if (validTilt && validHeight)
     {
         // Sequential fusion of XY components.
 
@@ -1893,7 +1894,11 @@ void AttPosEKF::FuseOptFlow()
             K_LOS[0][19] = -SK_LOS[0]*(P[19][0]*SKK_LOS[8] + P[19][1]*SKK_LOS[7] - P[19][3]*SKK_LOS[6] + P[19][2]*SKK_LOS[9] - P[19][9]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[19][22]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[19][4]*SH_LOS[3]*SKK_LOS[5]*SKK_LOS[14] + P[19][5]*SH_LOS[3]*SKK_LOS[4]*SKK_LOS[14] - P[19][6]*SH_LOS[3]*SKK_LOS[3]*SKK_LOS[14]);
             K_LOS[0][20] = -SK_LOS[0]*(P[20][0]*SKK_LOS[8] + P[20][1]*SKK_LOS[7] - P[20][3]*SKK_LOS[6] + P[20][2]*SKK_LOS[9] - P[20][9]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[20][22]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[20][4]*SH_LOS[3]*SKK_LOS[5]*SKK_LOS[14] + P[20][5]*SH_LOS[3]*SKK_LOS[4]*SKK_LOS[14] - P[20][6]*SH_LOS[3]*SKK_LOS[3]*SKK_LOS[14]);
             K_LOS[0][21] = -SK_LOS[0]*(P[21][0]*SKK_LOS[8] + P[21][1]*SKK_LOS[7] - P[21][3]*SKK_LOS[6] + P[21][2]*SKK_LOS[9] - P[21][9]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[21][22]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[21][4]*SH_LOS[3]*SKK_LOS[5]*SKK_LOS[14] + P[21][5]*SH_LOS[3]*SKK_LOS[4]*SKK_LOS[14] - P[21][6]*SH_LOS[3]*SKK_LOS[3]*SKK_LOS[14]);
-            K_LOS[0][22] = -SK_LOS[0]*(P[22][0]*SKK_LOS[8] + P[22][1]*SKK_LOS[7] - P[22][3]*SKK_LOS[6] + P[22][2]*SKK_LOS[9] - P[22][9]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[22][22]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[22][4]*SH_LOS[3]*SKK_LOS[5]*SKK_LOS[14] + P[22][5]*SH_LOS[3]*SKK_LOS[4]*SKK_LOS[14] - P[22][6]*SH_LOS[3]*SKK_LOS[3]*SKK_LOS[14]);
+            if (!inhibitGndHgtState) {
+                K_LOS[0][22] = -SK_LOS[0]*(P[22][0]*SKK_LOS[8] + P[22][1]*SKK_LOS[7] - P[22][3]*SKK_LOS[6] + P[22][2]*SKK_LOS[9] - P[22][9]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[22][22]*SH_LOS[2]*SH_LOS[7]*SKK_LOS[14] + P[22][4]*SH_LOS[3]*SKK_LOS[5]*SKK_LOS[14] + P[22][5]*SH_LOS[3]*SKK_LOS[4]*SKK_LOS[14] - P[22][6]*SH_LOS[3]*SKK_LOS[3]*SKK_LOS[14]);
+            } else {
+                K_LOS[0][22] = 0.0f;
+            }
 
             // calculate innovation variance and innovation for X axis observation
             varInnovOptFlow[0] = 1.0f/SK_LOS[0];
@@ -1936,7 +1941,11 @@ void AttPosEKF::FuseOptFlow()
             K_LOS[1][19] = SK_LOS[1]*(P[19][0]*SKK_LOS[10] - P[19][3]*SKK_LOS[13] + P[19][1]*SKK_LOS[11] + P[19][2]*SKK_LOS[12] - P[19][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[19][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[19][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[19][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[19][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
             K_LOS[1][20] = SK_LOS[1]*(P[20][0]*SKK_LOS[10] - P[20][3]*SKK_LOS[13] + P[20][1]*SKK_LOS[11] + P[20][2]*SKK_LOS[12] - P[20][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[20][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[20][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[20][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[20][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
             K_LOS[1][21] = SK_LOS[1]*(P[21][0]*SKK_LOS[10] - P[21][3]*SKK_LOS[13] + P[21][1]*SKK_LOS[11] + P[21][2]*SKK_LOS[12] - P[21][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[21][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[21][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[21][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[21][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
-            K_LOS[1][22] = SK_LOS[1]*(P[22][0]*SKK_LOS[10] - P[22][3]*SKK_LOS[13] + P[22][1]*SKK_LOS[11] + P[22][2]*SKK_LOS[12] - P[22][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[22][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[22][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
+            if (!inhibitGndHgtState) {
+                K_LOS[1][22] = SK_LOS[1]*(P[22][0]*SKK_LOS[10] - P[22][3]*SKK_LOS[13] + P[22][1]*SKK_LOS[11] + P[22][2]*SKK_LOS[12] - P[22][9]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][22]*SH_LOS[1]*SH_LOS[7]*SKK_LOS[14] + P[22][6]*SH_LOS[3]*SKK_LOS[0]*SKK_LOS[14] + P[22][4]*SH_LOS[3]*SKK_LOS[2]*SKK_LOS[14] - P[22][5]*SH_LOS[3]*SKK_LOS[1]*SKK_LOS[14]);
+            } else {
+                K_LOS[1][22] = 0.0f;
+            }
 
             // calculate variance and innovation for Y observation
             varInnovOptFlow[1] = 1.0f/SK_LOS[1];
@@ -2034,9 +2043,9 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
 
     // Perform sequential fusion of optical flow measurements only when in the air and flying level
     float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
-    bool validHeight = heightAboveGndEst > 5.0f;
-    bool validTilt = Tnb.z.z > 0.95f;
-    if (useOpticalFlow && fuseOptFlowData && !onGround && validTilt && validHeight)
+    bool validHeight = heightAboveGndEst > 0.5f;
+    bool validTilt = Tnb.z.z > 0.866f;
+    if (validTilt && validHeight)
     {
         // Copy required states to local variable names
         q0             = statesAtOptFlowTime[0];
@@ -2118,7 +2127,7 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
         for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
             if ((fScaleFactorObsInnov[obsIndex]*fScaleFactorObsInnov[obsIndex]/fScaleFactorObsInnovVar[obsIndex]) < 9.0f) {
                 // correct the state
-                fScaleFactor = ConstrainFloat(fScaleFactor - K_OPT[obsIndex] * fScaleFactorObsInnov[obsIndex], 0.5f, 2.0f);
+                fScaleFactor = ConstrainFloat(fScaleFactor - K_OPT[obsIndex] * fScaleFactorObsInnov[obsIndex], 0.1f, 10.0f);
                 // constrain the state
 
                 // correct the state variance
@@ -2235,42 +2244,33 @@ int AttPosEKF::RecallStates(float* statesForFusion, uint64_t msec)
 
 int AttPosEKF::RecallOmega(float* omegaForFusion, uint64_t msec)
 {
-    int ret = 0;
-
-    int64_t bestTimeDelta = 200;
-    unsigned bestStoreIndex = 0;
+    // work back in time and calculate average angular rate over the time interval
+    for (unsigned i=0; i < 3; i++) {
+        omegaForFusion[i] = 0.0f;
+    }
+    uint8_t sumIndex = 0;
+    int64_t timeDelta;
     for (unsigned storeIndexLocal = 0; storeIndexLocal < data_buffer_size; storeIndexLocal++)
     {
-        // Work around a GCC compiler bug - we know 64bit support on ARM is
-        // sketchy in GCC.
-        uint64_t timeDelta;
-
-        if (msec > statetimeStamp[storeIndexLocal]) {
-            timeDelta = msec - statetimeStamp[storeIndexLocal];
-        } else {
-            timeDelta = statetimeStamp[storeIndexLocal] - msec;
-        }
-
-        if (timeDelta < (uint64_t)bestTimeDelta)
+        // calculate the average of all samples younger than msec
+        timeDelta = statetimeStamp[storeIndexLocal] - msec;
+        if (timeDelta > 0)
         {
-            bestStoreIndex = storeIndexLocal;
-            bestTimeDelta = timeDelta;
+            for (unsigned i=0; i < 3; i++) {
+                omegaForFusion[i] += storedOmega[i][storeIndexLocal];
+            }
+            sumIndex += 1;
         }
     }
-    if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
-    {
+    if (sumIndex >= 1) {
         for (unsigned i=0; i < 3; i++) {
-            omegaForFusion[i] = storedOmega[i][bestStoreIndex];
+            omegaForFusion[i] = omegaForFusion[i] / float(sumIndex);
         }
-    }
-    else // otherwise output current state
-    {
+    } else {
         omegaForFusion[0] = angRate.x;
         omegaForFusion[1] = angRate.y;
         omegaForFusion[2] = angRate.z;
     }
-
-    return ret;
 }
 
 void AttPosEKF::quat2Tnb(Mat3f &Tnb, const float (&quat)[4])
@@ -2367,7 +2367,7 @@ void AttPosEKF::calcLLH(float posNED[3], double &lat, double &lon, float &hgt, d
 
 void AttPosEKF::OnGroundCheck()
 {
-    onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 4.0f) && (VtasMeas < 6.0f));
+    onGround = (((sq(velNED[0]) + sq(velNED[1]) + sq(velNED[2])) < 25.0f) && (VtasMeas < 6.0f));
     if (staticMode) {
         staticMode = (!refSet || (GPSstatus < GPS_FIX_3D));
     }
@@ -2383,8 +2383,8 @@ void AttPosEKF::OnGroundCheck()
     } else {
         inhibitMagStates = false;
     }
-    // don't update terrain offset state if on ground
-    if (onGround) {
+    // don't update terrain offset state if flying at low velocity without range finder fusion
+    if (onGround && !useRangeFinder) {
         inhibitGndHgtState = true;
     } else {
         inhibitGndHgtState = false;
@@ -2424,7 +2424,7 @@ void AttPosEKF::CovarianceInit()
     P[19][19] = sq(0.02f);
     P[20][20] = P[19][19];
     P[21][21] = P[19][19];
-    P[22][22] = sq(0.5f);
+    P[22][22] = 0.0f;
 
     fScaleFactorVar = 0.001f; // focal length scale factor variance
 }
@@ -2568,7 +2568,7 @@ void AttPosEKF::ConstrainStates()
     }
 
     // Constrain terrain offset
-    states[22] = ConstrainFloat(states[22], -1000.0f, 1000.0f);
+    states[22] = ConstrainFloat(states[22], states[9] + 0.5f, 1000.0f);
 
 }
 

@@ -201,6 +201,7 @@ public:
 
     bool onGround;    ///< boolean true when the flight vehicle is on the ground (not flying)
     bool staticMode;    ///< boolean true if no position feedback is fused
+    bool useGPS; // boolean true if GPS data is being used
     bool useAirspeed;    ///< boolean true if airspeed data is being used
     bool useCompass;    ///< boolean true if magnetometer data is being used
     bool useRangeFinder;     ///< true when rangefinder is being used

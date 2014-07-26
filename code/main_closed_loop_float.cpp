@@ -351,28 +351,42 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // For planes we only fuse flow measurements when in the air
-            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.7f && !_ekf->onGround)
+            // Fuse optical flow measurements
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.95f)
             {
+                // recall states and angular rates stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - 2*msecOptFlowDelay));
+//                for (uint8_t j=0; j<n_states; j++) {
+//                    _ekf->statesAtOptFlowTime[j] = _ekf->states[j];
+//                }
+//                _ekf->omegaAtOptFlowTime[0] = _ekf->angRate.x;
+//                _ekf->omegaAtOptFlowTime[1] = _ekf->angRate.y;
+//                _ekf->omegaAtOptFlowTime[2] = _ekf->angRate.z;
 
-                flowRadX = -flowRawPixelX * 0.04f;
-                flowRadY = -flowRawPixelY * 0.04f;
+                // scale from pixels per second to radians/second
+                // scale factor is 24e-3 / focal length in mm
+                float scaleFactor = 10.0f * 24e-3f / 4.0f;
+                flowRadX = -flowRawPixelX * scaleFactor;
+                flowRadY = -flowRawPixelY * scaleFactor;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
                 _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor - _ekf->angRate.x;
                 _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor - _ekf->angRate.y;
+                // use these lines if not using estimated scale factor
+//                _ekf->flowRadXYcomp[0] = flowRadX - _ekf->omegaAtOptFlowTime[0];
+//                _ekf->flowRadXYcomp[1] = flowRadY - _ekf->omegaAtOptFlowTime[1];
 
                 // these flow rates are not motion compensated and are used for focal length scale factor estimation
                 _ekf->flowRadXY[0] = flowRadX;
                 _ekf->flowRadXY[1] = flowRadY;
 
-                // recall states and angular rates stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-
                 // perform optical flow fusion
                 _ekf->fuseOptFlowData = true;
-                _ekf->FocalLengthScaleFactorEKF();
+                // don't try to estimate focal length scale factor if GPS is not being used.
+                if (_ekf->useGPS) {
+                    _ekf->FocalLengthScaleFactorEKF();
+                }
                 _ekf->FuseOptFlow();
                 _ekf->fuseOptFlowData = false;
 
@@ -425,14 +439,19 @@ int main(int argc, char *argv[])
                 _ekf->posNE[0] = posNED[0];
                 _ekf->posNE[1] = posNED[1];
 
-                 // set fusion flags
-                _ekf->fuseVelData = true;
-                _ekf->fusePosData = true;
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
-                _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
-                // run the fusion step
-                _ekf->FuseVelposNED();
+                 // fuse GPS
+                if (_ekf->useGPS) {
+                    _ekf->fuseVelData = true;
+                    _ekf->fusePosData = true;
+                    // recall states stored at time of measurement after adjusting for delays
+                    _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
+                    _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
+                    // run the fusion step
+                    _ekf->FuseVelposNED();
+                } else {
+                    _ekf->fuseVelData = false;
+                    _ekf->fusePosData = false;
+                }
             }
             else
             {
@@ -754,7 +773,6 @@ void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    // Currently synthesise a terrain measurement that is 5 m below the baro alt
     while (ADStimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j=0; j<=9; j++)
@@ -882,7 +900,12 @@ void readFlowData()
             flowRawPixelX = temp[1];        // in pixels
             flowRawPixelY = temp[2];        // in pixels
             flowDistance = temp[3];         // in meters
-            flowQuality = temp[4] / 255;    // distance normalized between 0 and 1
+            // catch glitches in logged data
+            if (flowRawPixelX > 200 || flowRawPixelY > 200 || flowRawPixelX < -200 || flowRawPixelY < -200) {
+                flowQuality = 0.0f;    // quality normalized between 0 and 1
+            } else {
+                flowQuality = temp[4] / 255;    // quality normalized between 0 and 1
+            }
             flowSensorId = temp[5];         // sensor ID
 
             flowMsec = temp[0];
@@ -890,6 +913,8 @@ void readFlowData()
     }
     if (flowMsec > lastFlowMsec)
     {
+        // assume 1/2 interval effective delay associated with averaging inside the sensor
+        msecOptFlowDelay = (flowMsec - lastFlowMsec)/2;
         lastFlowMsec = flowMsec;
         newFlowData = true;
     }
@@ -967,7 +992,7 @@ void WriteFilterOutput()
     fprintf(pCovOutFile,"\n");
     // velocity, position and height observations used by the filter
     fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", _ekf->velNED[0], _ekf->velNED[1], _ekf->velNED[2], _ekf->posNE[0], _ekf->posNE[1], _ekf->hgtMea);
+    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", _ekf->velNED[0], _ekf->velNED[1], _ekf->velNED[2], _ekf->posNE[0], _ekf->posNE[1], -_ekf->hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
 
     fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
@@ -1021,7 +1046,7 @@ void WriteFilterOutput()
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
     // focal length scale factor estimate and innovations from optical flow rates used to estimate it
-    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance, - _ekf->states[9]);
+    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance*_ekf->Tbn.z.z, - _ekf->states[9]);
     fprintf(pOptFlowFuseFile,"\n");
 }
 
