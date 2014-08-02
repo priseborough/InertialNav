@@ -371,11 +371,11 @@ int main(int argc, char *argv[])
                 flowRadY = -flowRawPixelY * scaleFactor;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
-                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor - _ekf->angRate.x;
-                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor - _ekf->angRate.y;
+                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor + _ekf->angRate.x;
+                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor + _ekf->angRate.y;
                 // use these lines if not using estimated scale factor
-//                _ekf->flowRadXYcomp[0] = flowRadX - _ekf->omegaAtOptFlowTime[0];
-//                _ekf->flowRadXYcomp[1] = flowRadY - _ekf->omegaAtOptFlowTime[1];
+//                _ekf->flowRadXYcomp[0] = flowRadX + _ekf->omegaAtOptFlowTime[0];
+//                _ekf->flowRadXYcomp[1] = flowRadY + _ekf->omegaAtOptFlowTime[1];
 
                 // these flow rates are not motion compensated and are used for focal length scale factor estimation
                 _ekf->flowRadXY[0] = flowRadX;
