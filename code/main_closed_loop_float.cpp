@@ -40,7 +40,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
-uint32_t msecOptFlowDelay = 10;
+uint32_t msecOptFlowDelay = 5;
 
 // IMU input data variables
 float imuIn;
@@ -357,25 +357,15 @@ int main(int argc, char *argv[])
                 // recall states and angular rates stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
                 _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - 2*msecOptFlowDelay));
-//                for (uint8_t j=0; j<n_states; j++) {
-//                    _ekf->statesAtOptFlowTime[j] = _ekf->states[j];
-//                }
-//                _ekf->omegaAtOptFlowTime[0] = _ekf->angRate.x;
-//                _ekf->omegaAtOptFlowTime[1] = _ekf->angRate.y;
-//                _ekf->omegaAtOptFlowTime[2] = _ekf->angRate.z;
 
-                // scale from pixels per second to radians/second
-                // scale factor is 24e-3 / focal length in mm
-                float scaleFactor = 10.0f * 24e-3f / 4.0f;
+                // scale from raw pixel flow rate to radians/second
+                float scaleFactor = 0.03f; // best value for quadcopter logs using the 16 mm lens
                 flowRadX = -flowRawPixelX * scaleFactor;
                 flowRadY = -flowRawPixelY * scaleFactor;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
-                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor + _ekf->angRate.x;
-                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor + _ekf->angRate.y;
-                // use these lines if not using estimated scale factor
-//                _ekf->flowRadXYcomp[0] = flowRadX + _ekf->omegaAtOptFlowTime[0];
-//                _ekf->flowRadXYcomp[1] = flowRadY + _ekf->omegaAtOptFlowTime[1];
+                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor + _ekf->omegaAtOptFlowTime[0];
+                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor + _ekf->omegaAtOptFlowTime[1];
 
                 // these flow rates are not motion compensated and are used for focal length scale factor estimation
                 _ekf->flowRadXY[0] = flowRadX;

@@ -23,9 +23,9 @@ AttPosEKF::AttPosEKF()
     onGround = true;
     staticMode = true;
     useGPS = true;
-    useAirspeed = true;
+    useAirspeed = false;
     useCompass = true;
-    useRangeFinder = true;
+    useRangeFinder = false;
     useOpticalFlow = true;
     numericalProtection = true;
     refSet = false;
