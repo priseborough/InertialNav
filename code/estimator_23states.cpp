@@ -2365,8 +2365,8 @@ void AttPosEKF::OnGroundCheck()
     } else {
         inhibitMagStates = false;
     }
-    // don't update terrain offset state if flying at low velocity without range finder fusion
-    if (onGround && !useRangeFinder) {
+    // don't update terrain offset state if there is no range finder and flying at low velocity or without GPS
+    if ((onGround || !useGPS) && !useRangeFinder) {
         inhibitGndHgtState = true;
     } else {
         inhibitGndHgtState = false;
