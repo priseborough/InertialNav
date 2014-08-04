@@ -58,11 +58,7 @@ processEqns = fScaleFactorNew;
 Tbn = Quat2Tbn([q0,q1,q2,q3]);
 
 % calculate relative velocity in sensor frame
-% relVelSensor = Tns*[velN;velE;velD];
 relVelSensor = transpose(Tbn)*[vel_x;vel_y;vel_z];
-
-% calculate angular rates in sensor frame
-% omegaSensor = Tbs*[omegaX;omegaY;omegaZ];
 
 % divide velocity by range, subtract body rates and apply scale factor to
 % get predicted sensed angular optical rates relative to X and Y sensor axes
