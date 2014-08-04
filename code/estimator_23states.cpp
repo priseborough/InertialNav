@@ -2188,6 +2188,15 @@ float AttPosEKF::sq(float valIn)
     return valIn*valIn;
 }
 
+float AttPosEKF::maxf(float valIn1, float valIn2)
+{
+    if (valIn1 >= valIn2) {
+        return valIn1;
+    } else {
+        return valIn2;
+    }
+}
+
 // Store states in a history array along with time stamp
 void AttPosEKF::StoreStates(uint64_t timestamp_ms)
 {

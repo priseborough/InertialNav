@@ -287,6 +287,8 @@ static void quat2Tnb(Mat3f &Tnb, const float (&quat)[4]);
 
 static float sq(float valIn);
 
+static float maxf(float valIn1, float valIn2);
+
 void OnGroundCheck();
 
 void CovarianceInit();
