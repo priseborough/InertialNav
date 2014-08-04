@@ -1,15 +1,16 @@
-Files for prototype 23 and 21 state Extended Kalman filters designed for APMPlane implementation
+Files for prototype 21, 22, 23 and 24 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
 This is an implementation of a strapdown inertial navigation system with an Extended Kalman Filter algorithm used 
-to provide aiding using the following data sources:
+to provide aiding using the following data sources (depending on filter variant):
 
 3D velocity measurements (taken from UBlox6 or equivalent GPS)
 2D position (taken from UBlox6 or equivalent GPS)
 Height measurement (could be GPS or barometric height or some combination)
 3-axis body fixed magnetic flux measurements
 True airspeed measurement
-Laser range finder measurement (assumed to be fixed in body axes and pointing downwards with a specified pitch offset)
+Terrain laser range finder measurements (aligned with vehicle Z axis)
+Ground optical flow measurements (flow angular rates about vehicle X and Y axes)
 
 The IMU delta angles and delta velocities are assumed to be simple integrals of the corresponding angular rates 
 and axial accelerations, with no coning or sculling compensation applied to them before input to the filter.
@@ -19,11 +20,12 @@ The filter estimates the following states:
 3 North,East,Down velocity components
 3 North,East,Down  position components
 3 IMU delta angle bias components
-1 IMU delta velocity bias in Z (not included in the 21-state filter)
+2 IMU delta velocity bias in X and Y (only included in 24 state derivation)
+1 IMU delta velocity bias in Z (only included in the 22 and 23 state derivation)
 2 North,East wind velocity components
 3 North,East,Down  earth magnetic flux components
 3 X,Y,Z body fixed magnetic flux components (these are opposite sign to the compass offsets used by APM)
-1 Offset of terrain along down axis (not included in 21 sate filter)
+1 Offset of terrain along down axis (only included in the 23 state filter derivation)
 
 The filter is designed to run in parallel with the existing APM AHRS complementary filter, firstly to provide
 a bootstrap for initial alignment, and secondly to provide a watchdog reference to detect filter divergence.
@@ -35,11 +37,13 @@ The three test data sets were obtained from a PX4 FMU and digital airspeed senso
 airframe. The 2nd and 3rd data sets include aerobatic manoeuvres (loops and axial rolls), but no spinning due to
 airframe limitations.
 
-No range finder measurements have been available, so range finder data has been synthesised from the baro height data
-to test the filter maths.
+Some additional data sets incorporating optical flow and range finder measurements are included.
 
 ========================================================================================================================
 Instructions To Run Simulink Model:
+
+Note : Simulink models are only available for 21 and 24 state architecture, and do not include range finder or optical
+flow measurements.
 
 You will need Matlab + Simulink 2012a or later to run this model
 
@@ -68,6 +72,3 @@ RefVelPosDataOut.txt
 StateDataOut.txt
 TasFuse.txt
 VelPosFuse.txt
-
-5) These text files can be plotted using the Matlab script PlotCcodeOutput.m , if you don't have Matlab a the
-   script file will show you what data is in each column so you can use your plotting tool of choice
