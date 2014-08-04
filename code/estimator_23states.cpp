@@ -2170,6 +2170,208 @@ void AttPosEKF::FocalLengthScaleFactorEKF()
     }
 }
 
+/*
+Estimation of optical flow sensor focal length scale factor and terrain height using a two state EKF
+This fiter requires optical flow rates that are not motion compensated
+Range to ground measurement is assumed to be via a narrow beam type sensor - eg laser
+*/
+void AttPosEKF::OpticalFlowEKF()
+{
+    // Perform sequential fusion of optical flow and range finder measurements only when in the air and tilted less than 45 degrees
+    bool validTilt = Tnb.z.z > 0.71;
+    if (validTilt)
+    {
+        // propagate ground position state noise each time this is called using the difference in position since the last observations and an RMS gradient assumption
+        if (!inhibitGndHgtState) {
+            Popt[1][1] += (sq(statesAtOptFlowTime[7] - prevPosN) + sq(statesAtOptFlowTime[8] - prevPosE)) * sq(gndHgtSigma);
+        }
+
+        // fuse range finder data
+        if (fuseRngData) {
+            float range; // range from camera to centre of image
+            float q0; // quaternion at optical flow measurement time
+            float q1; // quaternion at optical flow measurement time
+            float q2; // quaternion at optical flow measurement time
+            float q3; // quaternion at optical flow measurement time
+            float R_RNG = 0.5; // range measurement variance (m^2) TODO make this a function of range and tilt to allow for sensor, alignment and AHRS errors
+
+            // Copy required states to local variable names
+            q0             = statesAtRngTime[0];
+            q1             = statesAtRngTime[1];
+            q2             = statesAtRngTime[2];
+            q3             = statesAtRngTime[3];
+
+            // calculate inverse of 3,3 element in direction cosine matrix
+            float Tbn33_inv = 1.0f / sq(q0) - sq(q1) - sq(q2) + sq(q3);
+
+            // constrain terrain height to be below the vehicle
+            flowStates[1] = maxf(flowStates[1], statesAtRngTime[9] + 0.5f);
+
+            // estimate range to centre of image
+            range = (flowStates[1] - statesAtRngTime[9]) * Tbn33_inv;
+
+            // calculate Kalman gains
+            float SK_RNG[3];
+            SK_RNG[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
+            SK_RNG[1] = 1/(R_RNG + Popt[1][1]/sq(SK_RNG[0]));
+            SK_RNG[2] = 1/SK_RNG[0];
+            float K_RNG[2];
+            K_RNG[0] = Popt[0][1]*SK_RNG[1]*SK_RNG[2];
+            K_RNG[1] = Popt[1][1]*SK_RNG[1]*SK_RNG[2];
+
+            // Calculate the innovation variance for data logging
+            varInnovRng = 1.0f/SK_RNG[1];
+
+            // Calculate the measurement innovation
+            innovRng = range - rngMea;
+
+            // Check the innovation for consistency and don't fuse if > 5Sigma
+            if ((sq(innovRng)*SK_RNG[1]) < 25.0f)
+            {
+                // correct the state
+                for (uint8_t i = 0; i < 2 ; i++) {
+                    flowStates[i] -= K_RNG[i] * innovRng;
+                }
+                // constrain the states
+                flowStates[0] = ConstrainFloat(flowStates[0], 0.1f, 10.0f);
+                flowStates[1] = maxf(flowStates[1], statesAtRngTime[9] + 0.5f);
+
+                // correct the covariance matrix
+                float nextPopt[2][2];
+                nextPopt[0][0] = Popt[0][0] - (Popt[0][1]*Popt[1][0]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv;
+                nextPopt[0][1] = Popt[0][1] - (Popt[0][1]*Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv;
+                nextPopt[1][0] = -Popt[1][0]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv - 1.0f);
+                nextPopt[1][1] = -Popt[1][1]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv - 1.0f);
+                // prevent the state variances from becoming negative and maintain symmetry
+                Popt[0][0] = maxf(nextPopt[0][0],0.0f);
+                Popt[1][1] = maxf(nextPopt[1][1],0.0f);
+                Popt[0][1] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+                Popt[1][0] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+            }
+        }
+
+
+        if (fuseOptFlowData) {
+            Vector3f vel; // velocity of sensor relative to ground in NED axes
+            Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
+            float losPred[2]; // predicted optical flow angular rate measurements
+            Mat3f T_nb;   // transformation from nav to body axes
+            float range; // range from camera to centre of image
+            float q0; // quaternion at optical flow measurement time
+            float q1; // quaternion at optical flow measurement time
+            float q2; // quaternion at optical flow measurement time
+            float q3; // quaternion at optical flow measurement time
+            float R_OPT = 0.5; // optical flow LOS rate variance (rad^2) TODO make this a function of the opt flow quality measure
+
+            // propagate scale factor state noise
+            Popt[0][0] += 1e-9f;
+
+            // Copy required states to local variable names
+            q0             = statesAtOptFlowTime[0];
+            q1             = statesAtOptFlowTime[1];
+            q2             = statesAtOptFlowTime[2];
+            q3             = statesAtOptFlowTime[3];
+            vel.x          = statesAtOptFlowTime[4];
+            vel.y          = statesAtOptFlowTime[5];
+            vel.z          = statesAtOptFlowTime[6];
+
+            // calculate rotation from NED to body axes
+            float q00 = sq(q0);
+            float q11 = sq(q1);
+            float q22 = sq(q2);
+            float q33 = sq(q3);
+            float q01 = q0 * q1;
+            float q02 = q0 * q2;
+            float q03 = q0 * q3;
+            float q12 = q1 * q2;
+            float q13 = q1 * q3;
+            float q23 = q2 * q3;
+            T_nb.x.x = q00 + q11 - q22 - q33;
+            T_nb.y.y = q00 - q11 + q22 - q33;
+            T_nb.z.z = q00 - q11 - q22 + q33;
+            T_nb.y.x = 2*(q12 - q03);
+            T_nb.z.x = 2*(q13 + q02);
+            T_nb.x.y = 2*(q12 + q03);
+            T_nb.z.y = 2*(q23 - q01);
+            T_nb.x.z = 2*(q13 - q02);
+            T_nb.y.z = 2*(q23 + q01);
+
+            // constrain terrain height to be below the vehicle
+            flowStates[1] = maxf(flowStates[1], statesAtOptFlowTime[9] + 0.5f);
+
+            // estimate range to centre of image
+            range = (flowStates[1] - statesAtOptFlowTime[9]) / T_nb.z.z;
+
+            // calculate relative velocity in sensor frame
+            relVelSensor = T_nb*vel;
+
+            // divide velocity by range, subtract body rates and apply scale factor to
+            // get predicted sensed angular optical rates relative to X and Y sensor axes
+            losPred[0] =  flowStates[0]*( relVelSensor.y/range) - omegaAtOptFlowTime[0];
+            losPred[1] =  flowStates[0]*(-relVelSensor.x/range) - omegaAtOptFlowTime[1];
+
+            // calculate innovations
+            fScaleFactorObsInnov[0] = losPred[0] - flowRadXY[0];
+            fScaleFactorObsInnov[1] = losPred[1] - flowRadXY[1];
+
+            // calculate Kalman gains
+            float SH_OPT[6];
+            SH_OPT[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
+            SH_OPT[1] = vel.x*(sq(q0) + sq(q1) - sq(q2) - sq(q3)) + vel.y*(2*q0*q3 + 2*q1*q2) - vel.z*(2*q0*q2 - 2*q1*q3);
+            SH_OPT[2] = vel.y*(sq(q0) - sq(q1) + sq(q2) - sq(q3)) - vel.x*(2*q0*q3 - 2*q1*q2) + vel.z*(2*q0*q1 + 2*q2*q3);
+            SH_OPT[3] = statesAtOptFlowTime[9] - flowStates[1];
+            SH_OPT[4] = 1/sq(SH_OPT[3]);
+            SH_OPT[5] = 1/SH_OPT[3];
+            float SK_OPT[3];
+            SK_OPT[0] = 1/(R_OPT + SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]));
+            SK_OPT[1] = 1/(R_OPT + SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]));
+            SK_OPT[2] = SH_OPT[0];
+            float K_OPT[2][2];
+            K_OPT[0][0] = -SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+            K_OPT[0][1] = SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+            K_OPT[1][0] = -SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+            K_OPT[1][1] = SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+
+
+            // calculate innovation variances
+            fScaleFactorObsInnovVar[0] = 1.0f/SK_OPT[1];
+            fScaleFactorObsInnovVar[1] = 1.0f/SK_OPT[0];
+
+            // Check the innovation for consistency and don't fuse if > 3Sigma
+            for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
+                if ((fScaleFactorObsInnov[obsIndex]*fScaleFactorObsInnov[obsIndex]/fScaleFactorObsInnovVar[obsIndex]) < 9.0f) {
+                    // correct the state
+                    for (uint8_t i = 0; i < 2 ; i++) {
+                        flowStates[i] -= K_OPT[i][obsIndex] * fScaleFactorObsInnov[obsIndex];
+                    }
+                    // constrain the states
+                    flowStates[0] = ConstrainFloat(flowStates[0], 0.1f, 10.0f);
+                    flowStates[1] = maxf(flowStates[1], statesAtOptFlowTime[9] + 0.5f);
+
+                    // correct the covariance matrix
+                    float nextPopt[2][2];
+                    if (obsIndex == 0) {
+                        nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                    } else if (obsIndex == 1) {
+                        nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                        nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                    }
+                    // prevent the state variances from becoming negative and maintain symmetry
+                    Popt[0][0] = maxf(nextPopt[0][0],0.0f);
+                    Popt[1][1] = maxf(nextPopt[1][1],0.0f);
+                    Popt[0][1] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+                    Popt[1][0] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+                }
+            }
+        }
+    }
+}
+
 void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
 {
     uint8_t row;
@@ -2465,6 +2667,7 @@ void AttPosEKF::CovarianceInit()
     P[22][22] = 0.0f;
 
     fScaleFactorVar = 0.001f; // focal length scale factor variance
+    Popt[0][0] = 0.001f;
 }
 
 float AttPosEKF::ConstrainFloat(float val, float min, float max)
@@ -3128,6 +3331,10 @@ void AttPosEKF::ZeroVariables()
     summedDelAng.zero();
     summedDelVel.zero();
     lastGyroOffset.zero();
+
+    // initialise states used by OpticalFlowEKF
+    flowStates[0] = 1.0f;
+    flowStates[1] = 0.0f;
 
     for (unsigned i = 0; i < data_buffer_size; i++) {
 

@@ -226,6 +226,12 @@ public:
     float fScaleFactorObsInnov[2]; // optical flow observation innovations from focal length scale factor estimator
     float fScaleFactorObsInnovVar[2]; // innovation variance for optical flow observations from focal length scale factor estimator
 
+    // Two state EKF used to estimate focal length scale factor and terrain position
+    float Popt[2][2];                       // state covariance matrix
+    float flowStates[2];                    // flow states [scale factor, terrain position]
+    float prevPosN;                         // north position at last measurement
+    float prevPosE;                         // east position at last measurement
+
 
 void  UpdateStrapdownEquationsNED();
 
@@ -242,6 +248,8 @@ void FuseRangeFinder();
 void FuseOptFlow();
 
 void FocalLengthScaleFactorEKF();
+
+void OpticalFlowEKF();
 
 void zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last);
 
