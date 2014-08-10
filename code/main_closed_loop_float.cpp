@@ -349,23 +349,52 @@ int main(int argc, char *argv[])
                     _ekf->summedDelVel.zero();
                     dt = 0.0f;
                 }
+                // Set global time stamp used by EKF processes
+                _ekf->globalTimeStamp_ms = IMUmsec;
             }
 
             // Fuse optical flow measurements
-            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.95f)
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.95f && _ekf->Tnb.z.z > 0.9f)
             {
                 // recall states and angular rates stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                _ekf->RecallOmega(_ekf->omegaAtOptFlowTime, (IMUmsec - 2*msecOptFlowDelay));
+                _ekf->RecallStates(_ekf->statesAtFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->RecallOmega(_ekf->omegaAcrossFlowTime, (IMUmsec - 2*msecOptFlowDelay));
+
+                // calculate rotation matrix
+                // Copy required states to local variable names
+                float q0 = _ekf->statesAtFlowTime[0];
+                float q1 = _ekf->statesAtFlowTime[1];
+                float q2 = _ekf->statesAtFlowTime[2];
+                float q3 = _ekf->statesAtFlowTime[3];
+                float q00 = _ekf->sq(q0);
+                float q11 = _ekf->sq(q1);
+                float q22 = _ekf->sq(q2);
+                float q33 = _ekf->sq(q3);
+                float q01 = q0 * q1;
+                float q02 = q0 * q2;
+                float q03 = q0 * q3;
+                float q12 = q1 * q2;
+                float q13 = q1 * q3;
+                float q23 = q2 * q3;
+                _ekf->Tnb_flow.x.x = q00 + q11 - q22 - q33;
+                _ekf->Tnb_flow.y.y = q00 - q11 + q22 - q33;
+                _ekf->Tnb_flow.z.z = q00 - q11 - q22 + q33;
+                _ekf->Tnb_flow.y.x = 2*(q12 - q03);
+                _ekf->Tnb_flow.z.x = 2*(q13 + q02);
+                _ekf->Tnb_flow.x.y = 2*(q12 + q03);
+                _ekf->Tnb_flow.z.y = 2*(q23 - q01);
+                _ekf->Tnb_flow.x.z = 2*(q13 - q02);
+                _ekf->Tnb_flow.y.z = 2*(q23 + q01);
 
                 // scale from raw pixel flow rate to radians/second
-                float scaleFactor = 0.03f; // best value for quadcopter logs using the 16 mm lens
+                //float scaleFactor = 0.03f; // best value for quad106.zip data using the 16 mm lens
+                float scaleFactor = 0.06f; // best value for InputFilesPX4_flow.zip data
                 flowRadX = -flowRawPixelX * scaleFactor;
                 flowRadY = -flowRawPixelY * scaleFactor;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
-                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->fScaleFactor + _ekf->omegaAtOptFlowTime[0];
-                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->fScaleFactor + _ekf->omegaAtOptFlowTime[1];
+                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->flowStates[0] + _ekf->omegaAcrossFlowTime[0];
+                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->flowStates[0] + _ekf->omegaAcrossFlowTime[1];
 
                 // these flow rates are not motion compensated and are used for focal length scale factor estimation
                 _ekf->flowRadXY[0] = flowRadX;
@@ -373,9 +402,10 @@ int main(int argc, char *argv[])
 
                 // perform optical flow fusion
                 _ekf->fuseOptFlowData = true;
+                _ekf->fuseRngData = false;
                 // don't try to estimate focal length scale factor if GPS is not being used.
                 if (_ekf->useGPS) {
-                    _ekf->FocalLengthScaleFactorEKF();
+                    _ekf->OpticalFlowEKF();
                 }
                 _ekf->FuseOptFlow();
                 _ekf->fuseOptFlowData = false;
@@ -396,12 +426,13 @@ int main(int argc, char *argv[])
             // Fuse Ground distance Measurements
             if (newDistData && _ekf->statesInitialised && _ekf->useRangeFinder)
             {
-                if (distValid > 0.0f) {
+                if (distValid > 0.0f && _ekf->Tnb.z.z > 0.9f) {
                     distLastValidReading = distGroundDistance;
                     _ekf->rngMea = distGroundDistance;
                     _ekf->fuseRngData = true;
+                    _ekf->fuseOptFlowData = false;
                     _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-                    _ekf->FuseRangeFinder();
+                    _ekf->OpticalFlowEKF();
                     _ekf->fuseRngData = false;
                 }
             }
@@ -436,6 +467,8 @@ int main(int argc, char *argv[])
                     // recall states stored at time of measurement after adjusting for delays
                     _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
                     _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
+                    // record the last fix time
+                    _ekf->lastFixTime_ms = IMUmsec;
                     // run the fusion step
                     _ekf->FuseVelposNED();
                 } else {
@@ -1035,8 +1068,8 @@ void WriteFilterOutput()
     {
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
-    // focal length scale factor estimate and innovations from optical flow rates used to estimate it
-    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->fScaleFactor, _ekf->fScaleFactorObsInnov[0], _ekf->fScaleFactorObsInnov[1], _ekf->states[22] - _ekf->states[9], distGroundDistance*_ekf->Tbn.z.z, - _ekf->states[9]);
+    // focal length scale factor and height above ground estimate and innovations from optical flow rates
+    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->flowStates[0], _ekf->auxFlowObsInnov[0], _ekf->auxFlowObsInnov[1], _ekf->flowStates[1] - _ekf->states[9], distGroundDistance*_ekf->Tbn.z.z, - _ekf->states[9]);
     fprintf(pOptFlowFuseFile,"\n");
 }
 

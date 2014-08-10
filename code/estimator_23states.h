@@ -2,7 +2,7 @@
 
 #include "estimator_utilities.h"
 
-const unsigned int n_states = 23;
+const unsigned int n_states = 22;
 const unsigned int data_buffer_size = 50;
 
 class AttPosEKF {
@@ -28,10 +28,6 @@ public:
     float covTimeStepMax; // maximum time allowed between covariance predictions
     float covDelAngMax; // maximum delta angle between covariance predictions
     float rngFinderPitch; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
-
-    float a1; // optical flow sensor misalgnment angle about X axis (rad)
-    float a2; // optical flow sensor misalgnment angle about Y axis (rad)
-    float a3; // optical flow sensor misalgnment angle about Z axis (rad)
 
     float yawVarScale;
     float windVelSigma;
@@ -59,9 +55,6 @@ public:
         covDelAngMax = 0.02f; // maximum delta angle between covariance predictions
         rngFinderPitch = 0.0f; // pitch angle of laser range finder in radians. Zero is aligned with the Z body axis. Positive is RH rotation about Y body axis.
         EAS2TAS = 1.0f;
-        a1 = 0.0f; // optical flow sensor misalgnment angle about X axis (rad)
-        a2 = 0.0f; // optical flow sensor misalgnment angle about Y axis (rad)
-        a3 = 0.0f; // optical flow sensor misalgnment angle about Z axis (rad)
 
         yawVarScale = 1.0f;
         windVelSigma = 0.1f;
@@ -69,7 +62,6 @@ public:
         dVelBiasSigma = 1e-4f;
         magEarthSigma = 3.0e-4f;
         magBodySigma  = 3.0e-4f;
-        gndHgtSigma  = 0.05f; // terrain gradient 1-sigma
 
         vneSigma = 0.2f;
         vdSigma = 0.3f;
@@ -81,6 +73,10 @@ public:
         gyroProcessNoise = 1.4544411e-2f;
         accelProcessNoise = 0.5f;
 
+        gndHgtSigma  = 0.1f; // terrain gradient 1-sigma
+        R_LOS = 0.5f; // optical flow measurement noise variance (rad/sec)^2
+        flowInnovGate = 2.0f; // number of standard deviations applied to the optical flow innovation consistency check
+        rngInnovGate = 5.0f; // number of standard deviations applied to the rnage finder innovation consistency check
     }
 
     struct mag_state_struct {
@@ -123,8 +119,8 @@ public:
     float statesAtMagMeasTime[n_states]; // filter satates at the effective measurement time
     float statesAtVtasMeasTime[n_states]; // filter states at the effective measurement time
     float statesAtRngTime[n_states]; // filter states at the effective measurement time
-    float statesAtOptFlowTime[n_states]; // States at the effective optical flow measurement time
-    float omegaAtOptFlowTime[3]; // angular rates at the effective optical flow measurement time
+    float statesAtFlowTime[n_states]; // States at the effective optical flow measurement time
+    float omegaAcrossFlowTime[3]; // angular rates at the effective optical flow measurement time
 
     Vector3f correctedDelAng; // delta angles about the xyz body axes corrected for errors (rad)
     Vector3f correctedDelVel; // delta velocities along the XYZ body axes corrected for errors (m/s)
@@ -173,6 +169,8 @@ public:
     bool refSet;                ///< flag to indicate if the reference position has been set
     Vector3f magBias; // states representing magnetometer bias vector in XYZ body axes
     unsigned covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
+    uint32_t lastFixTime_ms; // Number of msec since last GPS Fix that was used
+    uint32_t globalTimeStamp_ms; // time in msec of current prediction cycle
 
     // GPS input data variables
     float gpsCourse;
@@ -197,7 +195,8 @@ public:
 
     bool inhibitWindStates; // true when wind states and covariances are to remain constant
     bool inhibitMagStates;  // true when magnetic field states and covariances are to remain constant
-    bool inhibitGndHgtState; // true when the terrain ground height offset state and covariances are to remain constant
+    bool inhibitGndState; // true when the terrain ground height offset state and covariances are to remain constant
+    bool inhibitScaleState; // true when the focal length scale factor state and covariances are to remain constant
 
     bool onGround;    ///< boolean true when the flight vehicle is on the ground (not flying)
     bool staticMode;    ///< boolean true if no position feedback is fused
@@ -220,18 +219,20 @@ public:
     // Optical Flow error estimation
     float storedOmega[3][data_buffer_size]; // angular rate vector stored for the last 50 time steps used by optical flow eror estimators
 
-    // Focal length scale factor estimation
-    float fScaleFactor; // optical flow sensor focal length scale factor
-    float fScaleFactorVar; // optical flow sensor focal length scale factor variance
-    float fScaleFactorObsInnov[2]; // optical flow observation innovations from focal length scale factor estimator
-    float fScaleFactorObsInnovVar[2]; // innovation variance for optical flow observations from focal length scale factor estimator
-
     // Two state EKF used to estimate focal length scale factor and terrain position
     float Popt[2][2];                       // state covariance matrix
     float flowStates[2];                    // flow states [scale factor, terrain position]
     float prevPosN;                         // north position at last measurement
     float prevPosE;                         // east position at last measurement
-
+    float auxFlowObsInnov[2];               // optical flow observation innovations from focal length scale factor estimator
+    float auxFlowObsInnovVar[2];            // innovation variance for optical flow observations from focal length scale factor estimator
+    float fScaleFactorVar;                  // optical flow sensor focal length scale factor variance
+    Mat3f Tnb_flow;                         // Transformation matrix from nav to body at the time fo the optical flow measurement
+    float R_LOS;                            // Optical flow observation noise variance (rad/sec)^2
+    float auxFlowTestRatio[2];              // ratio of X and Y flow observation innovations to fault threshold
+    float auxRngTestRatio;                  // ratio of range observation innovations to fault threshold
+    float flowInnovGate;                    // number of standard deviations used for the innovation consistency check
+    float rngInnovGate;                     // number of standard deviations used for the innovation consistency check
 
 void  UpdateStrapdownEquationsNED();
 
@@ -243,11 +244,7 @@ void FuseMagnetometer();
 
 void FuseAirspeed();
 
-void FuseRangeFinder();
-
 void FuseOptFlow();
-
-void FocalLengthScaleFactorEKF();
 
 void OpticalFlowEKF();
 
@@ -297,13 +294,15 @@ static float sq(float valIn);
 
 static float maxf(float valIn1, float valIn2);
 
+static float min(float valIn1, float valIn2);
+
 void OnGroundCheck();
 
 void CovarianceInit();
 
 void InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination);
 
-float ConstrainFloat(float val, float min, float max);
+float ConstrainFloat(float val, float min, float maxf);
 
 void ConstrainVariances();
 

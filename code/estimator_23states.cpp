@@ -23,9 +23,9 @@ AttPosEKF::AttPosEKF()
     onGround = true;
     staticMode = true;
     useGPS = true;
-    useAirspeed = false;
+    useAirspeed = true;
     useCompass = true;
-    useRangeFinder = false;
+    useRangeFinder = true;
     useOpticalFlow = true;
     numericalProtection = true;
     refSet = false;
@@ -240,11 +240,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     } else {
         for (uint8_t i=16; i<=21; i++) processNoise[i] = 0;
     }
-    if (!inhibitGndHgtState) {
-        processNoise[22] = dt * sqrtf(sq(states[4]) + sq(states[5])) * gndHgtSigma;
-    } else {
-        processNoise[22] = 0;
-    }
 
     // square all sigmas
     for (unsigned i = 0; i < n_states; i++) processNoise[i] = sq(processNoise[i]);
@@ -343,7 +338,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[0][19] = P[0][19] + P[1][19]*SF[7] + P[2][19]*SF[9] + P[3][19]*SF[8] + P[10][19]*SF[11] + P[11][19]*SPP[7] + P[12][19]*SPP[6];
     nextP[0][20] = P[0][20] + P[1][20]*SF[7] + P[2][20]*SF[9] + P[3][20]*SF[8] + P[10][20]*SF[11] + P[11][20]*SPP[7] + P[12][20]*SPP[6];
     nextP[0][21] = P[0][21] + P[1][21]*SF[7] + P[2][21]*SF[9] + P[3][21]*SF[8] + P[10][21]*SF[11] + P[11][21]*SPP[7] + P[12][21]*SPP[6];
-    nextP[0][22] = P[0][22] + P[1][22]*SF[7] + P[2][22]*SF[9] + P[3][22]*SF[8] + P[10][22]*SF[11] + P[11][22]*SPP[7] + P[12][22]*SPP[6];
     nextP[1][0] = P[1][0] + SQ[8] + P[0][0]*SF[6] + P[2][0]*SF[5] + P[3][0]*SF[9] + P[11][0]*SPP[6] - P[12][0]*SPP[7] - (P[10][0]*q0)/2 + SF[7]*(P[1][1] + P[0][1]*SF[6] + P[2][1]*SF[5] + P[3][1]*SF[9] + P[11][1]*SPP[6] - P[12][1]*SPP[7] - (P[10][1]*q0)/2) + SF[9]*(P[1][2] + P[0][2]*SF[6] + P[2][2]*SF[5] + P[3][2]*SF[9] + P[11][2]*SPP[6] - P[12][2]*SPP[7] - (P[10][2]*q0)/2) + SF[8]*(P[1][3] + P[0][3]*SF[6] + P[2][3]*SF[5] + P[3][3]*SF[9] + P[11][3]*SPP[6] - P[12][3]*SPP[7] - (P[10][3]*q0)/2) + SF[11]*(P[1][10] + P[0][10]*SF[6] + P[2][10]*SF[5] + P[3][10]*SF[9] + P[11][10]*SPP[6] - P[12][10]*SPP[7] - (P[10][10]*q0)/2) + SPP[7]*(P[1][11] + P[0][11]*SF[6] + P[2][11]*SF[5] + P[3][11]*SF[9] + P[11][11]*SPP[6] - P[12][11]*SPP[7] - (P[10][11]*q0)/2) + SPP[6]*(P[1][12] + P[0][12]*SF[6] + P[2][12]*SF[5] + P[3][12]*SF[9] + P[11][12]*SPP[6] - P[12][12]*SPP[7] - (P[10][12]*q0)/2);
     nextP[1][1] = P[1][1] + P[0][1]*SF[6] + P[2][1]*SF[5] + P[3][1]*SF[9] + P[11][1]*SPP[6] - P[12][1]*SPP[7] + daxCov*SQ[9] - (P[10][1]*q0)/2 + SF[6]*(P[1][0] + P[0][0]*SF[6] + P[2][0]*SF[5] + P[3][0]*SF[9] + P[11][0]*SPP[6] - P[12][0]*SPP[7] - (P[10][0]*q0)/2) + SF[5]*(P[1][2] + P[0][2]*SF[6] + P[2][2]*SF[5] + P[3][2]*SF[9] + P[11][2]*SPP[6] - P[12][2]*SPP[7] - (P[10][2]*q0)/2) + SF[9]*(P[1][3] + P[0][3]*SF[6] + P[2][3]*SF[5] + P[3][3]*SF[9] + P[11][3]*SPP[6] - P[12][3]*SPP[7] - (P[10][3]*q0)/2) + SPP[6]*(P[1][11] + P[0][11]*SF[6] + P[2][11]*SF[5] + P[3][11]*SF[9] + P[11][11]*SPP[6] - P[12][11]*SPP[7] - (P[10][11]*q0)/2) - SPP[7]*(P[1][12] + P[0][12]*SF[6] + P[2][12]*SF[5] + P[3][12]*SF[9] + P[11][12]*SPP[6] - P[12][12]*SPP[7] - (P[10][12]*q0)/2) + (dayCov*sq(q3))/4 + (dazCov*sq(q2))/4 - (q0*(P[1][10] + P[0][10]*SF[6] + P[2][10]*SF[5] + P[3][10]*SF[9] + P[11][10]*SPP[6] - P[12][10]*SPP[7] - (P[10][10]*q0)/2))/2;
     nextP[1][2] = P[1][2] + SQ[5] + P[0][2]*SF[6] + P[2][2]*SF[5] + P[3][2]*SF[9] + P[11][2]*SPP[6] - P[12][2]*SPP[7] - (P[10][2]*q0)/2 + SF[4]*(P[1][0] + P[0][0]*SF[6] + P[2][0]*SF[5] + P[3][0]*SF[9] + P[11][0]*SPP[6] - P[12][0]*SPP[7] - (P[10][0]*q0)/2) + SF[8]*(P[1][1] + P[0][1]*SF[6] + P[2][1]*SF[5] + P[3][1]*SF[9] + P[11][1]*SPP[6] - P[12][1]*SPP[7] - (P[10][1]*q0)/2) + SF[6]*(P[1][3] + P[0][3]*SF[6] + P[2][3]*SF[5] + P[3][3]*SF[9] + P[11][3]*SPP[6] - P[12][3]*SPP[7] - (P[10][3]*q0)/2) + SF[11]*(P[1][12] + P[0][12]*SF[6] + P[2][12]*SF[5] + P[3][12]*SF[9] + P[11][12]*SPP[6] - P[12][12]*SPP[7] - (P[10][12]*q0)/2) - SPP[6]*(P[1][10] + P[0][10]*SF[6] + P[2][10]*SF[5] + P[3][10]*SF[9] + P[11][10]*SPP[6] - P[12][10]*SPP[7] - (P[10][10]*q0)/2) - (q0*(P[1][11] + P[0][11]*SF[6] + P[2][11]*SF[5] + P[3][11]*SF[9] + P[11][11]*SPP[6] - P[12][11]*SPP[7] - (P[10][11]*q0)/2))/2;
@@ -366,7 +360,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[1][19] = P[1][19] + P[0][19]*SF[6] + P[2][19]*SF[5] + P[3][19]*SF[9] + P[11][19]*SPP[6] - P[12][19]*SPP[7] - (P[10][19]*q0)/2;
     nextP[1][20] = P[1][20] + P[0][20]*SF[6] + P[2][20]*SF[5] + P[3][20]*SF[9] + P[11][20]*SPP[6] - P[12][20]*SPP[7] - (P[10][20]*q0)/2;
     nextP[1][21] = P[1][21] + P[0][21]*SF[6] + P[2][21]*SF[5] + P[3][21]*SF[9] + P[11][21]*SPP[6] - P[12][21]*SPP[7] - (P[10][21]*q0)/2;
-    nextP[1][22] = P[1][22] + P[0][22]*SF[6] + P[2][22]*SF[5] + P[3][22]*SF[9] + P[11][22]*SPP[6] - P[12][22]*SPP[7] - (P[10][22]*q0)/2;
     nextP[2][0] = P[2][0] + SQ[7] + P[0][0]*SF[4] + P[1][0]*SF[8] + P[3][0]*SF[6] + P[12][0]*SF[11] - P[10][0]*SPP[6] - (P[11][0]*q0)/2 + SF[7]*(P[2][1] + P[0][1]*SF[4] + P[1][1]*SF[8] + P[3][1]*SF[6] + P[12][1]*SF[11] - P[10][1]*SPP[6] - (P[11][1]*q0)/2) + SF[9]*(P[2][2] + P[0][2]*SF[4] + P[1][2]*SF[8] + P[3][2]*SF[6] + P[12][2]*SF[11] - P[10][2]*SPP[6] - (P[11][2]*q0)/2) + SF[8]*(P[2][3] + P[0][3]*SF[4] + P[1][3]*SF[8] + P[3][3]*SF[6] + P[12][3]*SF[11] - P[10][3]*SPP[6] - (P[11][3]*q0)/2) + SF[11]*(P[2][10] + P[0][10]*SF[4] + P[1][10]*SF[8] + P[3][10]*SF[6] + P[12][10]*SF[11] - P[10][10]*SPP[6] - (P[11][10]*q0)/2) + SPP[7]*(P[2][11] + P[0][11]*SF[4] + P[1][11]*SF[8] + P[3][11]*SF[6] + P[12][11]*SF[11] - P[10][11]*SPP[6] - (P[11][11]*q0)/2) + SPP[6]*(P[2][12] + P[0][12]*SF[4] + P[1][12]*SF[8] + P[3][12]*SF[6] + P[12][12]*SF[11] - P[10][12]*SPP[6] - (P[11][12]*q0)/2);
     nextP[2][1] = P[2][1] + SQ[5] + P[0][1]*SF[4] + P[1][1]*SF[8] + P[3][1]*SF[6] + P[12][1]*SF[11] - P[10][1]*SPP[6] - (P[11][1]*q0)/2 + SF[6]*(P[2][0] + P[0][0]*SF[4] + P[1][0]*SF[8] + P[3][0]*SF[6] + P[12][0]*SF[11] - P[10][0]*SPP[6] - (P[11][0]*q0)/2) + SF[5]*(P[2][2] + P[0][2]*SF[4] + P[1][2]*SF[8] + P[3][2]*SF[6] + P[12][2]*SF[11] - P[10][2]*SPP[6] - (P[11][2]*q0)/2) + SF[9]*(P[2][3] + P[0][3]*SF[4] + P[1][3]*SF[8] + P[3][3]*SF[6] + P[12][3]*SF[11] - P[10][3]*SPP[6] - (P[11][3]*q0)/2) + SPP[6]*(P[2][11] + P[0][11]*SF[4] + P[1][11]*SF[8] + P[3][11]*SF[6] + P[12][11]*SF[11] - P[10][11]*SPP[6] - (P[11][11]*q0)/2) - SPP[7]*(P[2][12] + P[0][12]*SF[4] + P[1][12]*SF[8] + P[3][12]*SF[6] + P[12][12]*SF[11] - P[10][12]*SPP[6] - (P[11][12]*q0)/2) - (q0*(P[2][10] + P[0][10]*SF[4] + P[1][10]*SF[8] + P[3][10]*SF[6] + P[12][10]*SF[11] - P[10][10]*SPP[6] - (P[11][10]*q0)/2))/2;
     nextP[2][2] = P[2][2] + P[0][2]*SF[4] + P[1][2]*SF[8] + P[3][2]*SF[6] + P[12][2]*SF[11] - P[10][2]*SPP[6] + dayCov*SQ[9] + (dazCov*SQ[10])/4 - (P[11][2]*q0)/2 + SF[4]*(P[2][0] + P[0][0]*SF[4] + P[1][0]*SF[8] + P[3][0]*SF[6] + P[12][0]*SF[11] - P[10][0]*SPP[6] - (P[11][0]*q0)/2) + SF[8]*(P[2][1] + P[0][1]*SF[4] + P[1][1]*SF[8] + P[3][1]*SF[6] + P[12][1]*SF[11] - P[10][1]*SPP[6] - (P[11][1]*q0)/2) + SF[6]*(P[2][3] + P[0][3]*SF[4] + P[1][3]*SF[8] + P[3][3]*SF[6] + P[12][3]*SF[11] - P[10][3]*SPP[6] - (P[11][3]*q0)/2) + SF[11]*(P[2][12] + P[0][12]*SF[4] + P[1][12]*SF[8] + P[3][12]*SF[6] + P[12][12]*SF[11] - P[10][12]*SPP[6] - (P[11][12]*q0)/2) - SPP[6]*(P[2][10] + P[0][10]*SF[4] + P[1][10]*SF[8] + P[3][10]*SF[6] + P[12][10]*SF[11] - P[10][10]*SPP[6] - (P[11][10]*q0)/2) + (daxCov*sq(q3))/4 - (q0*(P[2][11] + P[0][11]*SF[4] + P[1][11]*SF[8] + P[3][11]*SF[6] + P[12][11]*SF[11] - P[10][11]*SPP[6] - (P[11][11]*q0)/2))/2;
@@ -389,7 +382,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[2][19] = P[2][19] + P[0][19]*SF[4] + P[1][19]*SF[8] + P[3][19]*SF[6] + P[12][19]*SF[11] - P[10][19]*SPP[6] - (P[11][19]*q0)/2;
     nextP[2][20] = P[2][20] + P[0][20]*SF[4] + P[1][20]*SF[8] + P[3][20]*SF[6] + P[12][20]*SF[11] - P[10][20]*SPP[6] - (P[11][20]*q0)/2;
     nextP[2][21] = P[2][21] + P[0][21]*SF[4] + P[1][21]*SF[8] + P[3][21]*SF[6] + P[12][21]*SF[11] - P[10][21]*SPP[6] - (P[11][21]*q0)/2;
-    nextP[2][22] = P[2][22] + P[0][22]*SF[4] + P[1][22]*SF[8] + P[3][22]*SF[6] + P[12][22]*SF[11] - P[10][22]*SPP[6] - (P[11][22]*q0)/2;
     nextP[3][0] = P[3][0] + SQ[6] + P[0][0]*SF[5] + P[1][0]*SF[4] + P[2][0]*SF[7] - P[11][0]*SF[11] + P[10][0]*SPP[7] - (P[12][0]*q0)/2 + SF[7]*(P[3][1] + P[0][1]*SF[5] + P[1][1]*SF[4] + P[2][1]*SF[7] - P[11][1]*SF[11] + P[10][1]*SPP[7] - (P[12][1]*q0)/2) + SF[9]*(P[3][2] + P[0][2]*SF[5] + P[1][2]*SF[4] + P[2][2]*SF[7] - P[11][2]*SF[11] + P[10][2]*SPP[7] - (P[12][2]*q0)/2) + SF[8]*(P[3][3] + P[0][3]*SF[5] + P[1][3]*SF[4] + P[2][3]*SF[7] - P[11][3]*SF[11] + P[10][3]*SPP[7] - (P[12][3]*q0)/2) + SF[11]*(P[3][10] + P[0][10]*SF[5] + P[1][10]*SF[4] + P[2][10]*SF[7] - P[11][10]*SF[11] + P[10][10]*SPP[7] - (P[12][10]*q0)/2) + SPP[7]*(P[3][11] + P[0][11]*SF[5] + P[1][11]*SF[4] + P[2][11]*SF[7] - P[11][11]*SF[11] + P[10][11]*SPP[7] - (P[12][11]*q0)/2) + SPP[6]*(P[3][12] + P[0][12]*SF[5] + P[1][12]*SF[4] + P[2][12]*SF[7] - P[11][12]*SF[11] + P[10][12]*SPP[7] - (P[12][12]*q0)/2);
     nextP[3][1] = P[3][1] + SQ[4] + P[0][1]*SF[5] + P[1][1]*SF[4] + P[2][1]*SF[7] - P[11][1]*SF[11] + P[10][1]*SPP[7] - (P[12][1]*q0)/2 + SF[6]*(P[3][0] + P[0][0]*SF[5] + P[1][0]*SF[4] + P[2][0]*SF[7] - P[11][0]*SF[11] + P[10][0]*SPP[7] - (P[12][0]*q0)/2) + SF[5]*(P[3][2] + P[0][2]*SF[5] + P[1][2]*SF[4] + P[2][2]*SF[7] - P[11][2]*SF[11] + P[10][2]*SPP[7] - (P[12][2]*q0)/2) + SF[9]*(P[3][3] + P[0][3]*SF[5] + P[1][3]*SF[4] + P[2][3]*SF[7] - P[11][3]*SF[11] + P[10][3]*SPP[7] - (P[12][3]*q0)/2) + SPP[6]*(P[3][11] + P[0][11]*SF[5] + P[1][11]*SF[4] + P[2][11]*SF[7] - P[11][11]*SF[11] + P[10][11]*SPP[7] - (P[12][11]*q0)/2) - SPP[7]*(P[3][12] + P[0][12]*SF[5] + P[1][12]*SF[4] + P[2][12]*SF[7] - P[11][12]*SF[11] + P[10][12]*SPP[7] - (P[12][12]*q0)/2) - (q0*(P[3][10] + P[0][10]*SF[5] + P[1][10]*SF[4] + P[2][10]*SF[7] - P[11][10]*SF[11] + P[10][10]*SPP[7] - (P[12][10]*q0)/2))/2;
     nextP[3][2] = P[3][2] + SQ[3] + P[0][2]*SF[5] + P[1][2]*SF[4] + P[2][2]*SF[7] - P[11][2]*SF[11] + P[10][2]*SPP[7] - (P[12][2]*q0)/2 + SF[4]*(P[3][0] + P[0][0]*SF[5] + P[1][0]*SF[4] + P[2][0]*SF[7] - P[11][0]*SF[11] + P[10][0]*SPP[7] - (P[12][0]*q0)/2) + SF[8]*(P[3][1] + P[0][1]*SF[5] + P[1][1]*SF[4] + P[2][1]*SF[7] - P[11][1]*SF[11] + P[10][1]*SPP[7] - (P[12][1]*q0)/2) + SF[6]*(P[3][3] + P[0][3]*SF[5] + P[1][3]*SF[4] + P[2][3]*SF[7] - P[11][3]*SF[11] + P[10][3]*SPP[7] - (P[12][3]*q0)/2) + SF[11]*(P[3][12] + P[0][12]*SF[5] + P[1][12]*SF[4] + P[2][12]*SF[7] - P[11][12]*SF[11] + P[10][12]*SPP[7] - (P[12][12]*q0)/2) - SPP[6]*(P[3][10] + P[0][10]*SF[5] + P[1][10]*SF[4] + P[2][10]*SF[7] - P[11][10]*SF[11] + P[10][10]*SPP[7] - (P[12][10]*q0)/2) - (q0*(P[3][11] + P[0][11]*SF[5] + P[1][11]*SF[4] + P[2][11]*SF[7] - P[11][11]*SF[11] + P[10][11]*SPP[7] - (P[12][11]*q0)/2))/2;
@@ -412,7 +404,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[3][19] = P[3][19] + P[0][19]*SF[5] + P[1][19]*SF[4] + P[2][19]*SF[7] - P[11][19]*SF[11] + P[10][19]*SPP[7] - (P[12][19]*q0)/2;
     nextP[3][20] = P[3][20] + P[0][20]*SF[5] + P[1][20]*SF[4] + P[2][20]*SF[7] - P[11][20]*SF[11] + P[10][20]*SPP[7] - (P[12][20]*q0)/2;
     nextP[3][21] = P[3][21] + P[0][21]*SF[5] + P[1][21]*SF[4] + P[2][21]*SF[7] - P[11][21]*SF[11] + P[10][21]*SPP[7] - (P[12][21]*q0)/2;
-    nextP[3][22] = P[3][22] + P[0][22]*SF[5] + P[1][22]*SF[4] + P[2][22]*SF[7] - P[11][22]*SF[11] + P[10][22]*SPP[7] - (P[12][22]*q0)/2;
     nextP[4][0] = P[4][0] + P[0][0]*SF[3] + P[1][0]*SF[1] + P[2][0]*SPP[0] - P[3][0]*SPP[2] - P[13][0]*SPP[4] + SF[7]*(P[4][1] + P[0][1]*SF[3] + P[1][1]*SF[1] + P[2][1]*SPP[0] - P[3][1]*SPP[2] - P[13][1]*SPP[4]) + SF[9]*(P[4][2] + P[0][2]*SF[3] + P[1][2]*SF[1] + P[2][2]*SPP[0] - P[3][2]*SPP[2] - P[13][2]*SPP[4]) + SF[8]*(P[4][3] + P[0][3]*SF[3] + P[1][3]*SF[1] + P[2][3]*SPP[0] - P[3][3]*SPP[2] - P[13][3]*SPP[4]) + SF[11]*(P[4][10] + P[0][10]*SF[3] + P[1][10]*SF[1] + P[2][10]*SPP[0] - P[3][10]*SPP[2] - P[13][10]*SPP[4]) + SPP[7]*(P[4][11] + P[0][11]*SF[3] + P[1][11]*SF[1] + P[2][11]*SPP[0] - P[3][11]*SPP[2] - P[13][11]*SPP[4]) + SPP[6]*(P[4][12] + P[0][12]*SF[3] + P[1][12]*SF[1] + P[2][12]*SPP[0] - P[3][12]*SPP[2] - P[13][12]*SPP[4]);
     nextP[4][1] = P[4][1] + P[0][1]*SF[3] + P[1][1]*SF[1] + P[2][1]*SPP[0] - P[3][1]*SPP[2] - P[13][1]*SPP[4] + SF[6]*(P[4][0] + P[0][0]*SF[3] + P[1][0]*SF[1] + P[2][0]*SPP[0] - P[3][0]*SPP[2] - P[13][0]*SPP[4]) + SF[5]*(P[4][2] + P[0][2]*SF[3] + P[1][2]*SF[1] + P[2][2]*SPP[0] - P[3][2]*SPP[2] - P[13][2]*SPP[4]) + SF[9]*(P[4][3] + P[0][3]*SF[3] + P[1][3]*SF[1] + P[2][3]*SPP[0] - P[3][3]*SPP[2] - P[13][3]*SPP[4]) + SPP[6]*(P[4][11] + P[0][11]*SF[3] + P[1][11]*SF[1] + P[2][11]*SPP[0] - P[3][11]*SPP[2] - P[13][11]*SPP[4]) - SPP[7]*(P[4][12] + P[0][12]*SF[3] + P[1][12]*SF[1] + P[2][12]*SPP[0] - P[3][12]*SPP[2] - P[13][12]*SPP[4]) - (q0*(P[4][10] + P[0][10]*SF[3] + P[1][10]*SF[1] + P[2][10]*SPP[0] - P[3][10]*SPP[2] - P[13][10]*SPP[4]))/2;
     nextP[4][2] = P[4][2] + P[0][2]*SF[3] + P[1][2]*SF[1] + P[2][2]*SPP[0] - P[3][2]*SPP[2] - P[13][2]*SPP[4] + SF[4]*(P[4][0] + P[0][0]*SF[3] + P[1][0]*SF[1] + P[2][0]*SPP[0] - P[3][0]*SPP[2] - P[13][0]*SPP[4]) + SF[8]*(P[4][1] + P[0][1]*SF[3] + P[1][1]*SF[1] + P[2][1]*SPP[0] - P[3][1]*SPP[2] - P[13][1]*SPP[4]) + SF[6]*(P[4][3] + P[0][3]*SF[3] + P[1][3]*SF[1] + P[2][3]*SPP[0] - P[3][3]*SPP[2] - P[13][3]*SPP[4]) + SF[11]*(P[4][12] + P[0][12]*SF[3] + P[1][12]*SF[1] + P[2][12]*SPP[0] - P[3][12]*SPP[2] - P[13][12]*SPP[4]) - SPP[6]*(P[4][10] + P[0][10]*SF[3] + P[1][10]*SF[1] + P[2][10]*SPP[0] - P[3][10]*SPP[2] - P[13][10]*SPP[4]) - (q0*(P[4][11] + P[0][11]*SF[3] + P[1][11]*SF[1] + P[2][11]*SPP[0] - P[3][11]*SPP[2] - P[13][11]*SPP[4]))/2;
@@ -435,7 +426,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[4][19] = P[4][19] + P[0][19]*SF[3] + P[1][19]*SF[1] + P[2][19]*SPP[0] - P[3][19]*SPP[2] - P[13][19]*SPP[4];
     nextP[4][20] = P[4][20] + P[0][20]*SF[3] + P[1][20]*SF[1] + P[2][20]*SPP[0] - P[3][20]*SPP[2] - P[13][20]*SPP[4];
     nextP[4][21] = P[4][21] + P[0][21]*SF[3] + P[1][21]*SF[1] + P[2][21]*SPP[0] - P[3][21]*SPP[2] - P[13][21]*SPP[4];
-    nextP[4][22] = P[4][22] + P[0][22]*SF[3] + P[1][22]*SF[1] + P[2][22]*SPP[0] - P[3][22]*SPP[2] - P[13][22]*SPP[4];
     nextP[5][0] = P[5][0] + P[0][0]*SF[2] + P[2][0]*SF[1] + P[3][0]*SF[3] - P[1][0]*SPP[0] + P[13][0]*SPP[3] + SF[7]*(P[5][1] + P[0][1]*SF[2] + P[2][1]*SF[1] + P[3][1]*SF[3] - P[1][1]*SPP[0] + P[13][1]*SPP[3]) + SF[9]*(P[5][2] + P[0][2]*SF[2] + P[2][2]*SF[1] + P[3][2]*SF[3] - P[1][2]*SPP[0] + P[13][2]*SPP[3]) + SF[8]*(P[5][3] + P[0][3]*SF[2] + P[2][3]*SF[1] + P[3][3]*SF[3] - P[1][3]*SPP[0] + P[13][3]*SPP[3]) + SF[11]*(P[5][10] + P[0][10]*SF[2] + P[2][10]*SF[1] + P[3][10]*SF[3] - P[1][10]*SPP[0] + P[13][10]*SPP[3]) + SPP[7]*(P[5][11] + P[0][11]*SF[2] + P[2][11]*SF[1] + P[3][11]*SF[3] - P[1][11]*SPP[0] + P[13][11]*SPP[3]) + SPP[6]*(P[5][12] + P[0][12]*SF[2] + P[2][12]*SF[1] + P[3][12]*SF[3] - P[1][12]*SPP[0] + P[13][12]*SPP[3]);
     nextP[5][1] = P[5][1] + P[0][1]*SF[2] + P[2][1]*SF[1] + P[3][1]*SF[3] - P[1][1]*SPP[0] + P[13][1]*SPP[3] + SF[6]*(P[5][0] + P[0][0]*SF[2] + P[2][0]*SF[1] + P[3][0]*SF[3] - P[1][0]*SPP[0] + P[13][0]*SPP[3]) + SF[5]*(P[5][2] + P[0][2]*SF[2] + P[2][2]*SF[1] + P[3][2]*SF[3] - P[1][2]*SPP[0] + P[13][2]*SPP[3]) + SF[9]*(P[5][3] + P[0][3]*SF[2] + P[2][3]*SF[1] + P[3][3]*SF[3] - P[1][3]*SPP[0] + P[13][3]*SPP[3]) + SPP[6]*(P[5][11] + P[0][11]*SF[2] + P[2][11]*SF[1] + P[3][11]*SF[3] - P[1][11]*SPP[0] + P[13][11]*SPP[3]) - SPP[7]*(P[5][12] + P[0][12]*SF[2] + P[2][12]*SF[1] + P[3][12]*SF[3] - P[1][12]*SPP[0] + P[13][12]*SPP[3]) - (q0*(P[5][10] + P[0][10]*SF[2] + P[2][10]*SF[1] + P[3][10]*SF[3] - P[1][10]*SPP[0] + P[13][10]*SPP[3]))/2;
     nextP[5][2] = P[5][2] + P[0][2]*SF[2] + P[2][2]*SF[1] + P[3][2]*SF[3] - P[1][2]*SPP[0] + P[13][2]*SPP[3] + SF[4]*(P[5][0] + P[0][0]*SF[2] + P[2][0]*SF[1] + P[3][0]*SF[3] - P[1][0]*SPP[0] + P[13][0]*SPP[3]) + SF[8]*(P[5][1] + P[0][1]*SF[2] + P[2][1]*SF[1] + P[3][1]*SF[3] - P[1][1]*SPP[0] + P[13][1]*SPP[3]) + SF[6]*(P[5][3] + P[0][3]*SF[2] + P[2][3]*SF[1] + P[3][3]*SF[3] - P[1][3]*SPP[0] + P[13][3]*SPP[3]) + SF[11]*(P[5][12] + P[0][12]*SF[2] + P[2][12]*SF[1] + P[3][12]*SF[3] - P[1][12]*SPP[0] + P[13][12]*SPP[3]) - SPP[6]*(P[5][10] + P[0][10]*SF[2] + P[2][10]*SF[1] + P[3][10]*SF[3] - P[1][10]*SPP[0] + P[13][10]*SPP[3]) - (q0*(P[5][11] + P[0][11]*SF[2] + P[2][11]*SF[1] + P[3][11]*SF[3] - P[1][11]*SPP[0] + P[13][11]*SPP[3]))/2;
@@ -458,7 +448,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[5][19] = P[5][19] + P[0][19]*SF[2] + P[2][19]*SF[1] + P[3][19]*SF[3] - P[1][19]*SPP[0] + P[13][19]*SPP[3];
     nextP[5][20] = P[5][20] + P[0][20]*SF[2] + P[2][20]*SF[1] + P[3][20]*SF[3] - P[1][20]*SPP[0] + P[13][20]*SPP[3];
     nextP[5][21] = P[5][21] + P[0][21]*SF[2] + P[2][21]*SF[1] + P[3][21]*SF[3] - P[1][21]*SPP[0] + P[13][21]*SPP[3];
-    nextP[5][22] = P[5][22] + P[0][22]*SF[2] + P[2][22]*SF[1] + P[3][22]*SF[3] - P[1][22]*SPP[0] + P[13][22]*SPP[3];
     nextP[6][0] = P[6][0] + P[1][0]*SF[2] + P[3][0]*SF[1] + P[0][0]*SPP[0] - P[2][0]*SPP[1] - P[13][0]*(sq(q0) - sq(q1) - sq(q2) + sq(q3)) + SF[7]*(P[6][1] + P[1][1]*SF[2] + P[3][1]*SF[1] + P[0][1]*SPP[0] - P[2][1]*SPP[1] - P[13][1]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[9]*(P[6][2] + P[1][2]*SF[2] + P[3][2]*SF[1] + P[0][2]*SPP[0] - P[2][2]*SPP[1] - P[13][2]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[8]*(P[6][3] + P[1][3]*SF[2] + P[3][3]*SF[1] + P[0][3]*SPP[0] - P[2][3]*SPP[1] - P[13][3]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[11]*(P[6][10] + P[1][10]*SF[2] + P[3][10]*SF[1] + P[0][10]*SPP[0] - P[2][10]*SPP[1] - P[13][10]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SPP[7]*(P[6][11] + P[1][11]*SF[2] + P[3][11]*SF[1] + P[0][11]*SPP[0] - P[2][11]*SPP[1] - P[13][11]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SPP[6]*(P[6][12] + P[1][12]*SF[2] + P[3][12]*SF[1] + P[0][12]*SPP[0] - P[2][12]*SPP[1] - P[13][12]*(sq(q0) - sq(q1) - sq(q2) + sq(q3)));
     nextP[6][1] = P[6][1] + P[1][1]*SF[2] + P[3][1]*SF[1] + P[0][1]*SPP[0] - P[2][1]*SPP[1] - P[13][1]*(sq(q0) - sq(q1) - sq(q2) + sq(q3)) + SF[6]*(P[6][0] + P[1][0]*SF[2] + P[3][0]*SF[1] + P[0][0]*SPP[0] - P[2][0]*SPP[1] - P[13][0]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[5]*(P[6][2] + P[1][2]*SF[2] + P[3][2]*SF[1] + P[0][2]*SPP[0] - P[2][2]*SPP[1] - P[13][2]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[9]*(P[6][3] + P[1][3]*SF[2] + P[3][3]*SF[1] + P[0][3]*SPP[0] - P[2][3]*SPP[1] - P[13][3]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SPP[6]*(P[6][11] + P[1][11]*SF[2] + P[3][11]*SF[1] + P[0][11]*SPP[0] - P[2][11]*SPP[1] - P[13][11]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) - SPP[7]*(P[6][12] + P[1][12]*SF[2] + P[3][12]*SF[1] + P[0][12]*SPP[0] - P[2][12]*SPP[1] - P[13][12]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) - (q0*(P[6][10] + P[1][10]*SF[2] + P[3][10]*SF[1] + P[0][10]*SPP[0] - P[2][10]*SPP[1] - P[13][10]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))))/2;
     nextP[6][2] = P[6][2] + P[1][2]*SF[2] + P[3][2]*SF[1] + P[0][2]*SPP[0] - P[2][2]*SPP[1] - P[13][2]*(sq(q0) - sq(q1) - sq(q2) + sq(q3)) + SF[4]*(P[6][0] + P[1][0]*SF[2] + P[3][0]*SF[1] + P[0][0]*SPP[0] - P[2][0]*SPP[1] - P[13][0]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[8]*(P[6][1] + P[1][1]*SF[2] + P[3][1]*SF[1] + P[0][1]*SPP[0] - P[2][1]*SPP[1] - P[13][1]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[6]*(P[6][3] + P[1][3]*SF[2] + P[3][3]*SF[1] + P[0][3]*SPP[0] - P[2][3]*SPP[1] - P[13][3]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) + SF[11]*(P[6][12] + P[1][12]*SF[2] + P[3][12]*SF[1] + P[0][12]*SPP[0] - P[2][12]*SPP[1] - P[13][12]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) - SPP[6]*(P[6][10] + P[1][10]*SF[2] + P[3][10]*SF[1] + P[0][10]*SPP[0] - P[2][10]*SPP[1] - P[13][10]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))) - (q0*(P[6][11] + P[1][11]*SF[2] + P[3][11]*SF[1] + P[0][11]*SPP[0] - P[2][11]*SPP[1] - P[13][11]*(sq(q0) - sq(q1) - sq(q2) + sq(q3))))/2;
@@ -481,7 +470,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[6][19] = P[6][19] + P[1][19]*SF[2] + P[3][19]*SF[1] + P[0][19]*SPP[0] - P[2][19]*SPP[1] - P[13][19]*SPP[5];
     nextP[6][20] = P[6][20] + P[1][20]*SF[2] + P[3][20]*SF[1] + P[0][20]*SPP[0] - P[2][20]*SPP[1] - P[13][20]*SPP[5];
     nextP[6][21] = P[6][21] + P[1][21]*SF[2] + P[3][21]*SF[1] + P[0][21]*SPP[0] - P[2][21]*SPP[1] - P[13][21]*SPP[5];
-    nextP[6][22] = P[6][22] + P[1][22]*SF[2] + P[3][22]*SF[1] + P[0][22]*SPP[0] - P[2][22]*SPP[1] - P[13][22]*SPP[5];
     nextP[7][0] = P[7][0] + P[4][0]*dt + SF[7]*(P[7][1] + P[4][1]*dt) + SF[9]*(P[7][2] + P[4][2]*dt) + SF[8]*(P[7][3] + P[4][3]*dt) + SF[11]*(P[7][10] + P[4][10]*dt) + SPP[7]*(P[7][11] + P[4][11]*dt) + SPP[6]*(P[7][12] + P[4][12]*dt);
     nextP[7][1] = P[7][1] + P[4][1]*dt + SF[6]*(P[7][0] + P[4][0]*dt) + SF[5]*(P[7][2] + P[4][2]*dt) + SF[9]*(P[7][3] + P[4][3]*dt) + SPP[6]*(P[7][11] + P[4][11]*dt) - SPP[7]*(P[7][12] + P[4][12]*dt) - (q0*(P[7][10] + P[4][10]*dt))/2;
     nextP[7][2] = P[7][2] + P[4][2]*dt + SF[4]*(P[7][0] + P[4][0]*dt) + SF[8]*(P[7][1] + P[4][1]*dt) + SF[6]*(P[7][3] + P[4][3]*dt) + SF[11]*(P[7][12] + P[4][12]*dt) - SPP[6]*(P[7][10] + P[4][10]*dt) - (q0*(P[7][11] + P[4][11]*dt))/2;
@@ -504,7 +492,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[7][19] = P[7][19] + P[4][19]*dt;
     nextP[7][20] = P[7][20] + P[4][20]*dt;
     nextP[7][21] = P[7][21] + P[4][21]*dt;
-    nextP[7][22] = P[7][22] + P[4][22]*dt;
     nextP[8][0] = P[8][0] + P[5][0]*dt + SF[7]*(P[8][1] + P[5][1]*dt) + SF[9]*(P[8][2] + P[5][2]*dt) + SF[8]*(P[8][3] + P[5][3]*dt) + SF[11]*(P[8][10] + P[5][10]*dt) + SPP[7]*(P[8][11] + P[5][11]*dt) + SPP[6]*(P[8][12] + P[5][12]*dt);
     nextP[8][1] = P[8][1] + P[5][1]*dt + SF[6]*(P[8][0] + P[5][0]*dt) + SF[5]*(P[8][2] + P[5][2]*dt) + SF[9]*(P[8][3] + P[5][3]*dt) + SPP[6]*(P[8][11] + P[5][11]*dt) - SPP[7]*(P[8][12] + P[5][12]*dt) - (q0*(P[8][10] + P[5][10]*dt))/2;
     nextP[8][2] = P[8][2] + P[5][2]*dt + SF[4]*(P[8][0] + P[5][0]*dt) + SF[8]*(P[8][1] + P[5][1]*dt) + SF[6]*(P[8][3] + P[5][3]*dt) + SF[11]*(P[8][12] + P[5][12]*dt) - SPP[6]*(P[8][10] + P[5][10]*dt) - (q0*(P[8][11] + P[5][11]*dt))/2;
@@ -527,7 +514,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[8][19] = P[8][19] + P[5][19]*dt;
     nextP[8][20] = P[8][20] + P[5][20]*dt;
     nextP[8][21] = P[8][21] + P[5][21]*dt;
-    nextP[8][22] = P[8][22] + P[5][22]*dt;
     nextP[9][0] = P[9][0] + P[6][0]*dt + SF[7]*(P[9][1] + P[6][1]*dt) + SF[9]*(P[9][2] + P[6][2]*dt) + SF[8]*(P[9][3] + P[6][3]*dt) + SF[11]*(P[9][10] + P[6][10]*dt) + SPP[7]*(P[9][11] + P[6][11]*dt) + SPP[6]*(P[9][12] + P[6][12]*dt);
     nextP[9][1] = P[9][1] + P[6][1]*dt + SF[6]*(P[9][0] + P[6][0]*dt) + SF[5]*(P[9][2] + P[6][2]*dt) + SF[9]*(P[9][3] + P[6][3]*dt) + SPP[6]*(P[9][11] + P[6][11]*dt) - SPP[7]*(P[9][12] + P[6][12]*dt) - (q0*(P[9][10] + P[6][10]*dt))/2;
     nextP[9][2] = P[9][2] + P[6][2]*dt + SF[4]*(P[9][0] + P[6][0]*dt) + SF[8]*(P[9][1] + P[6][1]*dt) + SF[6]*(P[9][3] + P[6][3]*dt) + SF[11]*(P[9][12] + P[6][12]*dt) - SPP[6]*(P[9][10] + P[6][10]*dt) - (q0*(P[9][11] + P[6][11]*dt))/2;
@@ -550,7 +536,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[9][19] = P[9][19] + P[6][19]*dt;
     nextP[9][20] = P[9][20] + P[6][20]*dt;
     nextP[9][21] = P[9][21] + P[6][21]*dt;
-    nextP[9][22] = P[9][22] + P[6][22]*dt;
     nextP[10][0] = P[10][0] + P[10][1]*SF[7] + P[10][2]*SF[9] + P[10][3]*SF[8] + P[10][10]*SF[11] + P[10][11]*SPP[7] + P[10][12]*SPP[6];
     nextP[10][1] = P[10][1] + P[10][0]*SF[6] + P[10][2]*SF[5] + P[10][3]*SF[9] + P[10][11]*SPP[6] - P[10][12]*SPP[7] - (P[10][10]*q0)/2;
     nextP[10][2] = P[10][2] + P[10][0]*SF[4] + P[10][1]*SF[8] + P[10][3]*SF[6] + P[10][12]*SF[11] - P[10][10]*SPP[6] - (P[10][11]*q0)/2;
@@ -573,7 +558,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[10][19] = P[10][19];
     nextP[10][20] = P[10][20];
     nextP[10][21] = P[10][21];
-    nextP[10][22] = P[10][22];
     nextP[11][0] = P[11][0] + P[11][1]*SF[7] + P[11][2]*SF[9] + P[11][3]*SF[8] + P[11][10]*SF[11] + P[11][11]*SPP[7] + P[11][12]*SPP[6];
     nextP[11][1] = P[11][1] + P[11][0]*SF[6] + P[11][2]*SF[5] + P[11][3]*SF[9] + P[11][11]*SPP[6] - P[11][12]*SPP[7] - (P[11][10]*q0)/2;
     nextP[11][2] = P[11][2] + P[11][0]*SF[4] + P[11][1]*SF[8] + P[11][3]*SF[6] + P[11][12]*SF[11] - P[11][10]*SPP[6] - (P[11][11]*q0)/2;
@@ -596,7 +580,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[11][19] = P[11][19];
     nextP[11][20] = P[11][20];
     nextP[11][21] = P[11][21];
-    nextP[11][22] = P[11][22];
     nextP[12][0] = P[12][0] + P[12][1]*SF[7] + P[12][2]*SF[9] + P[12][3]*SF[8] + P[12][10]*SF[11] + P[12][11]*SPP[7] + P[12][12]*SPP[6];
     nextP[12][1] = P[12][1] + P[12][0]*SF[6] + P[12][2]*SF[5] + P[12][3]*SF[9] + P[12][11]*SPP[6] - P[12][12]*SPP[7] - (P[12][10]*q0)/2;
     nextP[12][2] = P[12][2] + P[12][0]*SF[4] + P[12][1]*SF[8] + P[12][3]*SF[6] + P[12][12]*SF[11] - P[12][10]*SPP[6] - (P[12][11]*q0)/2;
@@ -619,7 +602,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[12][19] = P[12][19];
     nextP[12][20] = P[12][20];
     nextP[12][21] = P[12][21];
-    nextP[12][22] = P[12][22];
     nextP[13][0] = P[13][0] + P[13][1]*SF[7] + P[13][2]*SF[9] + P[13][3]*SF[8] + P[13][10]*SF[11] + P[13][11]*SPP[7] + P[13][12]*SPP[6];
     nextP[13][1] = P[13][1] + P[13][0]*SF[6] + P[13][2]*SF[5] + P[13][3]*SF[9] + P[13][11]*SPP[6] - P[13][12]*SPP[7] - (P[13][10]*q0)/2;
     nextP[13][2] = P[13][2] + P[13][0]*SF[4] + P[13][1]*SF[8] + P[13][3]*SF[6] + P[13][12]*SF[11] - P[13][10]*SPP[6] - (P[13][11]*q0)/2;
@@ -642,7 +624,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[13][19] = P[13][19];
     nextP[13][20] = P[13][20];
     nextP[13][21] = P[13][21];
-    nextP[13][22] = P[13][22];
     nextP[14][0] = P[14][0] + P[14][1]*SF[7] + P[14][2]*SF[9] + P[14][3]*SF[8] + P[14][10]*SF[11] + P[14][11]*SPP[7] + P[14][12]*SPP[6];
     nextP[14][1] = P[14][1] + P[14][0]*SF[6] + P[14][2]*SF[5] + P[14][3]*SF[9] + P[14][11]*SPP[6] - P[14][12]*SPP[7] - (P[14][10]*q0)/2;
     nextP[14][2] = P[14][2] + P[14][0]*SF[4] + P[14][1]*SF[8] + P[14][3]*SF[6] + P[14][12]*SF[11] - P[14][10]*SPP[6] - (P[14][11]*q0)/2;
@@ -665,7 +646,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[14][19] = P[14][19];
     nextP[14][20] = P[14][20];
     nextP[14][21] = P[14][21];
-    nextP[14][22] = P[14][22];
     nextP[15][0] = P[15][0] + P[15][1]*SF[7] + P[15][2]*SF[9] + P[15][3]*SF[8] + P[15][10]*SF[11] + P[15][11]*SPP[7] + P[15][12]*SPP[6];
     nextP[15][1] = P[15][1] + P[15][0]*SF[6] + P[15][2]*SF[5] + P[15][3]*SF[9] + P[15][11]*SPP[6] - P[15][12]*SPP[7] - (P[15][10]*q0)/2;
     nextP[15][2] = P[15][2] + P[15][0]*SF[4] + P[15][1]*SF[8] + P[15][3]*SF[6] + P[15][12]*SF[11] - P[15][10]*SPP[6] - (P[15][11]*q0)/2;
@@ -688,7 +668,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[15][19] = P[15][19];
     nextP[15][20] = P[15][20];
     nextP[15][21] = P[15][21];
-    nextP[15][22] = P[15][22];
     nextP[16][0] = P[16][0] + P[16][1]*SF[7] + P[16][2]*SF[9] + P[16][3]*SF[8] + P[16][10]*SF[11] + P[16][11]*SPP[7] + P[16][12]*SPP[6];
     nextP[16][1] = P[16][1] + P[16][0]*SF[6] + P[16][2]*SF[5] + P[16][3]*SF[9] + P[16][11]*SPP[6] - P[16][12]*SPP[7] - (P[16][10]*q0)/2;
     nextP[16][2] = P[16][2] + P[16][0]*SF[4] + P[16][1]*SF[8] + P[16][3]*SF[6] + P[16][12]*SF[11] - P[16][10]*SPP[6] - (P[16][11]*q0)/2;
@@ -711,7 +690,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[16][19] = P[16][19];
     nextP[16][20] = P[16][20];
     nextP[16][21] = P[16][21];
-    nextP[16][22] = P[16][22];
     nextP[17][0] = P[17][0] + P[17][1]*SF[7] + P[17][2]*SF[9] + P[17][3]*SF[8] + P[17][10]*SF[11] + P[17][11]*SPP[7] + P[17][12]*SPP[6];
     nextP[17][1] = P[17][1] + P[17][0]*SF[6] + P[17][2]*SF[5] + P[17][3]*SF[9] + P[17][11]*SPP[6] - P[17][12]*SPP[7] - (P[17][10]*q0)/2;
     nextP[17][2] = P[17][2] + P[17][0]*SF[4] + P[17][1]*SF[8] + P[17][3]*SF[6] + P[17][12]*SF[11] - P[17][10]*SPP[6] - (P[17][11]*q0)/2;
@@ -734,7 +712,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[17][19] = P[17][19];
     nextP[17][20] = P[17][20];
     nextP[17][21] = P[17][21];
-    nextP[17][22] = P[17][22];
     nextP[18][0] = P[18][0] + P[18][1]*SF[7] + P[18][2]*SF[9] + P[18][3]*SF[8] + P[18][10]*SF[11] + P[18][11]*SPP[7] + P[18][12]*SPP[6];
     nextP[18][1] = P[18][1] + P[18][0]*SF[6] + P[18][2]*SF[5] + P[18][3]*SF[9] + P[18][11]*SPP[6] - P[18][12]*SPP[7] - (P[18][10]*q0)/2;
     nextP[18][2] = P[18][2] + P[18][0]*SF[4] + P[18][1]*SF[8] + P[18][3]*SF[6] + P[18][12]*SF[11] - P[18][10]*SPP[6] - (P[18][11]*q0)/2;
@@ -757,7 +734,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[18][19] = P[18][19];
     nextP[18][20] = P[18][20];
     nextP[18][21] = P[18][21];
-    nextP[18][22] = P[18][22];
     nextP[19][0] = P[19][0] + P[19][1]*SF[7] + P[19][2]*SF[9] + P[19][3]*SF[8] + P[19][10]*SF[11] + P[19][11]*SPP[7] + P[19][12]*SPP[6];
     nextP[19][1] = P[19][1] + P[19][0]*SF[6] + P[19][2]*SF[5] + P[19][3]*SF[9] + P[19][11]*SPP[6] - P[19][12]*SPP[7] - (P[19][10]*q0)/2;
     nextP[19][2] = P[19][2] + P[19][0]*SF[4] + P[19][1]*SF[8] + P[19][3]*SF[6] + P[19][12]*SF[11] - P[19][10]*SPP[6] - (P[19][11]*q0)/2;
@@ -780,7 +756,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[19][19] = P[19][19];
     nextP[19][20] = P[19][20];
     nextP[19][21] = P[19][21];
-    nextP[19][22] = P[19][22];
     nextP[20][0] = P[20][0] + P[20][1]*SF[7] + P[20][2]*SF[9] + P[20][3]*SF[8] + P[20][10]*SF[11] + P[20][11]*SPP[7] + P[20][12]*SPP[6];
     nextP[20][1] = P[20][1] + P[20][0]*SF[6] + P[20][2]*SF[5] + P[20][3]*SF[9] + P[20][11]*SPP[6] - P[20][12]*SPP[7] - (P[20][10]*q0)/2;
     nextP[20][2] = P[20][2] + P[20][0]*SF[4] + P[20][1]*SF[8] + P[20][3]*SF[6] + P[20][12]*SF[11] - P[20][10]*SPP[6] - (P[20][11]*q0)/2;
@@ -803,7 +778,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[20][19] = P[20][19];
     nextP[20][20] = P[20][20];
     nextP[20][21] = P[20][21];
-    nextP[20][22] = P[20][22];
     nextP[21][0] = P[21][0] + P[21][1]*SF[7] + P[21][2]*SF[9] + P[21][3]*SF[8] + P[21][10]*SF[11] + P[21][11]*SPP[7] + P[21][12]*SPP[6];
     nextP[21][1] = P[21][1] + P[21][0]*SF[6] + P[21][2]*SF[5] + P[21][3]*SF[9] + P[21][11]*SPP[6] - P[21][12]*SPP[7] - (P[21][10]*q0)/2;
     nextP[21][2] = P[21][2] + P[21][0]*SF[4] + P[21][1]*SF[8] + P[21][3]*SF[6] + P[21][12]*SF[11] - P[21][10]*SPP[6] - (P[21][11]*q0)/2;
@@ -826,30 +800,6 @@ void AttPosEKF::CovariancePrediction(float dt)
     nextP[21][19] = P[21][19];
     nextP[21][20] = P[21][20];
     nextP[21][21] = P[21][21];
-    nextP[21][22] = P[21][22];
-    nextP[22][0] = P[22][0] + P[22][1]*SF[7] + P[22][2]*SF[9] + P[22][3]*SF[8] + P[22][10]*SF[11] + P[22][11]*SPP[7] + P[22][12]*SPP[6];
-    nextP[22][1] = P[22][1] + P[22][0]*SF[6] + P[22][2]*SF[5] + P[22][3]*SF[9] + P[22][11]*SPP[6] - P[22][12]*SPP[7] - (P[22][10]*q0)/2;
-    nextP[22][2] = P[22][2] + P[22][0]*SF[4] + P[22][1]*SF[8] + P[22][3]*SF[6] + P[22][12]*SF[11] - P[22][10]*SPP[6] - (P[22][11]*q0)/2;
-    nextP[22][3] = P[22][3] + P[22][0]*SF[5] + P[22][1]*SF[4] + P[22][2]*SF[7] - P[22][11]*SF[11] + P[22][10]*SPP[7] - (P[22][12]*q0)/2;
-    nextP[22][4] = P[22][4] + P[22][1]*SF[1] + P[22][0]*SF[3] + P[22][2]*SPP[0] - P[22][3]*SPP[2] - P[22][13]*SPP[4];
-    nextP[22][5] = P[22][5] + P[22][0]*SF[2] + P[22][2]*SF[1] + P[22][3]*SF[3] - P[22][1]*SPP[0] + P[22][13]*SPP[3];
-    nextP[22][6] = P[22][6] + P[22][1]*SF[2] + P[22][3]*SF[1] + P[22][0]*SPP[0] - P[22][2]*SPP[1] - P[22][13]*SPP[5];
-    nextP[22][7] = P[22][7] + P[22][4]*dt;
-    nextP[22][8] = P[22][8] + P[22][5]*dt;
-    nextP[22][9] = P[22][9] + P[22][6]*dt;
-    nextP[22][10] = P[22][10];
-    nextP[22][11] = P[22][11];
-    nextP[22][12] = P[22][12];
-    nextP[22][13] = P[22][13];
-    nextP[22][14] = P[22][14];
-    nextP[22][15] = P[22][15];
-    nextP[22][16] = P[22][16];
-    nextP[22][17] = P[22][17];
-    nextP[22][18] = P[22][18];
-    nextP[22][19] = P[22][19];
-    nextP[22][20] = P[22][20];
-    nextP[22][21] = P[22][21];
-    nextP[22][22] = P[22][22];
 
     for (unsigned i = 0; i < n_states; i++)
     {
@@ -908,7 +858,7 @@ void AttPosEKF::FuseVelposNED()
     bool fuseData[6] = {false,false,false,false,false,false};
     uint8_t stateIndex;
     uint8_t obsIndex;
-    uint8_t indexLimit = 22;
+    uint8_t indexLimit = 21;
 
 // declare variables used by state and covariance update calculations
     float velErr;
@@ -1075,10 +1025,6 @@ void AttPosEKF::FuseVelposNED()
                         Kfusion[i] = 0;
                     }
                 }
-                // Don't update terrain state if inhibited
-                if (inhibitGndHgtState) {
-                    Kfusion[22] = 0;
-               }
 
                 // Calculate state corrections and re-normalise the quaternions
                 for (uint8_t i = 0; i<=indexLimit; i++)
@@ -1259,11 +1205,6 @@ void AttPosEKF::FuseMagnetometer()
                     Kfusion[i] = 0;
                 }
             }
-            if (!inhibitGndHgtState) {
-                Kfusion[22] = SK_MX[0]*(P[22][19] + P[22][1]*SH_MAG[0] + P[22][3]*SH_MAG[2] + P[22][0]*SK_MX[3] - P[22][2]*SK_MX[2] - P[22][16]*SK_MX[1] + P[22][17]*SK_MX[5] - P[22][18]*SK_MX[4]);
-            } else {
-                Kfusion[22] = 0;
-            }
             varInnovMag[0] = 1.0f/SK_MX[0];
             innovMag[0] = MagPred[0] - magData.x;
         }
@@ -1332,11 +1273,6 @@ void AttPosEKF::FuseMagnetometer()
                 Kfusion[19] = 0;
                 Kfusion[20] = 0;
                 Kfusion[21] = 0;
-            }
-            if (!inhibitGndHgtState) {
-                Kfusion[22] = SK_MY[0]*(P[22][20] + P[22][0]*SH_MAG[2] + P[22][1]*SH_MAG[1] + P[22][2]*SH_MAG[0] - P[22][3]*SK_MY[2] - P[22][17]*SK_MY[1] - P[22][16]*SK_MY[3] + P[22][18]*SK_MY[4]);
-            } else {
-                Kfusion[22] = 0;
             }
             varInnovMag[1] = 1.0f/SK_MY[0];
             innovMag[1] = MagPred[1] - magData.y;
@@ -1407,11 +1343,6 @@ void AttPosEKF::FuseMagnetometer()
                 Kfusion[19] = 0;
                 Kfusion[20] = 0;
                 Kfusion[21] = 0;
-            }
-            if (!inhibitGndHgtState) {
-                Kfusion[22] = SK_MZ[0]*(P[22][21] + P[22][0]*SH_MAG[1] + P[22][3]*SH_MAG[0] - P[22][1]*SK_MZ[2] + P[22][2]*SK_MZ[3] + P[22][18]*SK_MZ[1] + P[22][16]*SK_MZ[5] - P[22][17]*SK_MZ[4]);
-            } else {
-                Kfusion[22] = 0;
             }
             varInnovMag[2] = 1.0f/SK_MZ[0];
             innovMag[2] = MagPred[2] - magData.z;
@@ -1578,11 +1509,6 @@ void AttPosEKF::FuseAirspeed()
                 Kfusion[i] = 0;
             }
         }
-        if (!inhibitGndHgtState) {
-            Kfusion[22] = SK_TAS*(P[22][4]*SH_TAS[2] - P[22][14]*SH_TAS[2] + P[22][5]*SH_TAS[1] - P[22][15]*SH_TAS[1] + P[22][6]*vd*SH_TAS[0]);
-        } else {
-            Kfusion[22] = 0;
-        }
         varInnovVtas = 1.0f/SK_TAS;
 
         // Calculate the measurement innovation
@@ -1664,75 +1590,9 @@ void AttPosEKF::zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uin
     }
 }
 
-void AttPosEKF::FuseRangeFinder()
-{
-
-    // Local variables
-    float rngPred;
-    float SH_RNG[5];
-    float H_RNG[23];
-    float SK_RNG[6];
-    float cosRngTilt;
-    const float R_RNG = 0.25f; // 0.5 m2 rangefinder measurement variance
-
-    // Copy required states to local variable names
-    float q0 = statesAtRngTime[0];
-    float q1 = statesAtRngTime[1];
-    float q2 = statesAtRngTime[2];
-    float q3 = statesAtRngTime[3];
-    float pd = statesAtRngTime[9];
-    float ptd = statesAtRngTime[22];
-
-    // Need to check that our range finder tilt angle is less than 30 degrees and we are using range finder data
-    SH_RNG[4] = sinf(rngFinderPitch);
-    cosRngTilt = - Tbn.z.x * SH_RNG[4] + Tbn.z.z * cosf(rngFinderPitch);
-    if (useRangeFinder && fuseRngData && cosRngTilt > 0.87f)
-    {
-        // Calculate observation jacobian and Kalman gain ignoring all states other than the terrain offset
-        // This prevents the range finder measurement modifying any of the other filter states and significantly reduces computations
-        SH_RNG[0] = SH_RNG[4]*(2*q0*q2 - 2*q1*q3) - sq(q0) + sq(q1) + sq(q2) - sq(q3);
-        SH_RNG[1] = pd - ptd;
-        SH_RNG[2] = 1/sq(SH_RNG[0]);
-        SH_RNG[3] = 1/SH_RNG[0];
-        for (uint8_t i = 0; i < n_states; i++) {
-            H_RNG[i] = 0.0f;
-            Kfusion[i] = 0.0f;
-        }
-        H_RNG[22] = -SH_RNG[3];
-        SK_RNG[0] = 1/(R_RNG + SH_RNG[3]*(P[9][9]*SH_RNG[3] - P[22][9]*SH_RNG[3] + P[0][9]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][9]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][9]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][9]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[3]*(P[9][22]*SH_RNG[3] - P[22][22]*SH_RNG[3] + P[0][22]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][22]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][22]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][22]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) + SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4])*(P[9][0]*SH_RNG[3] - P[22][0]*SH_RNG[3] + P[0][0]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][0]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][0]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][0]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4])*(P[9][1]*SH_RNG[3] - P[22][1]*SH_RNG[3] + P[0][1]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][1]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][1]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][1]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) - SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4])*(P[9][2]*SH_RNG[3] - P[22][2]*SH_RNG[3] + P[0][2]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][2]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][2]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][2]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])) + SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])*(P[9][3]*SH_RNG[3] - P[22][3]*SH_RNG[3] + P[0][3]*SH_RNG[1]*SH_RNG[2]*(2*q0 - 2*q2*SH_RNG[4]) - P[1][3]*SH_RNG[1]*SH_RNG[2]*(2*q1 - 2*q3*SH_RNG[4]) - P[2][3]*SH_RNG[1]*SH_RNG[2]*(2*q2 + 2*q0*SH_RNG[4]) + P[3][3]*SH_RNG[1]*SH_RNG[2]*(2*q3 + 2*q1*SH_RNG[4])));
-        SK_RNG[1] = 2*q1 - 2*q3*SH_RNG[4];
-        SK_RNG[2] = 2*q0 - 2*q2*SH_RNG[4];
-        SK_RNG[3] = 2*q3 + 2*q1*SH_RNG[4];
-        SK_RNG[4] = 2*q2 + 2*q0*SH_RNG[4];
-        SK_RNG[5] = SH_RNG[2];
-        Kfusion[22] = SK_RNG[0]*(P[22][9]*SH_RNG[3] - P[22][22]*SH_RNG[3] + P[22][0]*SH_RNG[1]*SK_RNG[2]*SK_RNG[5] - P[22][1]*SH_RNG[1]*SK_RNG[1]*SK_RNG[5] - P[22][2]*SH_RNG[1]*SK_RNG[4]*SK_RNG[5] + P[22][3]*SH_RNG[1]*SK_RNG[3]*SK_RNG[5]);
-
-        // Calculate the innovation variance for data logging
-        varInnovRng = 1.0f/SK_RNG[0];
-
-        // Calculate the measurement innovation
-        rngPred = (ptd - pd)/cosRngTilt;
-        innovRng = rngPred - rngMea;
-        //printf("ptd=%5.1f, pd=%5.1f, innov=%5.1f\n", ptd, pd, innovRng);
-
-        // Check the innovation for consistency and don't fuse if > 5Sigma
-        if ((innovRng*innovRng*SK_RNG[0]) < 25)
-        {
-            // correct the state vector
-            states[22] = states[22] - Kfusion[22] * innovRng;
-
-            // correct the covariance P = (I - K*H)*P
-            P[22][22] = P[22][22] - Kfusion[22] * H_RNG[22] * P[22][22];
-            P[22][22] = ConstrainFloat(P[22][22], 0.0f, 10000.0f);
-        }
-    }
-
-}
-
 void AttPosEKF::FuseOptFlow()
 {
     static float SH_LOS[13];
-    static float SKK_LOS[15];
     static float SK_LOS[2];
     static float q0 = 0.0f;
     static float q1 = 0.0f;
@@ -1743,33 +1603,19 @@ void AttPosEKF::FuseOptFlow()
     static float vd = 0.0f;
     static float pd = 0.0f;
     static float ptd = 0.0f;
-    static float R_LOS = 0.5f;
     static float losPred[2];
 
     // Transformation matrix from nav to body axes
-    Mat3f Tnb_local;
-    // Transformation matrix from body to sensor axes
-    // assume camera is aligned with Z body axis plus a misalignment
-    // defined by 3 small angles about X, Y and Z body axis
-    Mat3f Tbs;
-    Tbs.x.y =  a3;
-    Tbs.y.x = -a3;
-    Tbs.x.z = -a2;
-    Tbs.z.x =  a2;
-    Tbs.y.z =  a1;
-    Tbs.z.y = -a1;
-    // Transformation matrix from navigation to sensor axes
-    Mat3f Tns;
     float H_LOS[2][n_states];
     float K_LOS[2][n_states];
     Vector3f velNED_local;
     Vector3f relVelSensor;
 
     // Perform sequential fusion of optical flow measurements only with valid tilt and height
-    float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
-    bool validHeight = heightAboveGndEst > 0.5f;
+    flowStates[1] = maxf(flowStates[1], statesAtFlowTime[9] + 0.5f);
+    float heightAboveGndEst = flowStates[1] - statesAtFlowTime[9];
     bool validTilt = Tnb.z.z > 0.7f;
-    if (validTilt && validHeight)
+    if (validTilt)
     {
         // Sequential fusion of XY components.
 
@@ -1777,48 +1623,24 @@ void AttPosEKF::FuseOptFlow()
         if (fuseOptFlowData)
         {
             // Copy required states to local variable names
-            q0       = statesAtOptFlowTime[0];
-            q1       = statesAtOptFlowTime[1];
-            q2       = statesAtOptFlowTime[2];
-            q3       = statesAtOptFlowTime[3];
-            vn       = statesAtOptFlowTime[4];
-            ve       = statesAtOptFlowTime[5];
-            vd       = statesAtOptFlowTime[6];
-            pd       = statesAtOptFlowTime[9];
-            ptd      = statesAtOptFlowTime[22];
+            q0       = statesAtFlowTime[0];
+            q1       = statesAtFlowTime[1];
+            q2       = statesAtFlowTime[2];
+            q3       = statesAtFlowTime[3];
+            vn       = statesAtFlowTime[4];
+            ve       = statesAtFlowTime[5];
+            vd       = statesAtFlowTime[6];
+            pd       = statesAtFlowTime[9];
+            ptd      = flowStates[1];
             velNED_local.x = vn;
             velNED_local.y = ve;
             velNED_local.z = vd;
 
-            // calculate rotation from NED to body axes
-            float q00 = sq(q0);
-            float q11 = sq(q1);
-            float q22 = sq(q2);
-            float q33 = sq(q3);
-            float q01 = q0 * q1;
-            float q02 = q0 * q2;
-            float q03 = q0 * q3;
-            float q12 = q1 * q2;
-            float q13 = q1 * q3;
-            float q23 = q2 * q3;
-            Tnb_local.x.x = q00 + q11 - q22 - q33;
-            Tnb_local.y.y = q00 - q11 + q22 - q33;
-            Tnb_local.z.z = q00 - q11 - q22 + q33;
-            Tnb_local.y.x = 2*(q12 - q03);
-            Tnb_local.z.x = 2*(q13 + q02);
-            Tnb_local.x.y = 2*(q12 + q03);
-            Tnb_local.z.y = 2*(q23 - q01);
-            Tnb_local.x.z = 2*(q13 - q02);
-            Tnb_local.y.z = 2*(q23 + q01);
-
-            // calculate transformation from NED to sensor axes
-            Tns = Tbs*Tnb_local;
-
             // calculate range from ground plain to centre of sensor fov assuming flat earth
-            float range = ConstrainFloat(((ptd - pd)/Tns.z.z),0.5f,100.0f);
+            float range = heightAboveGndEst/Tnb_flow.z.z;
 
             // calculate relative velocity in sensor frame
-            relVelSensor = Tns*velNED_local;
+            relVelSensor = Tnb_flow*velNED_local;
 
             // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
             losPred[0] =  relVelSensor.y/range;
@@ -1832,8 +1654,8 @@ void AttPosEKF::FuseOptFlow()
             SH_LOS[4] = 1/sq(pd - ptd);
 
             // Calculate common expressions for Kalman gains
-            SK_LOS[0] = 1.0f/(R_LOS + (SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3])*(P[0][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][0]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][0]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][0]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][0]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][0]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3])*(P[0][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][1]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][1]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][1]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][1]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][1]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - (SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3])*(P[0][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][2]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][2]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][2]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][2]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][2]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3])*(P[0][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][3]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][3]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][3]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][3]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][3]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[1]*SH_LOS[4]*(P[0][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][9]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][9]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][9]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][9]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][9]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[1]*SH_LOS[4]*(P[0][22]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][22]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][22]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][22]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][22]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][22]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][22]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][22]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][22]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))*(P[0][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][4]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][4]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][4]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][4]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][4]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2)*(P[0][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][5]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][5]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][5]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][5]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][5]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3)*(P[0][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][6]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][6]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][6]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[22][6]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][6]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))));
-            SK_LOS[1] = 1.0f/(R_LOS + (SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3])*(P[0][0]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][0]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][0]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][0]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][0]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3])*(P[0][1]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][1]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][1]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][1]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][1]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3])*(P[0][2]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][2]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][2]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][2]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][2]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - (SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3])*(P[0][3]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][3]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][3]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][3]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][3]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[2]*SH_LOS[4]*(P[0][9]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][9]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][9]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][9]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][9]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[2]*SH_LOS[4]*(P[0][22]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][22]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][22]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][22]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][22]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][22]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][22]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][22]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][22]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))*(P[0][5]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][5]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][5]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][5]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][5]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2)*(P[0][4]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][4]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][4]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][4]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][4]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3)*(P[0][6]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][6]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][6]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[22][6]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][6]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))));
+            SK_LOS[0] = 1.0f/(R_LOS + (SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3])*(P[0][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][0]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][0]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][0]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][0]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3])*(P[0][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][1]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][1]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][1]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][1]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - (SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3])*(P[0][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][2]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][2]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][2]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][2]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3])*(P[0][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][3]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][3]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][3]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][3]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[1]*SH_LOS[4]*(P[0][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][9]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][9]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][9]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][9]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))*(P[0][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][4]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][4]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][4]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][4]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2)*(P[0][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][5]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][5]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][5]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][5]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3)*(P[0][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) + 2*q0*SH_LOS[1]*SH_LOS[3]) + P[1][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q1*SH_LOS[1]*SH_LOS[3]) - P[2][6]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) + 2*q2*SH_LOS[1]*SH_LOS[3]) + P[3][6]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q3*SH_LOS[1]*SH_LOS[3]) + P[5][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2) - P[6][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3) - P[9][6]*SH_LOS[0]*SH_LOS[1]*SH_LOS[4] + P[4][6]*SH_LOS[0]*SH_LOS[3]*(sq(q0) + sq(q1) - sq(q2) - sq(q3))));
+            SK_LOS[1] = 1.0f/(R_LOS + (SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3])*(P[0][0]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][0]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][0]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][0]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][0]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][0]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3])*(P[0][1]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][1]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][1]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][1]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][1]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][1]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + (SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3])*(P[0][2]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][2]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][2]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][2]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][2]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][2]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - (SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3])*(P[0][3]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][3]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][3]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][3]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][3]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][3]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[2]*SH_LOS[4]*(P[0][9]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][9]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][9]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][9]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][9]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][9]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))*(P[0][5]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][5]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][5]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][5]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][5]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][5]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) - SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2)*(P[0][4]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][4]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][4]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][4]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][4]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][4]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))) + SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3)*(P[0][6]*(SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn) + 2*q0*SH_LOS[2]*SH_LOS[3]) + P[1][6]*(SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn) - 2*q1*SH_LOS[2]*SH_LOS[3]) + P[2][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*vd + 2*q2*ve + 2*q1*vn) - 2*q2*SH_LOS[2]*SH_LOS[3]) - P[3][6]*(SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn) - 2*q3*SH_LOS[2]*SH_LOS[3]) - P[4][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q3 - 2*q1*q2) + P[6][6]*SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3) - P[9][6]*SH_LOS[0]*SH_LOS[2]*SH_LOS[4] + P[5][6]*SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3))));
             SK_LOS[2] = SH_LOS[0]*SH_LOS[3]*(2*q3*ve - 2*q2*vd + 2*q0*vn);
             SK_LOS[3] = SH_LOS[0]*SH_LOS[3]*(2*q0*vd - 2*q1*ve + 2*q2*vn);
             SK_LOS[4] = SH_LOS[0]*SH_LOS[3]*(2*q1*vd + 2*q0*ve - 2*q3*vn);
@@ -1864,53 +1686,46 @@ void AttPosEKF::FuseOptFlow()
             H_LOS[0][5] = -SH_LOS[0]*SH_LOS[3]*(sq(q0) - sq(q1) + sq(q2) - sq(q3));
             H_LOS[0][6] = -SH_LOS[0]*SH_LOS[3]*(2*q0*q1 + 2*q2*q3);
             H_LOS[0][9] = tempVar[1];
-            H_LOS[0][22] = -tempVar[1];
 
             // calculate Kalman gains for X LOS rate
-            K_LOS[0][0] = -(P[0][0]*tempVar[8] + P[0][1]*tempVar[7] - P[0][3]*tempVar[6] + P[0][2]*tempVar[5] - P[0][4]*tempVar[4] + P[0][6]*tempVar[3] - P[0][9]*tempVar[1] + P[0][22]*tempVar[1] + P[0][5]*tempVar[0])/(R_LOS + tempVar[8]*(P[0][0]*tempVar[8] + P[1][0]*tempVar[7] + P[2][0]*tempVar[5] - P[3][0]*tempVar[6] - P[4][0]*tempVar[4] + P[6][0]*tempVar[3] - P[9][0]*tempVar[1] + P[22][0]*tempVar[1] + P[5][0]*tempVar[0]) + tempVar[7]*(P[0][1]*tempVar[8] + P[1][1]*tempVar[7] + P[2][1]*tempVar[5] - P[3][1]*tempVar[6] - P[4][1]*tempVar[4] + P[6][1]*tempVar[3] - P[9][1]*tempVar[1] + P[22][1]*tempVar[1] + P[5][1]*tempVar[0]) + tempVar[5]*(P[0][2]*tempVar[8] + P[1][2]*tempVar[7] + P[2][2]*tempVar[5] - P[3][2]*tempVar[6] - P[4][2]*tempVar[4] + P[6][2]*tempVar[3] - P[9][2]*tempVar[1] + P[22][2]*tempVar[1] + P[5][2]*tempVar[0]) - tempVar[6]*(P[0][3]*tempVar[8] + P[1][3]*tempVar[7] + P[2][3]*tempVar[5] - P[3][3]*tempVar[6] - P[4][3]*tempVar[4] + P[6][3]*tempVar[3] - P[9][3]*tempVar[1] + P[22][3]*tempVar[1] + P[5][3]*tempVar[0]) - tempVar[4]*(P[0][4]*tempVar[8] + P[1][4]*tempVar[7] + P[2][4]*tempVar[5] - P[3][4]*tempVar[6] - P[4][4]*tempVar[4] + P[6][4]*tempVar[3] - P[9][4]*tempVar[1] + P[22][4]*tempVar[1] + P[5][4]*tempVar[0]) + tempVar[3]*(P[0][6]*tempVar[8] + P[1][6]*tempVar[7] + P[2][6]*tempVar[5] - P[3][6]*tempVar[6] - P[4][6]*tempVar[4] + P[6][6]*tempVar[3] - P[9][6]*tempVar[1] + P[22][6]*tempVar[1] + P[5][6]*tempVar[0]) - tempVar[1]*(P[0][9]*tempVar[8] + P[1][9]*tempVar[7] + P[2][9]*tempVar[5] - P[3][9]*tempVar[6] - P[4][9]*tempVar[4] + P[6][9]*tempVar[3] - P[9][9]*tempVar[1] + P[22][9]*tempVar[1] + P[5][9]*tempVar[0]) + tempVar[1]*(P[0][22]*tempVar[8] + P[1][22]*tempVar[7] + P[2][22]*tempVar[5] - P[3][22]*tempVar[6] - P[4][22]*tempVar[4] + P[6][22]*tempVar[3] - P[9][22]*tempVar[1] + P[22][22]*tempVar[1] + P[5][22]*tempVar[0]) + tempVar[0]*(P[0][5]*tempVar[8] + P[1][5]*tempVar[7] + P[2][5]*tempVar[5] - P[3][5]*tempVar[6] - P[4][5]*tempVar[4] + P[6][5]*tempVar[3] - P[9][5]*tempVar[1] + P[22][5]*tempVar[1] + P[5][5]*tempVar[0]));
-            K_LOS[0][1] = -SK_LOS[1]*(P[1][0]*tempVar[8] + P[1][1]*tempVar[7] - P[1][3]*tempVar[6] + P[1][2]*tempVar[5] - P[1][4]*tempVar[4] + P[1][6]*tempVar[3] - P[1][9]*tempVar[1] + P[1][22]*tempVar[1] + P[1][5]*tempVar[0]);
-            K_LOS[0][2] = -SK_LOS[1]*(P[2][0]*tempVar[8] + P[2][1]*tempVar[7] - P[2][3]*tempVar[6] + P[2][2]*tempVar[5] - P[2][4]*tempVar[4] + P[2][6]*tempVar[3] - P[2][9]*tempVar[1] + P[2][22]*tempVar[1] + P[2][5]*tempVar[0]);
-            K_LOS[0][3] = -SK_LOS[1]*(P[3][0]*tempVar[8] + P[3][1]*tempVar[7] - P[3][3]*tempVar[6] + P[3][2]*tempVar[5] - P[3][4]*tempVar[4] + P[3][6]*tempVar[3] - P[3][9]*tempVar[1] + P[3][22]*tempVar[1] + P[3][5]*tempVar[0]);
-            K_LOS[0][4] = -SK_LOS[1]*(P[4][0]*tempVar[8] + P[4][1]*tempVar[7] - P[4][3]*tempVar[6] + P[4][2]*tempVar[5] - P[4][4]*tempVar[4] + P[4][6]*tempVar[3] - P[4][9]*tempVar[1] + P[4][22]*tempVar[1] + P[4][5]*tempVar[0]);
-            K_LOS[0][5] = -SK_LOS[1]*(P[5][0]*tempVar[8] + P[5][1]*tempVar[7] - P[5][3]*tempVar[6] + P[5][2]*tempVar[5] - P[5][4]*tempVar[4] + P[5][6]*tempVar[3] - P[5][9]*tempVar[1] + P[5][22]*tempVar[1] + P[5][5]*tempVar[0]);
-            K_LOS[0][6] = -SK_LOS[1]*(P[6][0]*tempVar[8] + P[6][1]*tempVar[7] - P[6][3]*tempVar[6] + P[6][2]*tempVar[5] - P[6][4]*tempVar[4] + P[6][6]*tempVar[3] - P[6][9]*tempVar[1] + P[6][22]*tempVar[1] + P[6][5]*tempVar[0]);
-            K_LOS[0][7] = -SK_LOS[1]*(P[7][0]*tempVar[8] + P[7][1]*tempVar[7] - P[7][3]*tempVar[6] + P[7][2]*tempVar[5] - P[7][4]*tempVar[4] + P[7][6]*tempVar[3] - P[7][9]*tempVar[1] + P[7][22]*tempVar[1] + P[7][5]*tempVar[0]);
-            K_LOS[0][8] = -SK_LOS[1]*(P[8][0]*tempVar[8] + P[8][1]*tempVar[7] - P[8][3]*tempVar[6] + P[8][2]*tempVar[5] - P[8][4]*tempVar[4] + P[8][6]*tempVar[3] - P[8][9]*tempVar[1] + P[8][22]*tempVar[1] + P[8][5]*tempVar[0]);
-            K_LOS[0][9] = -SK_LOS[1]*(P[9][0]*tempVar[8] + P[9][1]*tempVar[7] - P[9][3]*tempVar[6] + P[9][2]*tempVar[5] - P[9][4]*tempVar[4] + P[9][6]*tempVar[3] - P[9][9]*tempVar[1] + P[9][22]*tempVar[1] + P[9][5]*tempVar[0]);
-            K_LOS[0][10] = -SK_LOS[1]*(P[10][0]*tempVar[8] + P[10][1]*tempVar[7] - P[10][3]*tempVar[6] + P[10][2]*tempVar[5] - P[10][4]*tempVar[4] + P[10][6]*tempVar[3] - P[10][9]*tempVar[1] + P[10][22]*tempVar[1] + P[10][5]*tempVar[0]);
-            K_LOS[0][11] = -SK_LOS[1]*(P[11][0]*tempVar[8] + P[11][1]*tempVar[7] - P[11][3]*tempVar[6] + P[11][2]*tempVar[5] - P[11][4]*tempVar[4] + P[11][6]*tempVar[3] - P[11][9]*tempVar[1] + P[11][22]*tempVar[1] + P[11][5]*tempVar[0]);
-            K_LOS[0][12] = -SK_LOS[1]*(P[12][0]*tempVar[8] + P[12][1]*tempVar[7] - P[12][3]*tempVar[6] + P[12][2]*tempVar[5] - P[12][4]*tempVar[4] + P[12][6]*tempVar[3] - P[12][9]*tempVar[1] + P[12][22]*tempVar[1] + P[12][5]*tempVar[0]);
+            K_LOS[0][0] = -(P[0][0]*tempVar[8] + P[0][1]*tempVar[7] - P[0][3]*tempVar[6] + P[0][2]*tempVar[5] - P[0][4]*tempVar[4] + P[0][6]*tempVar[3] - P[0][9]*tempVar[1] + P[0][5]*tempVar[0])/(R_LOS + tempVar[8]*(P[0][0]*tempVar[8] + P[1][0]*tempVar[7] + P[2][0]*tempVar[5] - P[3][0]*tempVar[6] - P[4][0]*tempVar[4] + P[6][0]*tempVar[3] - P[9][0]*tempVar[1] + P[5][0]*tempVar[0]) + tempVar[7]*(P[0][1]*tempVar[8] + P[1][1]*tempVar[7] + P[2][1]*tempVar[5] - P[3][1]*tempVar[6] - P[4][1]*tempVar[4] + P[6][1]*tempVar[3] - P[9][1]*tempVar[1] + P[5][1]*tempVar[0]) + tempVar[5]*(P[0][2]*tempVar[8] + P[1][2]*tempVar[7] + P[2][2]*tempVar[5] - P[3][2]*tempVar[6] - P[4][2]*tempVar[4] + P[6][2]*tempVar[3] - P[9][2]*tempVar[1] + P[5][2]*tempVar[0]) - tempVar[6]*(P[0][3]*tempVar[8] + P[1][3]*tempVar[7] + P[2][3]*tempVar[5] - P[3][3]*tempVar[6] - P[4][3]*tempVar[4] + P[6][3]*tempVar[3] - P[9][3]*tempVar[1] + P[5][3]*tempVar[0]) - tempVar[4]*(P[0][4]*tempVar[8] + P[1][4]*tempVar[7] + P[2][4]*tempVar[5] - P[3][4]*tempVar[6] - P[4][4]*tempVar[4] + P[6][4]*tempVar[3] - P[9][4]*tempVar[1] + P[5][4]*tempVar[0]) + tempVar[3]*(P[0][6]*tempVar[8] + P[1][6]*tempVar[7] + P[2][6]*tempVar[5] - P[3][6]*tempVar[6] - P[4][6]*tempVar[4] + P[6][6]*tempVar[3] - P[9][6]*tempVar[1] + P[5][6]*tempVar[0]) - tempVar[1]*(P[0][9]*tempVar[8] + P[1][9]*tempVar[7] + P[2][9]*tempVar[5] - P[3][9]*tempVar[6] - P[4][9]*tempVar[4] + P[6][9]*tempVar[3] - P[9][9]*tempVar[1] + P[5][9]*tempVar[0]) + tempVar[0]*(P[0][5]*tempVar[8] + P[1][5]*tempVar[7] + P[2][5]*tempVar[5] - P[3][5]*tempVar[6] - P[4][5]*tempVar[4] + P[6][5]*tempVar[3] - P[9][5]*tempVar[1] + P[5][5]*tempVar[0]));
+            K_LOS[0][1] = -SK_LOS[1]*(P[1][0]*tempVar[8] + P[1][1]*tempVar[7] - P[1][3]*tempVar[6] + P[1][2]*tempVar[5] - P[1][4]*tempVar[4] + P[1][6]*tempVar[3] - P[1][9]*tempVar[1] + P[1][5]*tempVar[0]);
+            K_LOS[0][2] = -SK_LOS[1]*(P[2][0]*tempVar[8] + P[2][1]*tempVar[7] - P[2][3]*tempVar[6] + P[2][2]*tempVar[5] - P[2][4]*tempVar[4] + P[2][6]*tempVar[3] - P[2][9]*tempVar[1] + P[2][5]*tempVar[0]);
+            K_LOS[0][3] = -SK_LOS[1]*(P[3][0]*tempVar[8] + P[3][1]*tempVar[7] - P[3][3]*tempVar[6] + P[3][2]*tempVar[5] - P[3][4]*tempVar[4] + P[3][6]*tempVar[3] - P[3][9]*tempVar[1] + P[3][5]*tempVar[0]);
+            K_LOS[0][4] = -SK_LOS[1]*(P[4][0]*tempVar[8] + P[4][1]*tempVar[7] - P[4][3]*tempVar[6] + P[4][2]*tempVar[5] - P[4][4]*tempVar[4] + P[4][6]*tempVar[3] - P[4][9]*tempVar[1] + P[4][5]*tempVar[0]);
+            K_LOS[0][5] = -SK_LOS[1]*(P[5][0]*tempVar[8] + P[5][1]*tempVar[7] - P[5][3]*tempVar[6] + P[5][2]*tempVar[5] - P[5][4]*tempVar[4] + P[5][6]*tempVar[3] - P[5][9]*tempVar[1] + P[5][5]*tempVar[0]);
+            K_LOS[0][6] = -SK_LOS[1]*(P[6][0]*tempVar[8] + P[6][1]*tempVar[7] - P[6][3]*tempVar[6] + P[6][2]*tempVar[5] - P[6][4]*tempVar[4] + P[6][6]*tempVar[3] - P[6][9]*tempVar[1] + P[6][5]*tempVar[0]);
+            K_LOS[0][7] = -SK_LOS[1]*(P[7][0]*tempVar[8] + P[7][1]*tempVar[7] - P[7][3]*tempVar[6] + P[7][2]*tempVar[5] - P[7][4]*tempVar[4] + P[7][6]*tempVar[3] - P[7][9]*tempVar[1] + P[7][5]*tempVar[0]);
+            K_LOS[0][8] = -SK_LOS[1]*(P[8][0]*tempVar[8] + P[8][1]*tempVar[7] - P[8][3]*tempVar[6] + P[8][2]*tempVar[5] - P[8][4]*tempVar[4] + P[8][6]*tempVar[3] - P[8][9]*tempVar[1] + P[8][5]*tempVar[0]);
+            K_LOS[0][9] = -SK_LOS[1]*(P[9][0]*tempVar[8] + P[9][1]*tempVar[7] - P[9][3]*tempVar[6] + P[9][2]*tempVar[5] - P[9][4]*tempVar[4] + P[9][6]*tempVar[3] - P[9][9]*tempVar[1] + P[9][5]*tempVar[0]);
+            K_LOS[0][10] = -SK_LOS[1]*(P[10][0]*tempVar[8] + P[10][1]*tempVar[7] - P[10][3]*tempVar[6] + P[10][2]*tempVar[5] - P[10][4]*tempVar[4] + P[10][6]*tempVar[3] - P[10][9]*tempVar[1] + P[10][5]*tempVar[0]);
+            K_LOS[0][11] = -SK_LOS[1]*(P[11][0]*tempVar[8] + P[11][1]*tempVar[7] - P[11][3]*tempVar[6] + P[11][2]*tempVar[5] - P[11][4]*tempVar[4] + P[11][6]*tempVar[3] - P[11][9]*tempVar[1] + P[11][5]*tempVar[0]);
+            K_LOS[0][12] = -SK_LOS[1]*(P[12][0]*tempVar[8] + P[12][1]*tempVar[7] - P[12][3]*tempVar[6] + P[12][2]*tempVar[5] - P[12][4]*tempVar[4] + P[12][6]*tempVar[3] - P[12][9]*tempVar[1] + P[12][5]*tempVar[0]);
             // only height measurements are allowed to modify the Z bias state to improve the stability of the estimate
-            K_LOS[0][13] = 0.0f;//-SK_LOS[1]*(P[13][0]*tempVar[8] + P[13][1]*tempVar[7] - P[13][3]*tempVar[6] + P[13][2]*tempVar[5] - P[13][4]*tempVar[4] + P[13][6]*tempVar[3] - P[13][9]*tempVar[1] + P[13][22]*tempVar[1] + P[13][5]*tempVar[0]);
+            K_LOS[0][13] = 0.0f;//-SK_LOS[1]*(P[13][0]*tempVar[8] + P[13][1]*tempVar[7] - P[13][3]*tempVar[6] + P[13][2]*tempVar[5] - P[13][4]*tempVar[4] + P[13][6]*tempVar[3] - P[13][9]*tempVar[1] + P[13][5]*tempVar[0]);
             if (inhibitWindStates) {
-                K_LOS[0][14] = -SK_LOS[1]*(P[14][0]*tempVar[8] + P[14][1]*tempVar[7] - P[14][3]*tempVar[6] + P[14][2]*tempVar[5] - P[14][4]*tempVar[4] + P[14][6]*tempVar[3] - P[14][9]*tempVar[1] + P[14][22]*tempVar[1] + P[14][5]*tempVar[0]);
-                K_LOS[0][15] = -SK_LOS[1]*(P[15][0]*tempVar[8] + P[15][1]*tempVar[7] - P[15][3]*tempVar[6] + P[15][2]*tempVar[5] - P[15][4]*tempVar[4] + P[15][6]*tempVar[3] - P[15][9]*tempVar[1] + P[15][22]*tempVar[1] + P[15][5]*tempVar[0]);
+                K_LOS[0][14] = -SK_LOS[1]*(P[14][0]*tempVar[8] + P[14][1]*tempVar[7] - P[14][3]*tempVar[6] + P[14][2]*tempVar[5] - P[14][4]*tempVar[4] + P[14][6]*tempVar[3] - P[14][9]*tempVar[1] + P[14][5]*tempVar[0]);
+                K_LOS[0][15] = -SK_LOS[1]*(P[15][0]*tempVar[8] + P[15][1]*tempVar[7] - P[15][3]*tempVar[6] + P[15][2]*tempVar[5] - P[15][4]*tempVar[4] + P[15][6]*tempVar[3] - P[15][9]*tempVar[1] + P[15][5]*tempVar[0]);
             } else {
                 K_LOS[0][14] = 0.0f;
                 K_LOS[0][15] = 0.0f;
             }
             if (inhibitMagStates) {
-                K_LOS[0][16] = -SK_LOS[1]*(P[16][0]*tempVar[8] + P[16][1]*tempVar[7] - P[16][3]*tempVar[6] + P[16][2]*tempVar[5] - P[16][4]*tempVar[4] + P[16][6]*tempVar[3] - P[16][9]*tempVar[1] + P[16][22]*tempVar[1] + P[16][5]*tempVar[0]);
-                K_LOS[0][17] = -SK_LOS[1]*(P[17][0]*tempVar[8] + P[17][1]*tempVar[7] - P[17][3]*tempVar[6] + P[17][2]*tempVar[5] - P[17][4]*tempVar[4] + P[17][6]*tempVar[3] - P[17][9]*tempVar[1] + P[17][22]*tempVar[1] + P[17][5]*tempVar[0]);
-                K_LOS[0][18] = -SK_LOS[1]*(P[18][0]*tempVar[8] + P[18][1]*tempVar[7] - P[18][3]*tempVar[6] + P[18][2]*tempVar[5] - P[18][4]*tempVar[4] + P[18][6]*tempVar[3] - P[18][9]*tempVar[1] + P[18][22]*tempVar[1] + P[18][5]*tempVar[0]);
-                K_LOS[0][19] = -SK_LOS[1]*(P[19][0]*tempVar[8] + P[19][1]*tempVar[7] - P[19][3]*tempVar[6] + P[19][2]*tempVar[5] - P[19][4]*tempVar[4] + P[19][6]*tempVar[3] - P[19][9]*tempVar[1] + P[19][22]*tempVar[1] + P[19][5]*tempVar[0]);
-                K_LOS[0][20] = -SK_LOS[1]*(P[20][0]*tempVar[8] + P[20][1]*tempVar[7] - P[20][3]*tempVar[6] + P[20][2]*tempVar[5] - P[20][4]*tempVar[4] + P[20][6]*tempVar[3] - P[20][9]*tempVar[1] + P[20][22]*tempVar[1] + P[20][5]*tempVar[0]);
-                K_LOS[0][21] = -SK_LOS[1]*(P[21][0]*tempVar[8] + P[21][1]*tempVar[7] - P[21][3]*tempVar[6] + P[21][2]*tempVar[5] - P[21][4]*tempVar[4] + P[21][6]*tempVar[3] - P[21][9]*tempVar[1] + P[21][22]*tempVar[1] + P[21][5]*tempVar[0]);
+                K_LOS[0][16] = -SK_LOS[1]*(P[16][0]*tempVar[8] + P[16][1]*tempVar[7] - P[16][3]*tempVar[6] + P[16][2]*tempVar[5] - P[16][4]*tempVar[4] + P[16][6]*tempVar[3] - P[16][9]*tempVar[1] + P[16][5]*tempVar[0]);
+                K_LOS[0][17] = -SK_LOS[1]*(P[17][0]*tempVar[8] + P[17][1]*tempVar[7] - P[17][3]*tempVar[6] + P[17][2]*tempVar[5] - P[17][4]*tempVar[4] + P[17][6]*tempVar[3] - P[17][9]*tempVar[1] + P[17][5]*tempVar[0]);
+                K_LOS[0][18] = -SK_LOS[1]*(P[18][0]*tempVar[8] + P[18][1]*tempVar[7] - P[18][3]*tempVar[6] + P[18][2]*tempVar[5] - P[18][4]*tempVar[4] + P[18][6]*tempVar[3] - P[18][9]*tempVar[1] + P[18][5]*tempVar[0]);
+                K_LOS[0][19] = -SK_LOS[1]*(P[19][0]*tempVar[8] + P[19][1]*tempVar[7] - P[19][3]*tempVar[6] + P[19][2]*tempVar[5] - P[19][4]*tempVar[4] + P[19][6]*tempVar[3] - P[19][9]*tempVar[1] + P[19][5]*tempVar[0]);
+                K_LOS[0][20] = -SK_LOS[1]*(P[20][0]*tempVar[8] + P[20][1]*tempVar[7] - P[20][3]*tempVar[6] + P[20][2]*tempVar[5] - P[20][4]*tempVar[4] + P[20][6]*tempVar[3] - P[20][9]*tempVar[1] + P[20][5]*tempVar[0]);
+                K_LOS[0][21] = -SK_LOS[1]*(P[21][0]*tempVar[8] + P[21][1]*tempVar[7] - P[21][3]*tempVar[6] + P[21][2]*tempVar[5] - P[21][4]*tempVar[4] + P[21][6]*tempVar[3] - P[21][9]*tempVar[1] + P[21][5]*tempVar[0]);
             } else {
                 for (uint8_t i = 16; i <= 21; i++) {
                     K_LOS[0][i] = 0.0f;
                 }
             }
-            if (!inhibitGndHgtState) {
-                K_LOS[0][22] = -SK_LOS[1]*(P[22][0]*tempVar[8] + P[22][1]*tempVar[7] - P[22][3]*tempVar[6] + P[22][2]*tempVar[5] - P[22][4]*tempVar[4] + P[22][6]*tempVar[3] - P[22][9]*tempVar[1] + P[22][22]*tempVar[1] + P[22][5]*tempVar[0]);
-            } else {
-                K_LOS[0][22] = 0.0f;
-            }
 
             // calculate innovation variance and innovation for X axis observation
             varInnovOptFlow[0] = 1.0f/SK_LOS[0];
             innovOptFlow[0] = losPred[0] - flowRadXYcomp[0];
-            //printf("losPred.x=%5.3f, flowRadXYcomp.x=%5.3f\n", losPred[0], flowRadXYcomp[0]);
 
             // calculate intermediate common variables
             tempVar[0] = 2.0f*SH_LOS[1]*SK_LOS[8];
@@ -1933,53 +1748,46 @@ void AttPosEKF::FuseOptFlow()
             H_LOS[1][5] = SH_LOS[0]*SH_LOS[3]*(2*q0*q3 + 2*q1*q2);
             H_LOS[1][6] = -SH_LOS[0]*SH_LOS[3]*(2*q0*q2 - 2*q1*q3);
             H_LOS[1][9] = -tempVar[7];
-            H_LOS[1][22] = tempVar[7];
 
             // Calculate Kalman gains for Y LOS rate
-            K_LOS[1][0] = SK_LOS[0]*(P[0][0]*tempVar[1] + P[0][1]*tempVar[2] - P[0][2]*tempVar[3] + P[0][3]*tempVar[4] + P[0][5]*tempVar[5] - P[0][6]*tempVar[6] - P[0][9]*tempVar[7] + P[0][22]*tempVar[7] + P[0][4]*tempVar[8]);
-            K_LOS[1][1] = SK_LOS[0]*(P[1][0]*tempVar[1] + P[1][1]*tempVar[2] - P[1][2]*tempVar[3] + P[1][3]*tempVar[4] + P[1][5]*tempVar[5] - P[1][6]*tempVar[6] - P[1][9]*tempVar[7] + P[1][22]*tempVar[7] + P[1][4]*tempVar[8]);
-            K_LOS[1][2] = SK_LOS[0]*(P[2][0]*tempVar[1] + P[2][1]*tempVar[2] - P[2][2]*tempVar[3] + P[2][3]*tempVar[4] + P[2][5]*tempVar[5] - P[2][6]*tempVar[6] - P[2][9]*tempVar[7] + P[2][22]*tempVar[7] + P[2][4]*tempVar[8]);
-            K_LOS[1][3] = SK_LOS[0]*(P[3][0]*tempVar[1] + P[3][1]*tempVar[2] - P[3][2]*tempVar[3] + P[3][3]*tempVar[4] + P[3][5]*tempVar[5] - P[3][6]*tempVar[6] - P[3][9]*tempVar[7] + P[3][22]*tempVar[7] + P[3][4]*tempVar[8]);
-            K_LOS[1][4] = SK_LOS[0]*(P[4][0]*tempVar[1] + P[4][1]*tempVar[2] - P[4][2]*tempVar[3] + P[4][3]*tempVar[4] + P[4][5]*tempVar[5] - P[4][6]*tempVar[6] - P[4][9]*tempVar[7] + P[4][22]*tempVar[7] + P[4][4]*tempVar[8]);
-            K_LOS[1][5] = SK_LOS[0]*(P[5][0]*tempVar[1] + P[5][1]*tempVar[2] - P[5][2]*tempVar[3] + P[5][3]*tempVar[4] + P[5][5]*tempVar[5] - P[5][6]*tempVar[6] - P[5][9]*tempVar[7] + P[5][22]*tempVar[7] + P[5][4]*tempVar[8]);
-            K_LOS[1][6] = SK_LOS[0]*(P[6][0]*tempVar[1] + P[6][1]*tempVar[2] - P[6][2]*tempVar[3] + P[6][3]*tempVar[4] + P[6][5]*tempVar[5] - P[6][6]*tempVar[6] - P[6][9]*tempVar[7] + P[6][22]*tempVar[7] + P[6][4]*tempVar[8]);
-            K_LOS[1][7] = SK_LOS[0]*(P[7][0]*tempVar[1] + P[7][1]*tempVar[2] - P[7][2]*tempVar[3] + P[7][3]*tempVar[4] + P[7][5]*tempVar[5] - P[7][6]*tempVar[6] - P[7][9]*tempVar[7] + P[7][22]*tempVar[7] + P[7][4]*tempVar[8]);
-            K_LOS[1][8] = SK_LOS[0]*(P[8][0]*tempVar[1] + P[8][1]*tempVar[2] - P[8][2]*tempVar[3] + P[8][3]*tempVar[4] + P[8][5]*tempVar[5] - P[8][6]*tempVar[6] - P[8][9]*tempVar[7] + P[8][22]*tempVar[7] + P[8][4]*tempVar[8]);
-            K_LOS[1][9] = SK_LOS[0]*(P[9][0]*tempVar[1] + P[9][1]*tempVar[2] - P[9][2]*tempVar[3] + P[9][3]*tempVar[4] + P[9][5]*tempVar[5] - P[9][6]*tempVar[6] - P[9][9]*tempVar[7] + P[9][22]*tempVar[7] + P[9][4]*tempVar[8]);
-            K_LOS[1][10] = SK_LOS[0]*(P[10][0]*tempVar[1] + P[10][1]*tempVar[2] - P[10][2]*tempVar[3] + P[10][3]*tempVar[4] + P[10][5]*tempVar[5] - P[10][6]*tempVar[6] - P[10][9]*tempVar[7] + P[10][22]*tempVar[7] + P[10][4]*tempVar[8]);
-            K_LOS[1][11] = SK_LOS[0]*(P[11][0]*tempVar[1] + P[11][1]*tempVar[2] - P[11][2]*tempVar[3] + P[11][3]*tempVar[4] + P[11][5]*tempVar[5] - P[11][6]*tempVar[6] - P[11][9]*tempVar[7] + P[11][22]*tempVar[7] + P[11][4]*tempVar[8]);
-            K_LOS[1][12] = SK_LOS[0]*(P[12][0]*tempVar[1] + P[12][1]*tempVar[2] - P[12][2]*tempVar[3] + P[12][3]*tempVar[4] + P[12][5]*tempVar[5] - P[12][6]*tempVar[6] - P[12][9]*tempVar[7] + P[12][22]*tempVar[7] + P[12][4]*tempVar[8]);
+            K_LOS[1][0] = SK_LOS[0]*(P[0][0]*tempVar[1] + P[0][1]*tempVar[2] - P[0][2]*tempVar[3] + P[0][3]*tempVar[4] + P[0][5]*tempVar[5] - P[0][6]*tempVar[6] - P[0][9]*tempVar[7] + P[0][4]*tempVar[8]);
+            K_LOS[1][1] = SK_LOS[0]*(P[1][0]*tempVar[1] + P[1][1]*tempVar[2] - P[1][2]*tempVar[3] + P[1][3]*tempVar[4] + P[1][5]*tempVar[5] - P[1][6]*tempVar[6] - P[1][9]*tempVar[7] + P[1][4]*tempVar[8]);
+            K_LOS[1][2] = SK_LOS[0]*(P[2][0]*tempVar[1] + P[2][1]*tempVar[2] - P[2][2]*tempVar[3] + P[2][3]*tempVar[4] + P[2][5]*tempVar[5] - P[2][6]*tempVar[6] - P[2][9]*tempVar[7] + P[2][4]*tempVar[8]);
+            K_LOS[1][3] = SK_LOS[0]*(P[3][0]*tempVar[1] + P[3][1]*tempVar[2] - P[3][2]*tempVar[3] + P[3][3]*tempVar[4] + P[3][5]*tempVar[5] - P[3][6]*tempVar[6] - P[3][9]*tempVar[7] + P[3][4]*tempVar[8]);
+            K_LOS[1][4] = SK_LOS[0]*(P[4][0]*tempVar[1] + P[4][1]*tempVar[2] - P[4][2]*tempVar[3] + P[4][3]*tempVar[4] + P[4][5]*tempVar[5] - P[4][6]*tempVar[6] - P[4][9]*tempVar[7] + P[4][4]*tempVar[8]);
+            K_LOS[1][5] = SK_LOS[0]*(P[5][0]*tempVar[1] + P[5][1]*tempVar[2] - P[5][2]*tempVar[3] + P[5][3]*tempVar[4] + P[5][5]*tempVar[5] - P[5][6]*tempVar[6] - P[5][9]*tempVar[7] + P[5][4]*tempVar[8]);
+            K_LOS[1][6] = SK_LOS[0]*(P[6][0]*tempVar[1] + P[6][1]*tempVar[2] - P[6][2]*tempVar[3] + P[6][3]*tempVar[4] + P[6][5]*tempVar[5] - P[6][6]*tempVar[6] - P[6][9]*tempVar[7] + P[6][4]*tempVar[8]);
+            K_LOS[1][7] = SK_LOS[0]*(P[7][0]*tempVar[1] + P[7][1]*tempVar[2] - P[7][2]*tempVar[3] + P[7][3]*tempVar[4] + P[7][5]*tempVar[5] - P[7][6]*tempVar[6] - P[7][9]*tempVar[7] + P[7][4]*tempVar[8]);
+            K_LOS[1][8] = SK_LOS[0]*(P[8][0]*tempVar[1] + P[8][1]*tempVar[2] - P[8][2]*tempVar[3] + P[8][3]*tempVar[4] + P[8][5]*tempVar[5] - P[8][6]*tempVar[6] - P[8][9]*tempVar[7] + P[8][4]*tempVar[8]);
+            K_LOS[1][9] = SK_LOS[0]*(P[9][0]*tempVar[1] + P[9][1]*tempVar[2] - P[9][2]*tempVar[3] + P[9][3]*tempVar[4] + P[9][5]*tempVar[5] - P[9][6]*tempVar[6] - P[9][9]*tempVar[7] + P[9][4]*tempVar[8]);
+            K_LOS[1][10] = SK_LOS[0]*(P[10][0]*tempVar[1] + P[10][1]*tempVar[2] - P[10][2]*tempVar[3] + P[10][3]*tempVar[4] + P[10][5]*tempVar[5] - P[10][6]*tempVar[6] - P[10][9]*tempVar[7] + P[10][4]*tempVar[8]);
+            K_LOS[1][11] = SK_LOS[0]*(P[11][0]*tempVar[1] + P[11][1]*tempVar[2] - P[11][2]*tempVar[3] + P[11][3]*tempVar[4] + P[11][5]*tempVar[5] - P[11][6]*tempVar[6] - P[11][9]*tempVar[7] + P[11][4]*tempVar[8]);
+            K_LOS[1][12] = SK_LOS[0]*(P[12][0]*tempVar[1] + P[12][1]*tempVar[2] - P[12][2]*tempVar[3] + P[12][3]*tempVar[4] + P[12][5]*tempVar[5] - P[12][6]*tempVar[6] - P[12][9]*tempVar[7] + P[12][4]*tempVar[8]);
             // only height measurements are allowed to modify the Z bias state to improve the stability of the estimate
-            K_LOS[1][13] = 0.0f;//SK_LOS[0]*(P[13][0]*tempVar[1] + P[13][1]*tempVar[2] - P[13][2]*tempVar[3] + P[13][3]*tempVar[4] + P[13][5]*tempVar[5] - P[13][6]*tempVar[6] - P[13][9]*tempVar[7] + P[13][22]*tempVar[7] + P[13][4]*tempVar[8]);
+            K_LOS[1][13] = 0.0f;//SK_LOS[0]*(P[13][0]*tempVar[1] + P[13][1]*tempVar[2] - P[13][2]*tempVar[3] + P[13][3]*tempVar[4] + P[13][5]*tempVar[5] - P[13][6]*tempVar[6] - P[13][9]*tempVar[7] + P[13][4]*tempVar[8]);
             if (inhibitWindStates) {
-                K_LOS[1][14] = SK_LOS[0]*(P[14][0]*tempVar[1] + P[14][1]*tempVar[2] - P[14][2]*tempVar[3] + P[14][3]*tempVar[4] + P[14][5]*tempVar[5] - P[14][6]*tempVar[6] - P[14][9]*tempVar[7] + P[14][22]*tempVar[7] + P[14][4]*tempVar[8]);
-                K_LOS[1][15] = SK_LOS[0]*(P[15][0]*tempVar[1] + P[15][1]*tempVar[2] - P[15][2]*tempVar[3] + P[15][3]*tempVar[4] + P[15][5]*tempVar[5] - P[15][6]*tempVar[6] - P[15][9]*tempVar[7] + P[15][22]*tempVar[7] + P[15][4]*tempVar[8]);
+                K_LOS[1][14] = SK_LOS[0]*(P[14][0]*tempVar[1] + P[14][1]*tempVar[2] - P[14][2]*tempVar[3] + P[14][3]*tempVar[4] + P[14][5]*tempVar[5] - P[14][6]*tempVar[6] - P[14][9]*tempVar[7] + P[14][4]*tempVar[8]);
+                K_LOS[1][15] = SK_LOS[0]*(P[15][0]*tempVar[1] + P[15][1]*tempVar[2] - P[15][2]*tempVar[3] + P[15][3]*tempVar[4] + P[15][5]*tempVar[5] - P[15][6]*tempVar[6] - P[15][9]*tempVar[7] + P[15][4]*tempVar[8]);
             } else {
                 K_LOS[1][14] = 0.0f;
                 K_LOS[1][15] = 0.0f;
             }
             if (inhibitMagStates) {
-            K_LOS[1][16] = SK_LOS[0]*(P[16][0]*tempVar[1] + P[16][1]*tempVar[2] - P[16][2]*tempVar[3] + P[16][3]*tempVar[4] + P[16][5]*tempVar[5] - P[16][6]*tempVar[6] - P[16][9]*tempVar[7] + P[16][22]*tempVar[7] + P[16][4]*tempVar[8]);
-            K_LOS[1][17] = SK_LOS[0]*(P[17][0]*tempVar[1] + P[17][1]*tempVar[2] - P[17][2]*tempVar[3] + P[17][3]*tempVar[4] + P[17][5]*tempVar[5] - P[17][6]*tempVar[6] - P[17][9]*tempVar[7] + P[17][22]*tempVar[7] + P[17][4]*tempVar[8]);
-            K_LOS[1][18] = SK_LOS[0]*(P[18][0]*tempVar[1] + P[18][1]*tempVar[2] - P[18][2]*tempVar[3] + P[18][3]*tempVar[4] + P[18][5]*tempVar[5] - P[18][6]*tempVar[6] - P[18][9]*tempVar[7] + P[18][22]*tempVar[7] + P[18][4]*tempVar[8]);
-            K_LOS[1][19] = SK_LOS[0]*(P[19][0]*tempVar[1] + P[19][1]*tempVar[2] - P[19][2]*tempVar[3] + P[19][3]*tempVar[4] + P[19][5]*tempVar[5] - P[19][6]*tempVar[6] - P[19][9]*tempVar[7] + P[19][22]*tempVar[7] + P[19][4]*tempVar[8]);
-            K_LOS[1][20] = SK_LOS[0]*(P[20][0]*tempVar[1] + P[20][1]*tempVar[2] - P[20][2]*tempVar[3] + P[20][3]*tempVar[4] + P[20][5]*tempVar[5] - P[20][6]*tempVar[6] - P[20][9]*tempVar[7] + P[20][22]*tempVar[7] + P[20][4]*tempVar[8]);
-            K_LOS[1][21] = SK_LOS[0]*(P[21][0]*tempVar[1] + P[21][1]*tempVar[2] - P[21][2]*tempVar[3] + P[21][3]*tempVar[4] + P[21][5]*tempVar[5] - P[21][6]*tempVar[6] - P[21][9]*tempVar[7] + P[21][22]*tempVar[7] + P[21][4]*tempVar[8]);
+            K_LOS[1][16] = SK_LOS[0]*(P[16][0]*tempVar[1] + P[16][1]*tempVar[2] - P[16][2]*tempVar[3] + P[16][3]*tempVar[4] + P[16][5]*tempVar[5] - P[16][6]*tempVar[6] - P[16][9]*tempVar[7] + P[16][4]*tempVar[8]);
+            K_LOS[1][17] = SK_LOS[0]*(P[17][0]*tempVar[1] + P[17][1]*tempVar[2] - P[17][2]*tempVar[3] + P[17][3]*tempVar[4] + P[17][5]*tempVar[5] - P[17][6]*tempVar[6] - P[17][9]*tempVar[7] + P[17][4]*tempVar[8]);
+            K_LOS[1][18] = SK_LOS[0]*(P[18][0]*tempVar[1] + P[18][1]*tempVar[2] - P[18][2]*tempVar[3] + P[18][3]*tempVar[4] + P[18][5]*tempVar[5] - P[18][6]*tempVar[6] - P[18][9]*tempVar[7] + P[18][4]*tempVar[8]);
+            K_LOS[1][19] = SK_LOS[0]*(P[19][0]*tempVar[1] + P[19][1]*tempVar[2] - P[19][2]*tempVar[3] + P[19][3]*tempVar[4] + P[19][5]*tempVar[5] - P[19][6]*tempVar[6] - P[19][9]*tempVar[7] + P[19][4]*tempVar[8]);
+            K_LOS[1][20] = SK_LOS[0]*(P[20][0]*tempVar[1] + P[20][1]*tempVar[2] - P[20][2]*tempVar[3] + P[20][3]*tempVar[4] + P[20][5]*tempVar[5] - P[20][6]*tempVar[6] - P[20][9]*tempVar[7] + P[20][4]*tempVar[8]);
+            K_LOS[1][21] = SK_LOS[0]*(P[21][0]*tempVar[1] + P[21][1]*tempVar[2] - P[21][2]*tempVar[3] + P[21][3]*tempVar[4] + P[21][5]*tempVar[5] - P[21][6]*tempVar[6] - P[21][9]*tempVar[7] + P[21][4]*tempVar[8]);
             } else {
                 for (uint8_t i = 16; i <= 21; i++) {
                     K_LOS[1][i] = 0.0f;
                 }
             }
-            if (!inhibitGndHgtState) {
-                K_LOS[1][22] = SK_LOS[0]*(P[22][0]*tempVar[1] + P[22][1]*tempVar[2] - P[22][2]*tempVar[3] + P[22][3]*tempVar[4] + P[22][5]*tempVar[5] - P[22][6]*tempVar[6] - P[22][9]*tempVar[7] + P[22][22]*tempVar[7] + P[22][4]*tempVar[8]);
-            } else {
-                K_LOS[1][22] = 0.0f;
-            }
 
             // calculate variance and innovation for Y observation
             varInnovOptFlow[1] = 1.0f/SK_LOS[1];
             innovOptFlow[1] = losPred[1] - flowRadXYcomp[1];
-            //printf("losPred.y=%5.3f, flowRadXYcomp.y=%5.3f\n", losPred[1], flowRadXYcomp[1]);
 
         }
 
@@ -2020,7 +1828,6 @@ void AttPosEKF::FuseOptFlow()
                     {
                         KH[i][j] = 0.0f;
                     }
-                    KH[i][22] = K_LOS[obsIndex][i] * H_LOS[obsIndex][22];
                 }
                 for (uint8_t i = 0; i < n_states; i++)
                 {
@@ -2032,7 +1839,6 @@ void AttPosEKF::FuseOptFlow()
                             KHP[i][j] = KHP[i][j] + KH[i][k] * P[k][j];
                         }
                         KHP[i][j] = KHP[i][j] + KH[i][9] * P[9][j];
-                        KHP[i][j] = KHP[i][j] + KH[i][22] * P[22][j];
                     }
                 }
                 for (uint8_t i = 0; i <  n_states; i++)
@@ -2050,198 +1856,207 @@ void AttPosEKF::FuseOptFlow()
 }
 
 /*
-Estimation of optical flow sensor focal length scale factor using a single state EKF
-This fiter requires optical flow rates that are not motion compensated
-*/
-void AttPosEKF::FocalLengthScaleFactorEKF()
-{
-    Vector3f vel; // velocity of sensor relative to ground in NED axes
-    Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
-    Mat3f T_nb;   // transformation from nav to body axes
-    float range; // range from camera to centre of image
-    float losPred[2]; // predicted optical flow angular rate measurements
-    float SH_OPT[11]; // intermediate results for observation jacobian
-    float H_OPT[2]; //observation jacobian
-    float SK_OPT[3]; // intermediate results for Kalman gains
-    float K_OPT[2]; // Kalman gains
-    float q0; // quaternion at optical flow measurement time
-    float q1; // quaternion at optical flow measurement time
-    float q2; // quaternion at optical flow measurement time
-    float q3; // quaternion at optical flow measurement time
-    float R_OPT = 0.1; // optical flow LOS rate variance (rad^2) TODO should make this a function of the opt flow quality measure
-
-    // Perform sequential fusion of optical flow measurements only when in the air and flying level
-    float heightAboveGndEst = statesAtOptFlowTime[22] - statesAtOptFlowTime[9];
-    bool validHeight = heightAboveGndEst > 0.5f;
-    bool validTilt = Tnb.z.z > 0.866f;
-    if (validTilt && validHeight)
-    {
-        // Copy required states to local variable names
-        q0             = statesAtOptFlowTime[0];
-        q1             = statesAtOptFlowTime[1];
-        q2             = statesAtOptFlowTime[2];
-        q3             = statesAtOptFlowTime[3];
-        vel.x          = statesAtOptFlowTime[4];
-        vel.y          = statesAtOptFlowTime[5];
-        vel.z          = statesAtOptFlowTime[6];
-
-        // increment state variance with a small value to keep the estimation alive
-        fScaleFactorVar += 1e-9;
-
-        // calculate rotation from NED to body axes
-        float q00 = sq(q0);
-        float q11 = sq(q1);
-        float q22 = sq(q2);
-        float q33 = sq(q3);
-        float q01 = q0 * q1;
-        float q02 = q0 * q2;
-        float q03 = q0 * q3;
-        float q12 = q1 * q2;
-        float q13 = q1 * q3;
-        float q23 = q2 * q3;
-        T_nb.x.x = q00 + q11 - q22 - q33;
-        T_nb.y.y = q00 - q11 + q22 - q33;
-        T_nb.z.z = q00 - q11 - q22 + q33;
-        T_nb.y.x = 2*(q12 - q03);
-        T_nb.z.x = 2*(q13 + q02);
-        T_nb.x.y = 2*(q12 + q03);
-        T_nb.z.y = 2*(q23 - q01);
-        T_nb.x.z = 2*(q13 - q02);
-        T_nb.y.z = 2*(q23 + q01);
-
-        // estimate range to centre of image
-        range = heightAboveGndEst/T_nb.z.z;
-
-        // calculate relative velocity in sensor frame
-        relVelSensor = T_nb*vel;
-
-        // divide velocity by range, subtract body rates and apply scale factor to
-        // get predicted sensed angular optical rates relative to X and Y sensor axes
-        losPred[0] =  fScaleFactor*( relVelSensor.y/range) - omegaAtOptFlowTime[0];
-        losPred[1] =  fScaleFactor*(-relVelSensor.x/range) - omegaAtOptFlowTime[1];
-
-        // calculate innovations
-        fScaleFactorObsInnov[0] = losPred[0] - flowRadXY[0];
-        fScaleFactorObsInnov[1] = losPred[1] - flowRadXY[1];
-
-        //printf("fScaleFactor=%5.3f\n", fScaleFactor);
-
-        // calculate observation jacobians
-        SH_OPT[0] = sq(q2);
-        SH_OPT[1] = 2*q0*q3;
-        SH_OPT[2] = 1/range;
-        SH_OPT[3] = sq(q0);
-        SH_OPT[4] = sq(q1);
-        SH_OPT[5] = sq(q3);
-        SH_OPT[6] = (SH_OPT[0] + SH_OPT[3] - SH_OPT[4] - SH_OPT[5]);
-        SH_OPT[7] = (SH_OPT[0] - SH_OPT[3] - SH_OPT[4] + SH_OPT[5]);
-        SH_OPT[8] = (2*q0*q1 + 2*q2*q3);
-        SH_OPT[9] = (2*q0*q2 - 2*q1*q3);
-        SH_OPT[10]= 2*q1*q2;
-        SK_OPT[0] = vel.z*SH_OPT[9] + vel.x*SH_OPT[7] - vel.y*(SH_OPT[1] + SH_OPT[10]);
-        SK_OPT[1] = vel.z*SH_OPT[8] + vel.y*SH_OPT[6] - vel.x*(SH_OPT[1] - SH_OPT[10]);
-        SK_OPT[2] = sq(SH_OPT[2]);
-        H_OPT[0] = SH_OPT[2]*SK_OPT[1];
-        H_OPT[1] = SH_OPT[2]*SK_OPT[0];
-
-        // calculate innovation variances
-        fScaleFactorObsInnovVar[0] = (R_OPT + fScaleFactorVar*sq(SK_OPT[1])*SK_OPT[2]);
-        fScaleFactorObsInnovVar[1] = (R_OPT + fScaleFactorVar*sq(SK_OPT[0])*SK_OPT[2]);
-
-        // calculate Kalman gains
-        K_OPT[0] = (fScaleFactorVar*SH_OPT[2]*SK_OPT[1])/fScaleFactorObsInnovVar[0];
-        K_OPT[1] = (fScaleFactorVar*SH_OPT[2]*SK_OPT[0])/fScaleFactorObsInnovVar[1];
-
-        // Check the innovation for consistency and don't fuse if > 3Sigma
-        for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
-            if ((fScaleFactorObsInnov[obsIndex]*fScaleFactorObsInnov[obsIndex]/fScaleFactorObsInnovVar[obsIndex]) < 9.0f) {
-                // correct the state
-                fScaleFactor = ConstrainFloat(fScaleFactor - K_OPT[obsIndex] * fScaleFactorObsInnov[obsIndex], 0.1f, 10.0f);
-                // constrain the state
-
-                // correct the state variance
-                fScaleFactorVar = fScaleFactorVar - K_OPT[obsIndex] * H_OPT[obsIndex] * fScaleFactorVar;
-                // prevent the state variance from becoming negative
-                if (fScaleFactorVar < 0.0f) {
-                    fScaleFactorVar = 0.0f;
-                }
-            }
-        }
-    }
-}
-
-/*
 Estimation of optical flow sensor focal length scale factor and terrain height using a two state EKF
 This fiter requires optical flow rates that are not motion compensated
 Range to ground measurement is assumed to be via a narrow beam type sensor - eg laser
 */
 void AttPosEKF::OpticalFlowEKF()
 {
-    // Perform sequential fusion of optical flow and range finder measurements only when in the air and tilted less than 45 degrees
-    bool validTilt = Tnb.z.z > 0.71;
-    if (validTilt)
-    {
-        // propagate ground position state noise each time this is called using the difference in position since the last observations and an RMS gradient assumption
-        if (!inhibitGndHgtState) {
-            Popt[1][1] += (sq(statesAtOptFlowTime[7] - prevPosN) + sq(statesAtOptFlowTime[8] - prevPosE)) * sq(gndHgtSigma);
+    // propagate ground position state noise each time this is called using the difference in position since the last observations and an RMS gradient assumption
+    // limit distance to prevent intialisation afer bad gps causing bad numerical conditioning
+    if (!inhibitGndState) {
+        float distanceTravelledSq;
+        if (fuseRngData) {
+            distanceTravelledSq = sq(statesAtRngTime[7] - prevPosN) + sq(statesAtRngTime[8] - prevPosE);
+            prevPosN = statesAtRngTime[7];
+            prevPosE = statesAtRngTime[8];
+        } else if (fuseOptFlowData) {
+            distanceTravelledSq = sq(statesAtFlowTime[7] - prevPosN) + sq(statesAtFlowTime[8] - prevPosE);
+            prevPosN = statesAtFlowTime[7];
+            prevPosE = statesAtFlowTime[8];
+        } else {
+            return;
+        }
+        distanceTravelledSq = min(distanceTravelledSq, 100.0f);
+        Popt[1][1] += (distanceTravelledSq * sq(gndHgtSigma));
+    }
+
+    // fuse range finder data
+    if (fuseRngData) {
+        float range; // range from camera to centre of image
+        float q0; // quaternion at optical flow measurement time
+        float q1; // quaternion at optical flow measurement time
+        float q2; // quaternion at optical flow measurement time
+        float q3; // quaternion at optical flow measurement time
+        float R_RNG = 0.5; // range measurement variance (m^2) TODO make this a function of range and tilt to allow for sensor, alignment and AHRS errors
+
+        // Copy required states to local variable names
+        q0             = statesAtRngTime[0];
+        q1             = statesAtRngTime[1];
+        q2             = statesAtRngTime[2];
+        q3             = statesAtRngTime[3];
+
+        // calculate Kalman gains
+        float SK_RNG[3];
+        SK_RNG[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
+        SK_RNG[1] = 1/(R_RNG + Popt[1][1]/sq(SK_RNG[0]));
+        SK_RNG[2] = 1/SK_RNG[0];
+        float K_RNG[2];
+        if (!inhibitScaleState) {
+            K_RNG[0] = Popt[0][1]*SK_RNG[1]*SK_RNG[2];
+        } else {
+            K_RNG[0] = 0.0f;
+        }
+        if (!inhibitGndState) {
+            K_RNG[1] = Popt[1][1]*SK_RNG[1]*SK_RNG[2];
+        } else {
+            K_RNG[1] = 0.0f;
         }
 
-        // fuse range finder data
-        if (fuseRngData) {
-            float range; // range from camera to centre of image
-            float q0; // quaternion at optical flow measurement time
-            float q1; // quaternion at optical flow measurement time
-            float q2; // quaternion at optical flow measurement time
-            float q3; // quaternion at optical flow measurement time
-            float R_RNG = 0.5; // range measurement variance (m^2) TODO make this a function of range and tilt to allow for sensor, alignment and AHRS errors
+        // Calculate the innovation variance for data logging
+        varInnovRng = 1.0f/SK_RNG[1];
 
-            // Copy required states to local variable names
-            q0             = statesAtRngTime[0];
-            q1             = statesAtRngTime[1];
-            q2             = statesAtRngTime[2];
-            q3             = statesAtRngTime[3];
+        // constrain terrain height to be below the vehicle
+        flowStates[1] = maxf(flowStates[1], statesAtRngTime[9] + 0.5f);
 
-            // calculate inverse of 3,3 element in direction cosine matrix
-            float Tbn33_inv = 1.0f / sq(q0) - sq(q1) - sq(q2) + sq(q3);
+        // estimate range to centre of image
+        range = (flowStates[1] - statesAtRngTime[9]) * SK_RNG[2];
 
-            // constrain terrain height to be below the vehicle
+        // Calculate the measurement innovation
+        innovRng = range - rngMea;
+
+        // calculate the innovation consistency test ratio
+        auxRngTestRatio = sq(innovRng) / (sq(rngInnovGate) * varInnovRng);
+
+        // Check the innovation for consistency and don't fuse if out of bounds
+        if (auxRngTestRatio < 1.0f)
+        {
+            // correct the state
+            for (uint8_t i = 0; i < 2 ; i++) {
+                flowStates[i] -= K_RNG[i] * innovRng;
+            }
+            // constrain the states
+            flowStates[0] = ConstrainFloat(flowStates[0], 0.1f, 10.0f);
             flowStates[1] = maxf(flowStates[1], statesAtRngTime[9] + 0.5f);
 
-            // estimate range to centre of image
-            range = (flowStates[1] - statesAtRngTime[9]) * Tbn33_inv;
+            // correct the covariance matrix
+            float nextPopt[2][2];
+            nextPopt[0][0] = Popt[0][0] - (Popt[0][1]*Popt[1][0]*SK_RNG[1]*SK_RNG[2]) * SK_RNG[2];
+            nextPopt[0][1] = Popt[0][1] - (Popt[0][1]*Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * SK_RNG[2];
+            nextPopt[1][0] = -Popt[1][0]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * SK_RNG[2] - 1.0f);
+            nextPopt[1][1] = -Popt[1][1]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * SK_RNG[2] - 1.0f);
+            // prevent the state variances from becoming negative and maintain symmetry
+            Popt[0][0] = maxf(nextPopt[0][0],0.0f);
+            Popt[1][1] = maxf(nextPopt[1][1],0.0f);
+            Popt[0][1] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+            Popt[1][0] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
+        }
+    }
 
-            // calculate Kalman gains
-            float SK_RNG[3];
-            SK_RNG[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
-            SK_RNG[1] = 1/(R_RNG + Popt[1][1]/sq(SK_RNG[0]));
-            SK_RNG[2] = 1/SK_RNG[0];
-            float K_RNG[2];
-            K_RNG[0] = Popt[0][1]*SK_RNG[1]*SK_RNG[2];
-            K_RNG[1] = Popt[1][1]*SK_RNG[1]*SK_RNG[2];
+    if (fuseOptFlowData) {
+        Vector3f vel; // velocity of sensor relative to ground in NED axes
+        Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
+        float losPred[2]; // predicted optical flow angular rate measurements
+        float range; // range from camera to centre of image
+        float q0; // quaternion at optical flow measurement time
+        float q1; // quaternion at optical flow measurement time
+        float q2; // quaternion at optical flow measurement time
+        float q3; // quaternion at optical flow measurement time
 
-            // Calculate the innovation variance for data logging
-            varInnovRng = 1.0f/SK_RNG[1];
+        // propagate scale factor state noise
+        if (!inhibitScaleState) {
+            Popt[0][0] += 1e-9f;
+        } else {
+            Popt[0][0] = 0.0f;
+        }
 
-            // Calculate the measurement innovation
-            innovRng = range - rngMea;
+        // Copy required states to local variable names
+        q0             = statesAtFlowTime[0];
+        q1             = statesAtFlowTime[1];
+        q2             = statesAtFlowTime[2];
+        q3             = statesAtFlowTime[3];
+        vel.x          = statesAtFlowTime[4];
+        vel.y          = statesAtFlowTime[5];
+        vel.z          = statesAtFlowTime[6];
 
-            // Check the innovation for consistency and don't fuse if > 5Sigma
-            if ((sq(innovRng)*SK_RNG[1]) < 25.0f)
-            {
+        // constrain terrain height to be below the vehicle
+        flowStates[1] = maxf(flowStates[1], statesAtFlowTime[9] + 0.5f);
+
+        // estimate range to centre of image
+        range = (flowStates[1] - statesAtFlowTime[9]) / Tnb_flow.z.z;
+
+        // calculate relative velocity in sensor frame
+        relVelSensor = Tnb_flow*vel;
+
+        // divide velocity by range, subtract body rates and apply scale factor to
+        // get predicted sensed angular optical rates relative to X and Y sensor axes
+        losPred[0] =  flowStates[0]*( relVelSensor.y/range) - omegaAcrossFlowTime[0];
+        losPred[1] =  flowStates[0]*(-relVelSensor.x/range) - omegaAcrossFlowTime[1];
+
+        // calculate innovations
+        auxFlowObsInnov[0] = losPred[0] - flowRadXY[0];
+        auxFlowObsInnov[1] = losPred[1] - flowRadXY[1];
+
+        // calculate Kalman gains
+        float SH_OPT[6];
+        SH_OPT[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
+        SH_OPT[1] = vel.x*(sq(q0) + sq(q1) - sq(q2) - sq(q3)) + vel.y*(2*q0*q3 + 2*q1*q2) - vel.z*(2*q0*q2 - 2*q1*q3);
+        SH_OPT[2] = vel.y*(sq(q0) - sq(q1) + sq(q2) - sq(q3)) - vel.x*(2*q0*q3 - 2*q1*q2) + vel.z*(2*q0*q1 + 2*q2*q3);
+        SH_OPT[3] = statesAtFlowTime[9] - flowStates[1];
+        SH_OPT[4] = 1/sq(SH_OPT[3]);
+        SH_OPT[5] = 1/SH_OPT[3];
+        float SK_OPT[3];
+        SK_OPT[0] = 1.0f/(R_LOS + SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]));
+        SK_OPT[1] = 1.0f/(R_LOS + SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]));
+        SK_OPT[2] = SH_OPT[0];
+        float K_OPT[2][2];
+        if (!inhibitScaleState) {
+            K_OPT[0][0] = -SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+            K_OPT[0][1] =  SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+        } else {
+            K_OPT[0][0] = 0.0f;
+            K_OPT[0][1] = 0.0f;
+        }
+        if (!inhibitGndState) {
+            K_OPT[1][0] = -SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+            K_OPT[1][1] =  SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+        } else {
+            K_OPT[1][0] = 0.0f;
+            K_OPT[1][1] = 0.0f;
+        }
+
+
+        // calculate innovation variances
+        auxFlowObsInnovVar[0] = 1.0f/SK_OPT[1];
+        auxFlowObsInnovVar[1] = 1.0f/SK_OPT[0];
+
+        // Check the innovation for consistency and don't fuse if > threshold
+        for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
+
+            // calculate the innovation consistency test ratio
+            auxFlowTestRatio[obsIndex] = sq(auxFlowObsInnov[obsIndex]) / (sq(flowInnovGate) * auxFlowObsInnovVar[obsIndex]);
+            if (auxFlowTestRatio[obsIndex] < 1.0f) {
                 // correct the state
                 for (uint8_t i = 0; i < 2 ; i++) {
-                    flowStates[i] -= K_RNG[i] * innovRng;
+                    flowStates[i] -= K_OPT[i][obsIndex] * auxFlowObsInnov[obsIndex];
                 }
                 // constrain the states
                 flowStates[0] = ConstrainFloat(flowStates[0], 0.1f, 10.0f);
-                flowStates[1] = maxf(flowStates[1], statesAtRngTime[9] + 0.5f);
+                flowStates[1] = maxf(flowStates[1], statesAtFlowTime[9] + 0.5f);
 
                 // correct the covariance matrix
                 float nextPopt[2][2];
-                nextPopt[0][0] = Popt[0][0] - (Popt[0][1]*Popt[1][0]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv;
-                nextPopt[0][1] = Popt[0][1] - (Popt[0][1]*Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv;
-                nextPopt[1][0] = -Popt[1][0]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv - 1.0f);
-                nextPopt[1][1] = -Popt[1][1]*((Popt[1][1]*SK_RNG[1]*SK_RNG[2]) * Tbn33_inv - 1.0f);
+                if (obsIndex == 0) {
+                    nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
+                } else if (obsIndex == 1) {
+                    nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                    nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
+                }
                 // prevent the state variances from becoming negative and maintain symmetry
                 Popt[0][0] = maxf(nextPopt[0][0],0.0f);
                 Popt[1][1] = maxf(nextPopt[1][1],0.0f);
@@ -2249,127 +2064,8 @@ void AttPosEKF::OpticalFlowEKF()
                 Popt[1][0] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
             }
         }
-
-
-        if (fuseOptFlowData) {
-            Vector3f vel; // velocity of sensor relative to ground in NED axes
-            Vector3f relVelSensor; // velocity of sensor relative to ground in sensor axes
-            float losPred[2]; // predicted optical flow angular rate measurements
-            Mat3f T_nb;   // transformation from nav to body axes
-            float range; // range from camera to centre of image
-            float q0; // quaternion at optical flow measurement time
-            float q1; // quaternion at optical flow measurement time
-            float q2; // quaternion at optical flow measurement time
-            float q3; // quaternion at optical flow measurement time
-            float R_OPT = 0.5; // optical flow LOS rate variance (rad^2) TODO make this a function of the opt flow quality measure
-
-            // propagate scale factor state noise
-            Popt[0][0] += 1e-9f;
-
-            // Copy required states to local variable names
-            q0             = statesAtOptFlowTime[0];
-            q1             = statesAtOptFlowTime[1];
-            q2             = statesAtOptFlowTime[2];
-            q3             = statesAtOptFlowTime[3];
-            vel.x          = statesAtOptFlowTime[4];
-            vel.y          = statesAtOptFlowTime[5];
-            vel.z          = statesAtOptFlowTime[6];
-
-            // calculate rotation from NED to body axes
-            float q00 = sq(q0);
-            float q11 = sq(q1);
-            float q22 = sq(q2);
-            float q33 = sq(q3);
-            float q01 = q0 * q1;
-            float q02 = q0 * q2;
-            float q03 = q0 * q3;
-            float q12 = q1 * q2;
-            float q13 = q1 * q3;
-            float q23 = q2 * q3;
-            T_nb.x.x = q00 + q11 - q22 - q33;
-            T_nb.y.y = q00 - q11 + q22 - q33;
-            T_nb.z.z = q00 - q11 - q22 + q33;
-            T_nb.y.x = 2*(q12 - q03);
-            T_nb.z.x = 2*(q13 + q02);
-            T_nb.x.y = 2*(q12 + q03);
-            T_nb.z.y = 2*(q23 - q01);
-            T_nb.x.z = 2*(q13 - q02);
-            T_nb.y.z = 2*(q23 + q01);
-
-            // constrain terrain height to be below the vehicle
-            flowStates[1] = maxf(flowStates[1], statesAtOptFlowTime[9] + 0.5f);
-
-            // estimate range to centre of image
-            range = (flowStates[1] - statesAtOptFlowTime[9]) / T_nb.z.z;
-
-            // calculate relative velocity in sensor frame
-            relVelSensor = T_nb*vel;
-
-            // divide velocity by range, subtract body rates and apply scale factor to
-            // get predicted sensed angular optical rates relative to X and Y sensor axes
-            losPred[0] =  flowStates[0]*( relVelSensor.y/range) - omegaAtOptFlowTime[0];
-            losPred[1] =  flowStates[0]*(-relVelSensor.x/range) - omegaAtOptFlowTime[1];
-
-            // calculate innovations
-            fScaleFactorObsInnov[0] = losPred[0] - flowRadXY[0];
-            fScaleFactorObsInnov[1] = losPred[1] - flowRadXY[1];
-
-            // calculate Kalman gains
-            float SH_OPT[6];
-            SH_OPT[0] = sq(q0) - sq(q1) - sq(q2) + sq(q3);
-            SH_OPT[1] = vel.x*(sq(q0) + sq(q1) - sq(q2) - sq(q3)) + vel.y*(2*q0*q3 + 2*q1*q2) - vel.z*(2*q0*q2 - 2*q1*q3);
-            SH_OPT[2] = vel.y*(sq(q0) - sq(q1) + sq(q2) - sq(q3)) - vel.x*(2*q0*q3 - 2*q1*q2) + vel.z*(2*q0*q1 + 2*q2*q3);
-            SH_OPT[3] = statesAtOptFlowTime[9] - flowStates[1];
-            SH_OPT[4] = 1/sq(SH_OPT[3]);
-            SH_OPT[5] = 1/SH_OPT[3];
-            float SK_OPT[3];
-            SK_OPT[0] = 1/(R_OPT + SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]));
-            SK_OPT[1] = 1/(R_OPT + SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*(Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]) + flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*(Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5] + Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]));
-            SK_OPT[2] = SH_OPT[0];
-            float K_OPT[2][2];
-            K_OPT[0][0] = -SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-            K_OPT[0][1] = SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-            K_OPT[1][0] = -SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-            K_OPT[1][1] = SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-
-
-            // calculate innovation variances
-            fScaleFactorObsInnovVar[0] = 1.0f/SK_OPT[1];
-            fScaleFactorObsInnovVar[1] = 1.0f/SK_OPT[0];
-
-            // Check the innovation for consistency and don't fuse if > 3Sigma
-            for (uint8_t obsIndex = 0; obsIndex < 2; obsIndex++) {
-                if ((fScaleFactorObsInnov[obsIndex]*fScaleFactorObsInnov[obsIndex]/fScaleFactorObsInnovVar[obsIndex]) < 9.0f) {
-                    // correct the state
-                    for (uint8_t i = 0; i < 2 ; i++) {
-                        flowStates[i] -= K_OPT[i][obsIndex] * fScaleFactorObsInnov[obsIndex];
-                    }
-                    // constrain the states
-                    flowStates[0] = ConstrainFloat(flowStates[0], 0.1f, 10.0f);
-                    flowStates[1] = maxf(flowStates[1], statesAtOptFlowTime[9] + 0.5f);
-
-                    // correct the covariance matrix
-                    float nextPopt[2][2];
-                    if (obsIndex == 0) {
-                        nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[0][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[1]*(Popt[1][0]*SH_OPT[2]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[2]*SH_OPT[4]*SK_OPT[2]);
-                    } else if (obsIndex == 1) {
-                        nextPopt[0][0] = - Popt[0][0]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][0]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[0][1] = - Popt[0][1]*(SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[1][1]*flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[0][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[0][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[1][0] = - Popt[1][0]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-                        nextPopt[1][1] = - Popt[1][1]*(flowStates[0]*SH_OPT[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]) - 1) - Popt[0][1]*SH_OPT[0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[0]*(Popt[1][0]*SH_OPT[1]*SH_OPT[5]*SK_OPT[2] + Popt[1][1]*flowStates[0]*SH_OPT[1]*SH_OPT[4]*SK_OPT[2]);
-                    }
-                    // prevent the state variances from becoming negative and maintain symmetry
-                    Popt[0][0] = maxf(nextPopt[0][0],0.0f);
-                    Popt[1][1] = maxf(nextPopt[1][1],0.0f);
-                    Popt[0][1] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
-                    Popt[1][0] = 0.5f * (nextPopt[0][1] + nextPopt[1][0]);
-                }
-            }
-        }
     }
+
 }
 
 void AttPosEKF::zeroCols(float (&covMat)[n_states][n_states], uint8_t first, uint8_t last)
@@ -2393,6 +2089,15 @@ float AttPosEKF::sq(float valIn)
 float AttPosEKF::maxf(float valIn1, float valIn2)
 {
     if (valIn1 >= valIn2) {
+        return valIn1;
+    } else {
+        return valIn2;
+    }
+}
+
+float AttPosEKF::min(float valIn1, float valIn2)
+{
+    if (valIn1 <= valIn2) {
         return valIn1;
     } else {
         return valIn2;
@@ -2625,9 +2330,22 @@ void AttPosEKF::OnGroundCheck()
     }
     // don't update terrain offset state if there is no range finder and flying at low velocity or without GPS
     if ((onGround || !useGPS) && !useRangeFinder) {
-        inhibitGndHgtState = true;
+        inhibitGndState = true;
     } else {
-        inhibitGndHgtState = false;
+        inhibitGndState = false;
+    }
+    // don't update terrain offset state if there is no range finder and flying at low velocity, or without GPS, as it is poorly observable
+    if ((onGround || (globalTimeStamp_ms - lastFixTime_ms) > 1000) && !useRangeFinder) {
+        inhibitGndState = true;
+    } else {
+        inhibitGndState = false;
+    }
+    // Don't update focal length offset state if there is no range finder or optical flow sensor
+    // we need both sensors to do this estimation
+    if (!useRangeFinder || !useOpticalFlow) {
+        inhibitScaleState = true;
+    } else {
+        inhibitScaleState = false;
     }
 }
 
@@ -2664,7 +2382,6 @@ void AttPosEKF::CovarianceInit()
     P[19][19] = sq(0.02f);
     P[20][20] = P[19][19];
     P[21][21] = P[19][19];
-    P[22][22] = 0.0f;
 
     fScaleFactorVar = 0.001f; // focal length scale factor variance
     Popt[0][0] = 0.001f;
@@ -2705,7 +2422,6 @@ void AttPosEKF::ConstrainVariances()
     // 14-15: Wind Vector  - m/sec (North,East)
     // 16-18: Earth Magnetic Field Vector - gauss (North, East, Down)
     // 19-21: Body Magnetic Field Vector - gauss (X,Y,Z)
-    // 22: Terrain  offset - m
 
     // Constrain quaternion variances
     for (unsigned i = 0; i <= 3; i++) {
@@ -2745,8 +2461,6 @@ void AttPosEKF::ConstrainVariances()
         P[i][i] = ConstrainFloat(P[i][i], 0.0f, 1.0f);
     }
 
-    // Constrain terrain offset variance
-    P[22][22] = ConstrainFloat(P[22][22], 0.0f, 10000.0f);
 }
 
 void AttPosEKF::ConstrainStates()
@@ -2764,7 +2478,6 @@ void AttPosEKF::ConstrainStates()
     // 14-15: Wind Vector  - m/sec (North,East)
     // 16-18: Earth Magnetic Field Vector - gauss (North, East, Down)
     // 19-21: Body Magnetic Field Vector - gauss (X,Y,Z)
-    // 22: Terrain  offset - m
 
     // Constrain quaternion
     for (unsigned i = 0; i <= 3; i++) {
@@ -2807,9 +2520,6 @@ void AttPosEKF::ConstrainStates()
     for (unsigned i = 19; i <= 21; i++) {
         states[i] = ConstrainFloat(states[i], -0.5f, 0.5f);
     }
-
-    // Constrain terrain offset
-    states[22] = ConstrainFloat(states[22], states[9] + 0.5f, 1000.0f);
 
 }
 
@@ -3265,14 +2975,13 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
     states[19] = magBias.x; // Magnetic Field Bias X
     states[20] = magBias.y; // Magnetic Field Bias Y
     states[21] = magBias.z; // Magnetic Field Bias Z
-    states[22] = 0.0f; // terrain height
 
     ResetVelocity();
     ResetPosition();
     ResetHeight();
 
     // initialise focal length scale factor estimator states
-    fScaleFactor = 1.0f;
+    flowStates[0] = 1.0f;
 
     statesInitialised = true;
 
@@ -3325,7 +3034,7 @@ void AttPosEKF::ZeroVariables()
     }
 
     // initialise the variables for the focal length scale factor to unity
-    fScaleFactor = 1.0f;
+    flowStates[0] = 1.0f;
 
     correctedDelAng.zero();
     summedDelAng.zero();
