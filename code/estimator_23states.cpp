@@ -187,6 +187,9 @@ void AttPosEKF::UpdateStrapdownEquationsNED()
 
     // Constrain states (to protect against filter divergence)
     ConstrainStates();
+
+    // update filtered IMU time step length
+    dtIMUfilt = 0.99f * dtIMUfilt + 0.01f * dtIMU;
 }
 
 void AttPosEKF::CovariancePrediction(float dt)
@@ -2904,7 +2907,7 @@ void AttPosEKF::ZeroVariables()
 {
 
     // Initialize on-init initialized variables
-
+    dtIMUfilt = ConstrainFloat(dtIMU, 0.001f, 0.02f);
     storeIndex = 0;
 
     // Do the data structure init
