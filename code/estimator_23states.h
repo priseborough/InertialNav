@@ -77,6 +77,7 @@ public:
         R_LOS = 0.03f; // optical flow measurement noise variance (rad/sec)^2
         flowInnovGate = 2.0f; // number of standard deviations applied to the optical flow innovation consistency check
         rngInnovGate = 5.0f; // number of standard deviations applied to the rnage finder innovation consistency check
+        minFlowRng = 0.3f; //minimum range between ground and flow sensor
     }
 
     struct mag_state_struct {
@@ -233,6 +234,7 @@ public:
     float auxRngTestRatio;                  // ratio of range observation innovations to fault threshold
     float flowInnovGate;                    // number of standard deviations used for the innovation consistency check
     float rngInnovGate;                     // number of standard deviations used for the innovation consistency check
+    float minFlowRng;                       // minimum range over which to fuse optical flow measurements
 
 void  UpdateStrapdownEquationsNED();
 
