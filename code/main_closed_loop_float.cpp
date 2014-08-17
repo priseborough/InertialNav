@@ -477,7 +477,7 @@ int main(int argc, char *argv[])
 
                  // fuse GPS
                 // NOT FOR FLIGHT : GPS is not used after 10sec
-                if (_ekf->useGPS && IMUmsec < 100000) {
+                if (_ekf->useGPS && IMUmsec < 10000) {
                     _ekf->fuseVelData = true;
                     _ekf->fusePosData = true;
                     // recall states stored at time of measurement after adjusting for delays
