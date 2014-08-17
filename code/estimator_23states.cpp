@@ -25,7 +25,7 @@ AttPosEKF::AttPosEKF()
     useGPS = true;
     useAirspeed = true;
     useCompass = true;
-    useRangeFinder = true;
+    useRangeFinder = false;
     useOpticalFlow = true;
     numericalProtection = true;
     refSet = false;
@@ -1614,7 +1614,7 @@ void AttPosEKF::FuseOptFlow()
     // Perform sequential fusion of optical flow measurements only with valid tilt and height
     flowStates[1] = maxf(flowStates[1], statesAtFlowTime[9] + 0.5f);
     float heightAboveGndEst = flowStates[1] - statesAtFlowTime[9];
-    bool validTilt = Tnb.z.z > 0.7f;
+    bool validTilt = Tnb.z.z > 0.71f;
     if (validTilt)
     {
         // Sequential fusion of XY components.
@@ -2495,7 +2495,8 @@ void AttPosEKF::ConstrainStates()
     }
 
     // Constrain altitude
-    states[9] = ConstrainFloat(states[9], -4.0e4f, 1.0e4f);
+    // NOT FOR FLIGHT : Upper value of 0.0 is a temporary fix to get around lack of range finder data during development testing
+    states[9] = ConstrainFloat(states[9], -4.0e4f, 0.0f);
 
     // Angle bias limit - set to 8 degrees / sec
     for (unsigned i = 10; i <= 12; i++) {

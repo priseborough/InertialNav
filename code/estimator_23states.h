@@ -74,7 +74,7 @@ public:
         accelProcessNoise = 0.5f;
 
         gndHgtSigma  = 0.1f; // terrain gradient 1-sigma
-        R_LOS = 0.5f; // optical flow measurement noise variance (rad/sec)^2
+        R_LOS = 0.03f; // optical flow measurement noise variance (rad/sec)^2
         flowInnovGate = 2.0f; // number of standard deviations applied to the optical flow innovation consistency check
         rngInnovGate = 5.0f; // number of standard deviations applied to the rnage finder innovation consistency check
     }

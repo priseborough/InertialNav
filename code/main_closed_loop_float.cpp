@@ -40,7 +40,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
-uint32_t msecOptFlowDelay = 5;
+uint32_t msecOptFlowDelay = 55;
 
 // IMU input data variables
 float imuIn;
@@ -106,6 +106,10 @@ float flowRawPixelY;       // in pixels
 float flowDistance;        // in meters
 float flowQuality;   // distance normalized between 0 and 1
 float flowSensorId;        // sensor ID
+float flowGyroX = 0.0f;
+float flowGyroY = 0.0f;
+float flowGyroBiasX = 0.0f;
+float flowGyroBiasY = 0.0f;
 
 float flowRadX;
 float flowRadY;
@@ -354,11 +358,20 @@ int main(int argc, char *argv[])
             }
 
             // Fuse optical flow measurements
-            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.95f && _ekf->Tnb.z.z > 0.9f)
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.5 && _ekf->Tnb.z.z > 0.71f)
             {
                 // recall states and angular rates stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtFlowTime, (IMUmsec - msecOptFlowDelay));
                 _ekf->RecallOmega(_ekf->omegaAcrossFlowTime, (IMUmsec - 2*msecOptFlowDelay));
+
+                // Calculate bias errorsfor flow sensor internal gyro
+                flowGyroBiasX = 0.999f * flowGyroBiasX + 0.001f * (flowGyroX - _ekf->omegaAcrossFlowTime[0]);
+                flowGyroBiasY = 0.999f * flowGyroBiasY + 0.001f * (flowGyroY - _ekf->omegaAcrossFlowTime[1]);
+                printf("flowGyroBiasX = %e, flowGyroBiasY = %e\n", flowGyroBiasX, flowGyroBiasY);
+
+                //use sensor internal rates corrected for bias errors
+                _ekf->omegaAcrossFlowTime[0] = flowGyroX - flowGyroBiasX;
+                _ekf->omegaAcrossFlowTime[1] = flowGyroY - flowGyroBiasY;
 
                 // calculate rotation matrix
                 // Copy required states to local variable names
@@ -388,9 +401,10 @@ int main(int argc, char *argv[])
 
                 // scale from raw pixel flow rate to radians/second
                 //float scaleFactor = 0.03f; // best value for quad106.zip data using the 16 mm lens
-                float scaleFactor = 0.06f; // best value for InputFilesPX4_flow.zip data
-                flowRadX = -flowRawPixelX * scaleFactor;
-                flowRadY = -flowRawPixelY * scaleFactor;
+                //float scaleFactor = 0.06f; // best value for InputFilesPX4_flow.zip data
+                float scaleFactor = 0.882f; // best value for quad123.zip data which outputs flow rates that have already been scaled to rad/sec
+                flowRadX = flowRawPixelX * scaleFactor;
+                flowRadY = flowRawPixelY * scaleFactor;
 
                 // calculate motion compensated angular flow rates used for fusion in the main nav filter
                 _ekf->flowRadXYcomp[0] = flowRadX/_ekf->flowStates[0] + _ekf->omegaAcrossFlowTime[0];
@@ -403,8 +417,9 @@ int main(int argc, char *argv[])
                 // perform optical flow fusion
                 _ekf->fuseOptFlowData = true;
                 _ekf->fuseRngData = false;
-                // don't try to estimate focal length scale factor if GPS is not being used.
-                if (_ekf->useGPS) {
+
+                // don't try to estimate focal length scale factor if GPS is not being used or there is no range finder.
+                if (_ekf->useGPS || _ekf->useRangeFinder) {
                     _ekf->OpticalFlowEKF();
                 }
                 _ekf->FuseOptFlow();
@@ -461,7 +476,8 @@ int main(int argc, char *argv[])
                 _ekf->posNE[1] = posNED[1];
 
                  // fuse GPS
-                if (_ekf->useGPS) {
+                // NOT FOR FLIGHT : GPS is not used after 10sec
+                if (_ekf->useGPS && IMUmsec < 100000) {
                     _ekf->fuseVelData = true;
                     _ekf->fusePosData = true;
                     // recall states stored at time of measurement after adjusting for delays
@@ -905,7 +921,7 @@ void readFlowData()
     if (pInFlowFile <= 0)
         return;
 
-    float temp[6];
+    float temp[8];
 
     // read in current value
     while (flowTimestamp <= IMUtimestamp)
@@ -918,7 +934,7 @@ void readFlowData()
         }
         if (!endOfData)
         {
-            // timestamp, rawx, rawy, distance, quality, sensor id
+            // timestamp, rawx, rawy, distance, quality, sensor id, flowGyroX, flowGyroY
             flowTimestamp  = temp[0];       // in milliseconds
             flowRawPixelX = temp[1];        // in pixels
             flowRawPixelY = temp[2];        // in pixels
@@ -930,6 +946,8 @@ void readFlowData()
                 flowQuality = temp[4] / 255;    // quality normalized between 0 and 1
             }
             flowSensorId = temp[5];         // sensor ID
+            flowGyroX = temp[6];
+            flowGyroY = temp[7];
 
             flowMsec = temp[0];
         }
