@@ -141,6 +141,7 @@ public:
     Vector3f dVelIMU;
     Vector3f dAngIMU;
     float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
+    float dtVelPos; // time lapsed since the last position / velocity measurement (seconds)
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output
@@ -172,8 +173,6 @@ public:
     unsigned covSkipCount; // Number of state prediction frames (IMU daya updates to skip before doing the covariance prediction
 
     // GPS input data variables
-    float gpsCourse;
-    float gpsVelD;
     double gpsLat;
     double gpsLon;
     float gpsHgt;
@@ -252,7 +251,7 @@ int RecallStates(float *statesForFusion, uint64_t msec);
 
 void ResetStoredStates();
 
-void quat2Tbn(Mat3f &Tbn, const float (&quat)[4]);
+void quat2Tbn(Mat3f &TBodyNed, const float (&quat)[4]);
 
 void calcEarthRateNED(Vector3f &omega, float latitude);
 
