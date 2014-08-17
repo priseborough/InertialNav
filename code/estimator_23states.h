@@ -221,9 +221,7 @@ public:
 
 void updateDtGpsFilt(float dt);
 
-void updateDtBaroFilt(float dt);
-
-void updateDtVelPosFilt(float dt);
+void updateDtHgtFilt(float dt);
 
 void  UpdateStrapdownEquationsNED();
 
@@ -312,6 +310,8 @@ bool StatesNaN();
 void InitializeDynamic(float (&initvelNED)[3], float declination);
 
 protected:
+
+void updateDtVelPosFilt(float dt);
 
 bool FilterHealthy();
 

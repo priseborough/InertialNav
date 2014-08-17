@@ -655,6 +655,10 @@ void readGpsData()
 
         if (!endOfData && (tempGps[1] > 2) /* 3 or more */)
         {
+            float now = tempGps[0];
+            float gpsDt = (now - GPStimestamp);
+            _ekf->updateDtGpsFilt(gpsDt);
+
             GPStimestamp  = tempGps[0];
             GPSmsec = tempGpsPrev[2];
             _ekf->GPSstatus = tempGpsPrev[1];
@@ -810,7 +814,11 @@ void readAirData()
         }
         if (!endOfData)
         {
-            ADStimestamp  = tempAds[0];
+            float now = tempAds[0];
+            float hgtDt = (now - ADStimestamp);
+            _ekf->updateDtHgtFilt(hgtDt);
+
+            ADStimestamp  = now;
             ADSmsec = tempAdsPrev[1];
             _ekf->VtasMeas = _ekf->EAS2TAS*tempAdsPrev[7];
             _ekf->baroHgt = tempAdsPrev[8];

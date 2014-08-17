@@ -981,7 +981,7 @@ void AttPosEKF::updateDtGpsFilt(float dt)
     dtGpsFilt = ConstrainFloat(dt, 0.001f, 2.0f) * 0.05f + dtGpsFilt * 0.95f;
 }
 
-void AttPosEKF::updateDtBaroFilt(float dt)
+void AttPosEKF::updateDtHgtFilt(float dt)
 {
     dtHgtFilt = ConstrainFloat(dt, 0.001f, 2.0f) * 0.05f + dtHgtFilt * 0.95f;
 }
