@@ -24,7 +24,7 @@ ax1.set_title("Airspeed / Pitch Estimated / Pitch Onboard")
 ax1.set_xlabel('time (s)')
 ax1.set_ylabel('Airspeed (m/s)')
 # ax1.set_ylim([-0.0025,0.0025])
-ax1.plot(adata['time'], adata['airspeed'], color='r', label='Pn')
+ax1.plot(adata['time'], adata['airspeed'], color='r', label='airspeed')
 
 ax2 = fig.add_subplot(312)
   
@@ -42,5 +42,12 @@ ax3.set_ylabel('Pitch onboard (deg)')
 #ax3.plot(data['time'], data['pitch'], color='g', label='pitch')
 #ax3.plot(data['time'], data['pitch_onb'], color='b', label='pitch_onb')
 ax3.plot(vdata['time'], vdata['pitch_int'], color='r', label='pitch integral')
+
+handles, labels = ax1.get_legend_handles_labels()
+ax1.legend(handles, labels, loc=2)
+handles, labels = ax2.get_legend_handles_labels()
+ax2.legend(handles, labels, loc=2)
+handles, labels = ax3.get_legend_handles_labels()
+ax3.legend(handles, labels, loc=2)
 
 plt.show()
