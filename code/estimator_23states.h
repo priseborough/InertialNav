@@ -116,6 +116,9 @@ public:
     float storedStates[n_states][data_buffer_size]; // state vectors stored for the last 50 time steps
     uint32_t statetimeStamp[data_buffer_size]; // time stamp for each state vector stored
 
+    // Times
+    uint64_t lastVelPosFusion;  // the time of the last velocity fusion, in the standard time unit of the filter
+
     float statesAtVelTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
     float statesAtPosTime[n_states]; // States at the effective measurement time for posNE and velNED measurements
     float statesAtHgtTime[n_states]; // States at the effective measurement time for the hgtMea measurement
@@ -140,8 +143,12 @@ public:
     Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
     Vector3f dVelIMU;
     Vector3f dAngIMU;
-    float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec)
-    float dtVelPos; // time lapsed since the last position / velocity measurement (seconds)
+    float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec), this may have significant jitter
+    float dtIMUfilt; // average time between IMU measurements (sec)
+    float dtVelPos; // time lapsed since the last position / velocity fusion (seconds), this may have significant jitter
+    float dtVelPosFilt; // average time between position / velocity fusion steps
+    float dtHgtFilt; // average time between height measurement updates
+    float dtGpsFilt; // average time between gps measurement updates
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output
@@ -212,6 +219,11 @@ public:
 
     unsigned storeIndex;
 
+void updateDtGpsFilt(float dt);
+
+void updateDtBaroFilt(float dt);
+
+void updateDtVelPosFilt(float dt);
 
 void  UpdateStrapdownEquationsNED();
 
@@ -314,4 +326,6 @@ void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, fl
 };
 
 uint32_t millis();
+
+uint64_t getMicros();
 

@@ -16,7 +16,8 @@ CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -Werror=format-security \
 			   -Werror=array-bounds \
 			   -Wfatal-errors \
-			   -Wno-missing-field-initializers
+			   -Wno-missing-field-initializers \
+			   -std=gnu++0x
 
 ODIR=obj
 LDIR =../lib

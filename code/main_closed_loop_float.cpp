@@ -45,6 +45,7 @@ float imuIn;
 float tempImu[8];
 float IMUtimestamp;
 static uint32_t IMUmsec = 0;
+static uint64_t IMUusec = 0;
 
 // Magnetometer input data variables
 float magIn;
@@ -100,6 +101,8 @@ uint64_t msecStartTime;
 uint64_t msecEndTime;
 
 float gpsGndSpd;
+float gpsCourse;
+float gpsVelD;
 
 AttPosEKF                   *_ekf;
 
@@ -211,6 +214,7 @@ int main(int argc, char *argv[])
 
     bool timeoutTested = false;
     bool nanTested = false;
+    bool hgtTested = false;
 
     while (true) {
 
@@ -234,6 +238,13 @@ int main(int argc, char *argv[])
                 nreads = 20;
                 timeoutTested = true;
                 printf("WARNING: TRIGGERING SENSOR TIMEOUT ON PURPOSE!\n");
+            }
+
+            // Trigger a NaN altitude at 12.5% of the log
+            if (!hgtTested && (IMUmsec > (msecEndTime - msecStartTime) / 8)) {
+                _ekf->hgtMea = 0.0f / 0.0f;
+                hgtTested = true;
+                printf("WARNING: TRIGGERING NaN ALT MEASUREMENT ON PURPOSE!\n");
             }
         }
 
@@ -278,14 +289,24 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
+                    _ekf->calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
                 }
                 _ekf->InitialiseFilter(_ekf->velNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, 0.0f);
-            }
 
-            // If valid IMU data and states initialised, predict states and covariances
-            if (_ekf->statesInitialised)
-            {
+            } else if ((IMUmsec > msecAlignTime) && !_ekf->statesInitialised) {
+
+                float initVelNED[3];
+
+                initVelNED[0] = 0.0f;
+                initVelNED[1] = 0.0f;
+                initVelNED[2] = 0.0f;
+                _ekf->posNE[0] = posNED[0];
+                _ekf->posNE[1] = posNED[1];
+
+                _ekf->InitialiseFilter(initVelNED, 0.0, 0.0, 0.0f, 0.0f);
+
+            } else if (_ekf->statesInitialised) {
+
                 // Run the strapdown INS equations every IMU update
                 _ekf->UpdateStrapdownEquationsNED();
                 #if 1
@@ -314,198 +335,198 @@ int main(int argc, char *argv[])
                     _ekf->summedDelVel.zero();
                     dt = 0.0f;
                 }
-            }
 
-            // Fuse GPS Measurements
-            if (newDataGps && _ekf->statesInitialised)
-            {
-                // Convert GPS measurements to Pos NE, hgt and Vel NED
-                if (pGpsRawINFile > 0)
+                // Fuse GPS Measurements
+                if (newDataGps)
                 {
-                    _ekf->velNED[0] = gpsRaw[4];
-                    _ekf->velNED[1] = gpsRaw[5];
-                    _ekf->velNED[2] = gpsRaw[6];
+                    // Convert GPS measurements to Pos NE, hgt and Vel NED
+                    if (pGpsRawINFile > 0)
+                    {
+                        _ekf->velNED[0] = gpsRaw[4];
+                        _ekf->velNED[1] = gpsRaw[5];
+                        _ekf->velNED[2] = gpsRaw[6];
+                    }
+                    else
+                    {
+                        _ekf->calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                    }
+                    _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+
+                    if (pOnboardFile > 0) {
+                        _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+
+                    }
+
+                    _ekf->posNE[0] = posNED[0];
+                    _ekf->posNE[1] = posNED[1];
+                     // set fusion flags
+                    _ekf->fuseVelData = true;
+                    _ekf->fusePosData = true;
+                    // recall states stored at time of measurement after adjusting for delays
+                    _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
+                    _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
+                    // run the fusion step
+                    _ekf->FuseVelposNED();
                 }
                 else
                 {
-                    _ekf->calcvelNED(_ekf->velNED, _ekf->gpsCourse, gpsGndSpd, _ekf->gpsVelD);
-                }
-                _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
-
-                if (pOnboardFile > 0) {
-                    _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
-
+                    _ekf->fuseVelData = false;
+                    _ekf->fusePosData = false;
                 }
 
-                _ekf->posNE[0] = posNED[0];
-                _ekf->posNE[1] = posNED[1];
-                 // set fusion flags
-                _ekf->fuseVelData = true;
-                _ekf->fusePosData = true;
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
-                _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
-                // run the fusion step
-                _ekf->FuseVelposNED();
-            }
-            else
-            {
-                _ekf->fuseVelData = false;
-                _ekf->fusePosData = false;
-            }
-
-            // Fuse Optical Flow Measurements
-            if (newOptFlowData && _ekf->statesInitialised)
-            {
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                _ekf->fuseOptFlowData = true;
-                _ekf->FuseOptFlow();
-                _ekf->FuseOptFlow();
-            }
-            else
-            {
-                _ekf->fuseOptFlowData = false;
-            }
-
-            if (newAdsData && _ekf->statesInitialised)
-            {
-                // Could use a blend of GPS and baro alt data if desired
-                _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
-                _ekf->fuseHgtData = true;
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
-                // run the fusion step
-                _ekf->FuseVelposNED();
-            }
-            else
-            {
-                _ekf->fuseHgtData = false;
-            }
-
-            // Fuse RangeFinder Measurements
-            if (newRngData && _ekf->statesInitialised)
-            {
-                // recall states stored at time of measurement after adjusting for delays
-                _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-                _ekf->fuseRngData = true;
-                _ekf->FuseRangeFinder();
-            }
-            else
-            {
-                _ekf->fuseRngData = false;
-            }
-
-            // Fuse Magnetometer Measurements
-            if (newDataMag && _ekf->statesInitialised)
-            {
-                _ekf->fuseMagData = true;
-                _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
-                _ekf->magstate.obsIndex = 0;
-                _ekf->FuseMagnetometer();
-                _ekf->FuseMagnetometer();
-                _ekf->FuseMagnetometer();
-            }
-            else
-            {
-                _ekf->fuseMagData = false;
-            }
-
-            // Fuse Airspeed Measurements
-            if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
-            {
-                _ekf->fuseVtasData = true;
-                _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
-                _ekf->FuseAirspeed();
-            }
-            else
-            {
-                _ekf->fuseVtasData = false;
-            }
-
-            struct ekf_status_report ekf_report;
-
-            /*
-             *    CHECK IF THE INPUT DATA IS SANE
-             */
-            int check = _ekf->CheckAndBound(&ekf_report);
-
-            switch (check) {
-                case 0:
-                    /* all ok */
-                    break;
-                case 1:
+                // Fuse Optical Flow Measurements
+                if (newOptFlowData)
                 {
-                    printf("NaN in states, resetting\n");
-                    printf("fail states: ");
-                    for (unsigned i = 0; i < ekf_report.n_states; i++) {
-                        printf("%f ",ekf_report.states[i]);
+                    // recall states stored at time of measurement after adjusting for delays
+                    _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                    _ekf->fuseOptFlowData = true;
+                    _ekf->FuseOptFlow();
+                }
+                else
+                {
+                    _ekf->fuseOptFlowData = false;
+                }
+
+                if (newAdsData)
+                {
+                    // Could use a blend of GPS and baro alt data if desired
+                    _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
+                    _ekf->fuseHgtData = true;
+                    // recall states stored at time of measurement after adjusting for delays
+                    _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                    // run the fusion step
+                    _ekf->FuseVelposNED();
+                }
+                else
+                {
+                    _ekf->fuseHgtData = false;
+                }
+
+                // Fuse RangeFinder Measurements
+                if (newRngData)
+                {
+                    // recall states stored at time of measurement after adjusting for delays
+                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+                    _ekf->fuseRngData = true;
+                    _ekf->FuseRangeFinder();
+                }
+                else
+                {
+                    _ekf->fuseRngData = false;
+                }
+
+                // Fuse Magnetometer Measurements
+                if (newDataMag)
+                {
+                    _ekf->fuseMagData = true;
+                    _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+                    _ekf->magstate.obsIndex = 0;
+                    _ekf->FuseMagnetometer();
+                    _ekf->FuseMagnetometer();
+                    _ekf->FuseMagnetometer();
+                }
+                else
+                {
+                    _ekf->fuseMagData = false;
+                }
+
+                // Fuse Airspeed Measurements
+                if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
+                {
+                    _ekf->fuseVtasData = true;
+                    _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
+                    _ekf->FuseAirspeed();
+                }
+                else
+                {
+                    _ekf->fuseVtasData = false;
+                }
+
+                struct ekf_status_report ekf_report;
+
+                /*
+                 *    CHECK IF THE INPUT DATA IS SANE
+                 */
+                int check = _ekf->CheckAndBound(&ekf_report);
+
+                switch (check) {
+                    case 0:
+                        /* all ok */
+                        break;
+                    case 1:
+                    {
+                        printf("NaN in states, resetting\n");
+                        printf("fail states: ");
+                        for (unsigned i = 0; i < ekf_report.n_states; i++) {
+                            printf("%f ",ekf_report.states[i]);
+                        }
+                        printf("\n");
+
+                        printf("states after reset: ");
+                        for (unsigned i = 0; i < ekf_report.n_states; i++) {
+                            printf("%f ",_ekf->states[i]);
+                        }
+                        printf("\n");
+                        break;
                     }
-                    printf("\n");
-
-                    printf("states after reset: ");
-                    for (unsigned i = 0; i < ekf_report.n_states; i++) {
-                        printf("%f ",_ekf->states[i]);
+                    case 2:
+                    {
+                        printf("stale IMU data, resetting\n");
+                        break;
                     }
-                    printf("\n");
-                    break;
-                }
-                case 2:
-                {
-                    printf("stale IMU data, resetting\n");
-                    break;
-                }
-                case 3:
-                {
-                    printf("switching to dynamic state\n");
-                    break;
-                }
-                case 4:
-                {
-                    printf("excessive gyro offsets\n");
-                    break;
-                }
-                case 5:
-                {
-                    printf("GPS velocity diversion\n");
-                    break;
-                }
-                case 6:
-                {
-                    printf("Excessive covariances\n");
-                    break;
-                }
+                    case 3:
+                    {
+                        printf("switching to dynamic state\n");
+                        break;
+                    }
+                    case 4:
+                    {
+                        printf("excessive gyro offsets\n");
+                        break;
+                    }
+                    case 5:
+                    {
+                        printf("GPS velocity diversion\n");
+                        break;
+                    }
+                    case 6:
+                    {
+                        printf("Excessive covariances\n");
+                        break;
+                    }
 
 
-                default:
-                {
-                    printf("unknown reset condition\n");
+                    default:
+                    {
+                        printf("unknown reset condition\n");
+                    }
                 }
+
+                if (check) {
+                    printf("RESET OCCURED AT %d milliseconds\n", (int)IMUmsec);
+
+                    if (!ekf_report.velHealth || !ekf_report.posHealth || !ekf_report.hgtHealth || ekf_report.gyroOffsetsExcessive) {
+                    printf("health: VEL:%s POS:%s HGT:%s OFFS:%s\n",
+                        ((ekf_report.velHealth) ? "OK" : "ERR"),
+                        ((ekf_report.posHealth) ? "OK" : "ERR"),
+                        ((ekf_report.hgtHealth) ? "OK" : "ERR"),
+                        ((!ekf_report.gyroOffsetsExcessive) ? "OK" : "ERR"));
+                    }
+
+                    if (ekf_report.velTimeout || ekf_report.posTimeout || ekf_report.hgtTimeout || ekf_report.imuTimeout) {
+                        printf("timeout: %s%s%s%s\n",
+                            ((ekf_report.velTimeout) ? "VEL " : ""),
+                            ((ekf_report.posTimeout) ? "POS " : ""),
+                            ((ekf_report.hgtTimeout) ? "HGT " : ""),
+                            ((ekf_report.imuTimeout) ? "IMU " : ""));
+                    }
+                }
+
+                // debug output
+                //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
+                WriteFilterOutput();
+
             }
-
-            if (check) {
-                printf("RESET OCCURED AT %d milliseconds\n", (int)IMUmsec);
-
-                if (!ekf_report.velHealth || !ekf_report.posHealth || !ekf_report.hgtHealth || ekf_report.gyroOffsetsExcessive) {
-                printf("health: VEL:%s POS:%s HGT:%s OFFS:%s\n",
-                    ((ekf_report.velHealth) ? "OK" : "ERR"),
-                    ((ekf_report.posHealth) ? "OK" : "ERR"),
-                    ((ekf_report.hgtHealth) ? "OK" : "ERR"),
-                    ((!ekf_report.gyroOffsetsExcessive) ? "OK" : "ERR"));
-                }
-
-                if (ekf_report.velTimeout || ekf_report.posTimeout || ekf_report.hgtTimeout || ekf_report.imuTimeout) {
-                    printf("timeout: %s%s%s%s\n",
-                        ((ekf_report.velTimeout) ? "VEL " : ""),
-                        ((ekf_report.posTimeout) ? "POS " : ""),
-                        ((ekf_report.hgtTimeout) ? "HGT " : ""),
-                        ((ekf_report.imuTimeout) ? "IMU " : ""));
-                }
-            }
-
-            // debug output
-            //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-            WriteFilterOutput();
 
             // State vector:
             // 0-3: quaternions (q0, q1, q2, q3)
@@ -554,6 +575,11 @@ uint32_t millis()
     return IMUmsec;
 }
 
+uint64_t getMicros()
+{
+    return IMUusec;
+}
+
 void readIMUData()
 {
     static Vector3f lastAngRate;
@@ -568,6 +594,7 @@ void readIMUData()
         IMUtimestamp  = tempImu[0];
         _ekf->dtIMU     = 0.001f*(tempImu[1] - IMUmsec);
         IMUmsec   = tempImu[1];
+        IMUusec = tempImu[0] * 1e6;
         _ekf->angRate.x = tempImu[2];
         _ekf->angRate.y = tempImu[3];
         _ekf->angRate.z = tempImu[4];
@@ -631,9 +658,9 @@ void readGpsData()
             GPStimestamp  = tempGps[0];
             GPSmsec = tempGpsPrev[2];
             _ekf->GPSstatus = tempGpsPrev[1];
-            _ekf->gpsCourse = deg2rad*tempGpsPrev[11];
+            gpsCourse = deg2rad*tempGpsPrev[11];
             gpsGndSpd = tempGpsPrev[10];
-            _ekf->gpsVelD = tempGpsPrev[12];
+            gpsVelD = tempGpsPrev[12];
             _ekf->gpsLat = deg2rad*tempGpsPrev[6];
             _ekf->gpsLon = deg2rad*tempGpsPrev[7] - pi;
             _ekf->gpsHgt = tempGpsPrev[8];
