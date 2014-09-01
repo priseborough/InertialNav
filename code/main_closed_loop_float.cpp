@@ -253,6 +253,9 @@ int main(int argc, char *argv[])
 
     while (true) {
 
+        // fail GPS on takeoff
+        if (IMUtimestamp > 10000) _ekf->useGPS = false;
+
         // read test data from files for next timestamp
         unsigned nreads = 1;
 
@@ -367,7 +370,6 @@ int main(int argc, char *argv[])
                 // Calculate bias errorsfor flow sensor internal gyro
                 flowGyroBiasX = 0.999f * flowGyroBiasX + 0.001f * (flowGyroX - _ekf->omegaAcrossFlowTime[0]);
                 flowGyroBiasY = 0.999f * flowGyroBiasY + 0.001f * (flowGyroY - _ekf->omegaAcrossFlowTime[1]);
-                printf("flowGyroBiasX = %e, flowGyroBiasY = %e\n", flowGyroBiasX, flowGyroBiasY);
 
                 //use sensor internal rates corrected for bias errors
                 _ekf->omegaAcrossFlowTime[0] = flowGyroX - flowGyroBiasX;
@@ -419,7 +421,7 @@ int main(int argc, char *argv[])
                 _ekf->fuseRngData = false;
 
                 // don't try to estimate focal length scale factor if GPS is not being used or there is no range finder.
-                if (_ekf->useGPS || _ekf->useRangeFinder) {
+                if (_ekf->useGPS && _ekf->useRangeFinder) {
                     _ekf->OpticalFlowEKF();
                 }
                 _ekf->FuseOptFlow();
@@ -477,7 +479,7 @@ int main(int argc, char *argv[])
 
                  // fuse GPS
                 // NOT FOR FLIGHT : GPS is not used after 10sec
-                if (_ekf->useGPS && IMUmsec < 10000) {
+                if (_ekf->useGPS && IMUmsec < 1000000) {
                     _ekf->fuseVelData = true;
                     _ekf->fusePosData = true;
                     // recall states stored at time of measurement after adjusting for delays

@@ -75,9 +75,12 @@ public:
 
         gndHgtSigma  = 0.1f; // terrain gradient 1-sigma
         R_LOS = 0.03f; // optical flow measurement noise variance (rad/sec)^2
-        flowInnovGate = 2.0f; // number of standard deviations applied to the optical flow innovation consistency check
+        flowInnovGate = 3.0f; // number of standard deviations applied to the optical flow innovation consistency check
+        auxFlowInnovGate = 10.0f; // number of standard deviations applied to the optical flow innovation consistency check used by the auxiliary filter
         rngInnovGate = 5.0f; // number of standard deviations applied to the rnage finder innovation consistency check
         minFlowRng = 0.3f; //minimum range between ground and flow sensor
+        moCompR_LOS = 0.2; // scaler from sensor gyro rate to uncertainty in LOS rate
+
     }
 
     struct mag_state_struct {
@@ -233,8 +236,10 @@ public:
     float auxFlowTestRatio[2];              // ratio of X and Y flow observation innovations to fault threshold
     float auxRngTestRatio;                  // ratio of range observation innovations to fault threshold
     float flowInnovGate;                    // number of standard deviations used for the innovation consistency check
+    float auxFlowInnovGate;                 // number of standard deviations applied to the optical flow innovation consistency check
     float rngInnovGate;                     // number of standard deviations used for the innovation consistency check
     float minFlowRng;                       // minimum range over which to fuse optical flow measurements
+    float moCompR_LOS;                      // scaler from sensor gyro rate to uncertainty in LOS rate
 
 void  UpdateStrapdownEquationsNED();
 
