@@ -1593,7 +1593,7 @@ void AttPosEKF::zeroRows(float (&covMat)[n_states][n_states], uint8_t first, uin
 void AttPosEKF::FuseOptFlow()
 {
     static float SH_LOS[13];
-    static float SK_LOS[2];
+    static float SK_LOS[9];
     static float q0 = 0.0f;
     static float q1 = 0.0f;
     static float q2 = 0.0f;
