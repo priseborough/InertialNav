@@ -1030,7 +1030,7 @@ void WriteFilterOutput()
 
     // range finder innovation and innovation variance
     fprintf(pRngFuseFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRngFuseFile," %e %e %e %e %e", _ekf->innovRng, _ekf->varInnovRng, _ekf->flowStates[1], _ekf->rngMea, _ekf->hgtMea);
+    fprintf(pRngFuseFile," %e %e %e %e %e %e %e", _ekf->innovRng, _ekf->varInnovRng, _ekf->flowStates[1], _ekf->rngMea, _ekf->hgtMea, _ekf->flowStates[1] - _ekf->states[9], _ekf->flowStates[22] - _ekf->states[9]);
     fprintf(pRngFuseFile,"\n");
 
     // optical flow innovation and innovation variance

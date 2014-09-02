@@ -120,7 +120,7 @@ AttPosEKF::AttPosEKF() :
     staticMode(true),
     useAirspeed(true),
     useCompass(true),
-    useRangeFinder(false),
+    useRangeFinder(true),
     useOpticalFlow(false),
 
     ekfDiverged(false),
@@ -1854,8 +1854,11 @@ void AttPosEKF::FuseRangeFinder()
         rngPred = (ptd - pd)/cosRngTilt;
         innovRng = rngPred - rngMea;
 
-        // Check the innovation for consistency and don't fuse if > 5Sigma
-        if ((innovRng*innovRng*SK_RNG[0]) < 25)
+        // calculate the innovation consistency test ratio
+        auxRngTestRatio = sq(innovRng) / (sq(rngInnovGate) * varInnovRng);
+
+        // Check the innovation for consistency and don't fuse if out of bounds
+        if (auxRngTestRatio < 1.0f)
         {
             // correct the state vector
             states[22] = states[22] - Kfusion[22] * innovRng;
@@ -2167,23 +2170,21 @@ void AttPosEKF::GroundEKF()
     // limit distance to prevent intialisation afer bad gps causing bad numerical conditioning
     if (!inhibitGndState) {
         float distanceTravelledSq;
-        if (fuseRngData) {
-            distanceTravelledSq = sq(statesAtRngTime[7] - prevPosN) + sq(statesAtRngTime[8] - prevPosE);
-            prevPosN = statesAtRngTime[7];
-            prevPosE = statesAtRngTime[8];
-        } else if (fuseOptFlowData) {
-            distanceTravelledSq = sq(statesAtFlowTime[7] - prevPosN) + sq(statesAtFlowTime[8] - prevPosE);
-            prevPosN = statesAtFlowTime[7];
-            prevPosE = statesAtFlowTime[8];
-        } else {
-            return;
-        }
+        distanceTravelledSq = sq(statesAtRngTime[7] - prevPosN) + sq(statesAtRngTime[8] - prevPosE);
+        prevPosN = statesAtRngTime[7];
+        prevPosE = statesAtRngTime[8];
         distanceTravelledSq = min(distanceTravelledSq, 100.0f);
         Popt[1][1] += (distanceTravelledSq * sq(gndHgtSigma));
     }
+    // we aren't using optical flow measurements in this hacked implementation so set the covariances for this state to zero to avoid numerical problems
+    Popt[0][0] = 0.0f;
+    Popt[0][1] = 0.0f;
+    Popt[1][0] = 0.0f;
 
-    // fuse range finder data
-    if (fuseRngData) {
+    // Fuse range finder data
+    // Need to check that our range finder tilt angle is less than 30 degrees
+    float cosRngTilt = - Tbn.z.x * sinf(rngFinderPitch) + Tbn.z.z * cosf(rngFinderPitch);
+    if (useRangeFinder && fuseRngData && cosRngTilt > 0.87f) {
         float range; // range from camera to centre of image
         float q0; // quaternion at optical flow measurement time
         float q1; // quaternion at optical flow measurement time
