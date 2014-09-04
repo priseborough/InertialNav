@@ -420,7 +420,6 @@ int main(int argc, char *argv[])
                     // recall states stored at time of measurement after adjusting for delays
                     _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
                     _ekf->fuseRngData = true;
-                    _ekf->inhibitGndState = false;
                     _ekf->rngMea = distGroundDistance;
                     _ekf->GroundEKF();
                 }
