@@ -24,7 +24,7 @@ ax1.plot(data['time'], data['EST'], color='g', label='Terrain offset estimate')
 ax1.plot(data['time'], data['DIST'], color='m', label='Raw distance measurement')
 ax1.plot(data['time'], data['BARO'], color='k', label='Barometric altitude')
 ax1.plot(data['time'], data['ESTHAGL1'], color='c', label='HAGL estimate from 2-state EKF')
-ax1.plot(data['time'], data['ESTHAGL2'], color='y', label='HAGL estimate from main EKF')
+ax1.plot(data['time'], data['ESTHAGL2'], color='y', label='HAGL estimate from laser')
 ax1.legend()
 
 plt.show()
