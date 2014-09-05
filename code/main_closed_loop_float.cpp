@@ -876,7 +876,7 @@ void readDistData()
             distMsec = temp[0];
         }
     }
-    if (distMsec > lastDistMsec)
+    if (distMsec > lastDistMsec && distValid)
     {
         lastDistMsec = distMsec;
         newDistData = true;
