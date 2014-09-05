@@ -420,7 +420,6 @@ int main(int argc, char *argv[])
                     // recall states stored at time of measurement after adjusting for delays
                     _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
                     _ekf->fuseRngData = true;
-                    _ekf->inhibitGndState = false;
                     _ekf->rngMea = distGroundDistance;
                     _ekf->GroundEKF();
                 }
@@ -877,7 +876,7 @@ void readDistData()
             distMsec = temp[0];
         }
     }
-    if (distMsec > lastDistMsec)
+    if (distMsec > lastDistMsec && distValid)
     {
         lastDistMsec = distMsec;
         newDistData = true;
@@ -1030,7 +1029,7 @@ void WriteFilterOutput()
 
     // range finder innovation and innovation variance
     fprintf(pRngFuseFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRngFuseFile," %e %e %e %e %e %e %e", _ekf->innovRng, _ekf->varInnovRng, _ekf->flowStates[1], _ekf->rngMea, _ekf->hgtMea, _ekf->flowStates[1] - _ekf->states[9], _ekf->flowStates[22] - _ekf->states[9]);
+    fprintf(pRngFuseFile," %e %e %e %e %e %e %e %e", _ekf->innovRng, _ekf->varInnovRng, _ekf->flowStates[1], _ekf->rngMea, _ekf->hgtMea, -_ekf->statesAtRngTime[9], -_ekf->flowStates[1], -_ekf->states[9] - distGroundDistance);
     fprintf(pRngFuseFile,"\n");
 
     // optical flow innovation and innovation variance
