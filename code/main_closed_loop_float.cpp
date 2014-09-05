@@ -13,7 +13,7 @@ void readMagData();
 
 void readAirData();
 
-void readRngData();
+void readDistData();
 
 void readOptFlowData();
 
@@ -81,7 +81,6 @@ uint32_t lastADSmsec = 0;
 float Veas;
 bool newAdsData = false;
 bool newDataGps = false;
-bool newRngData = false;
 bool newOptFlowData = false;
 
 float onboardTimestamp = 0;
@@ -94,6 +93,15 @@ float onboardVelNED[3];
 float onboardLat;
 float onboardLon;
 float onboardHgt;
+
+uint32_t distMsec = 0;
+uint32_t lastDistMsec = 0;
+bool newDistData = false;
+
+float distTimestamp = 0.0f;
+bool distValid = false;
+float distGroundDistance;
+float distLastValidReading;
 
 // input data timing
 uint64_t msecAlignTime;
@@ -127,6 +135,8 @@ FILE * pGpsRawINFile;
 FILE * validationOutFile;
 FILE * pOnboardPosVelOutFile;
 FILE * pOnboardFile;
+FILE * pInFlowFile;
+FILE * pInDistFile;
 
 FILE * open_with_exit(const char* filename, const char* flags)
 {
@@ -195,6 +205,9 @@ int main(int argc, char *argv[])
     pOnboardFile = fopen ("GPOSonboard.txt","r");
     pOnboardPosVelOutFile = open_with_exit ("OnboardVelPosDataOut.txt","w");
 
+    pInFlowFile = fopen ("FLOW.txt","r");
+    pInDistFile = fopen ("DIST.txt","r");
+
     printf("Filter start\n");
 
     memset(gpsRaw, 0, sizeof(gpsRaw));
@@ -257,12 +270,11 @@ int main(int argc, char *argv[])
         for (unsigned i = 0; i < nreads; i++) {
             readIMUData();
             readGpsData();
-            readOptFlowData();
             readMagData();
             readAirData();
-            readRngData();
             readAhrsData();
             readOnboardData();
+            readDistData();
         }
 
         // Apply dtIMU here after 1 or more reads, simulating skipped sensor
@@ -374,18 +386,18 @@ int main(int argc, char *argv[])
                     _ekf->fusePosData = false;
                 }
 
-                // Fuse Optical Flow Measurements
-                if (newOptFlowData)
-                {
-                    // recall states stored at time of measurement after adjusting for delays
-                    _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                    _ekf->fuseOptFlowData = true;
-                    _ekf->FuseOptFlow();
-                }
-                else
-                {
-                    _ekf->fuseOptFlowData = false;
-                }
+                // // Fuse Optical Flow Measurements
+                // if (newOptFlowData)
+                // {
+                //     // recall states stored at time of measurement after adjusting for delays
+                //     _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
+                //     _ekf->fuseOptFlowData = true;
+                //     _ekf->FuseOptFlow();
+                // }
+                // else
+                // {
+                //     _ekf->fuseOptFlowData = false;
+                // }
 
                 if (newAdsData)
                 {
@@ -403,12 +415,13 @@ int main(int argc, char *argv[])
                 }
 
                 // Fuse RangeFinder Measurements
-                if (newRngData)
+                if (newDistData)
                 {
                     // recall states stored at time of measurement after adjusting for delays
                     _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
                     _ekf->fuseRngData = true;
-                    _ekf->FuseRangeFinder();
+                    _ekf->rngMea = distGroundDistance;
+                    _ekf->GroundEKF();
                 }
                 else
                 {
@@ -837,14 +850,40 @@ void readAirData()
     }
 }
 
-void readRngData()
+void readDistData()
 {
-    // Currently synthesise a terrain measurement that is 5 m below the baro alt
-    if (newAdsData) {
-        _ekf->rngMea = (_ekf->baroHgt  - _ekf->hgtRef - _ekf->baroHgtOffset + 5.0f) / _ekf->Tbn.z.z;
-        newRngData = true;
-    } else {
-        newRngData = false;
+    if (pInDistFile <= 0)
+        return;
+
+    float temp[3];
+
+    // read in current value
+    while (distTimestamp <= IMUtimestamp)
+    {
+        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
+        {
+            float in;
+            if (fscanf(pInDistFile, "%f", &in) != EOF) temp[j] = in;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            // timestamp, distance, flags
+            distTimestamp  = temp[0];       // in milliseconds
+            distGroundDistance = temp[1];   // in meters
+            distValid = (temp[2] > 0.0f);   // reading is valid
+
+            distMsec = temp[0];
+        }
+    }
+    if (distMsec > lastDistMsec && distValid)
+    {
+        lastDistMsec = distMsec;
+        newDistData = true;
+    }
+    else
+    {
+        newDistData = false;
     }
 }
 
@@ -990,7 +1029,7 @@ void WriteFilterOutput()
 
     // range finder innovation and innovation variance
     fprintf(pRngFuseFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRngFuseFile," %e %e", _ekf->innovRng, _ekf->varInnovRng);
+    fprintf(pRngFuseFile," %e %e %e %e %e %e %e %e", _ekf->innovRng, _ekf->varInnovRng, _ekf->flowStates[1], _ekf->rngMea, _ekf->hgtMea, -_ekf->statesAtRngTime[9], -_ekf->flowStates[1], -_ekf->states[9] - distGroundDistance);
     fprintf(pRngFuseFile,"\n");
 
     // optical flow innovation and innovation variance
