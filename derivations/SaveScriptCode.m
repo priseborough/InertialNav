@@ -99,7 +99,7 @@ if exist('nextP','var')
     fprintf(fid,'nextP = zeros(%d,%d);\n',nStates,nStates);
     for rowIndex = 1:nStates
         for colIndex = 1:nStates
-            string = char(PP(rowIndex,colIndex));
+            string = char(nextP(rowIndex,colIndex));
             % don't write out a zero-assignment
             if ~strcmpi(string,'0')
                 fprintf(fid,'nextP(%d,%d) = %s;\n',rowIndex,colIndex,string);
@@ -109,6 +109,7 @@ if exist('nextP','var')
     fprintf(fid,'\n');
     
 end
+
 %% Write equations for velocity and position data fusion
 if exist('H_VP','var')
     

@@ -199,6 +199,36 @@ if exist('SH_OPT','var')
     fprintf(fid,'\n');
     
 end
+
+[nRow,nCol] = size(H_OPTX);
+fprintf(fid,'\n');
+fprintf(fid,'H_OPTX = zeros(1,%d);\n',nCol);
+for rowIndex = 1:nRow
+    for colIndex = 1:nCol
+        string = char(H_OPTX(rowIndex,colIndex));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'H_OPTX(1,%d) = %s;\n',colIndex,string);
+        end
+    end
+end
+fprintf(fid,'\n');
+
+[nRow,nCol] = size(H_OPTY);
+fprintf(fid,'\n');
+fprintf(fid,'H_OPTY = zeros(1,%d);\n',nCol);
+for rowIndex = 1:nRow
+    for colIndex = 1:nCol
+        string = char(H_OPTY(rowIndex,colIndex));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'H_OPTY(1,%d) = %s;\n',colIndex,string);
+        end
+    end
+end
+fprintf(fid,'\n');
+
+
 %% Write equations for laser range finder data fusion
 if exist('H_RNG','var')
     
