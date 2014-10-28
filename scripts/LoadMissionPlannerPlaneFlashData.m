@@ -1,4 +1,4 @@
-%clear all;
+clear all;
 %load('quadEKF_400_1.mat');
 load('SkyhunterOptFlow.mat');
 %maxtime = 600000;
@@ -57,19 +57,18 @@ if ~isempty(BARO)
     BARO(:,2) = (BARO(:,2) - zerotimestamp);
     ADStimestamp = BARO(:,2);
     ADStime  = BARO(:,2);
-    Veas     = zeros(size(BARO(:,1)));
+    if ~isempty(ARSP)
+        Veas     = ARSP(:,3);
+    else
+        Veas     = zeros(size(BARO(:,1)));
+    end
     HgtBaro  = BARO(:,3);
     NTUN = [ADStimestamp ADStimestamp zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) Veas HgtBaro zeros(size(Veas, 1), 1)];
 end
 
 %% PX4Flow Data
 
-if ~isempty(OF)
-    OF(:,2) = (OF(:,2) - zerotimestamp);
-    % timestamp, flowx, flowy, distance, quality, sensor id, angRateX,
-    % angRateY
-    FLOW_OUT = [OF(:,2) OF(:,7) -OF(:,6) OF(:,8) OF(:,3) 77*ones(size(OF(:,1))) 0.001*OF(:,4) 0.001*OF(:,5)];
-elseif ~isempty(EKF5)
+if ~isempty(EKF5)
     EKF5(:,2) = (EKF5(:,2) - zerotimestamp);
     % timestamp, flowx, flowy, distance, quality, sensor id, angRateX, angRateY
     FLOW_OUT = [EKF5(:,2) EKF5(:,3) EKF5(:,4) zeros(size(EKF5(:,1))) EKF5(:,9) 77*ones(size(EKF5(:,1))) EKF5(:,5) EKF5(:,6)];
@@ -95,9 +94,9 @@ if ~isempty(ATT)
     ATT(:,2) = (ATT(:,2) - zerotimestamp);
     ATTtimestamp = ATT(:,2);
     ATTtime  = ATT(:,2);
-    Roll     = ATT(:,4);
-    Pitch    = ATT(:,6);
-    Yaw      = ATT(:,8);
+    Roll     = ATT(:,3);
+    Pitch    = ATT(:,4);
+    Yaw      = ATT(:,5);
     for i = 1:length(Yaw)
         if Yaw(i) > 180
             Yaw(i) = Yaw(i) - 360;
