@@ -253,9 +253,6 @@ int main(int argc, char *argv[])
 
     while (true) {
 
-        // fail GPS on takeoff
-        if (IMUtimestamp > 10000) _ekf->useGPS = false;
-
         // read test data from files for next timestamp
         unsigned nreads = 1;
 
@@ -478,11 +475,11 @@ int main(int argc, char *argv[])
                 _ekf->posNE[0] = posNED[0];
                 _ekf->posNE[1] = posNED[1];
 
-                 // fuse GPS
-                // NOT FOR FLIGHT : GPS is not used after 10sec
-                if (_ekf->useGPS && IMUmsec < 1000000) {
+                // fuse GPS
+                if (_ekf->useGPS && IMUmsec < 1000) {
                     _ekf->fuseVelData = true;
                     _ekf->fusePosData = true;
+                    _ekf->fuseHgtData = false;
                     // recall states stored at time of measurement after adjusting for delays
                     _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
                     _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
@@ -493,26 +490,33 @@ int main(int argc, char *argv[])
                 } else {
                     _ekf->fuseVelData = false;
                     _ekf->fusePosData = false;
+                    _ekf->fuseHgtData = false;
                 }
             }
             else
             {
                 _ekf->fuseVelData = false;
                 _ekf->fusePosData = false;
+                _ekf->fuseHgtData = false;
             }
 
             if (newAdsData && _ekf->statesInitialised)
             {
                 // Could use a blend of GPS and baro alt data if desired
                 _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
                 _ekf->fuseHgtData = true;
                 // recall states stored at time of measurement after adjusting for delays
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 _ekf->FuseVelposNED();
+                printf("time = %e \n", IMUtimestamp);
             }
             else
             {
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
                 _ekf->fuseHgtData = false;
             }
 
@@ -938,10 +942,10 @@ void readFlowData()
         if (!endOfData)
         {
             // timestamp, rawx, rawy, distance, quality, sensor id, flowGyroX, flowGyroY
-            flowTimestamp  = temp[0];       // in milliseconds
+            flowTimestamp = temp[0];       // in milliseconds
             flowRawPixelX = temp[1];        // in pixels
             flowRawPixelY = temp[2];        // in pixels
-            flowDistance = temp[3];         // in meters
+            flowDistance  = temp[3];         // in meters
             // catch glitches in logged data
             if (flowRawPixelX > 200 || flowRawPixelY > 200 || flowRawPixelX < -200 || flowRawPixelY < -200) {
                 flowQuality = 0.0f;    // quality normalized between 0 and 1
