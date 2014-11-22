@@ -354,7 +354,81 @@ if exist('SH_MAG','var')
     fprintf(fid,'\n');
     
 end
-%% Write equations for optical flow sensor scale factor error estimation
+%% Write equations for optical flow sensor angular LOS data fusion
+if exist('SH_LOS','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_LOS = zeros(%d,1);\n',numel(SH_LOS));
+    for rowIndex = 1:numel(SH_LOS)
+        string = char(SH_LOS(rowIndex,1));
+        fprintf(fid,'SH_LOS(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    [nRow,nCol] = size(H_LOS);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_LOS = zeros(1,%d);\n',nCol);
+    for colIndex = 1:nCol
+        string = char(H_LOS(1,colIndex));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'H_LOS(%d) = %s;\n',colIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    [nRow,nCol] = size(H_LOS);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_LOS = zeros(1,%d);\n',nCol);
+    for colIndex = 1:nCol
+        string = char(H_LOS(2,colIndex));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'H_LOS(%d) = %s;\n',colIndex,string);
+        end
+    end
+    
+%     fprintf(fid,'\n');
+%     fprintf(fid,'SKK_LOS = zeros(%d,1);\n',numel(SKK_LOS));
+%     for rowIndex = 1:numel(SKK_LOS)
+%         string = char(SKK_LOS(rowIndex,1));
+%         fprintf(fid,'SKK_LOS(%d) = %s;\n',rowIndex,string);
+%     end
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_LOS = zeros(%d,1);\n',numel(SK_LOS));
+    for rowIndex = 1:numel(SK_LOS)
+        string = char(SK_LOS(rowIndex,1));
+        fprintf(fid,'SK_LOS(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(K_LOSX);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_LOS(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_LOSY);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_LOS(rowIndex,2));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    
+end
+%% Write observation fusion equations for optical flow sensor scale factor error estimation
 if exist('SH_OPT','var')
     
     fprintf(fid,'\n');
