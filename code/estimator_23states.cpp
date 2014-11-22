@@ -1971,7 +1971,6 @@ void AttPosEKF::OpticalFlowEKF()
 
         // propagate scale factor state noise
         if (!inhibitScaleState) {
-            printf("Popt[0][0] = %e\n",Popt[0][0]);
             Popt[0][0] += 1e-8f;
         } else {
             Popt[0][0] = 0.0f;
