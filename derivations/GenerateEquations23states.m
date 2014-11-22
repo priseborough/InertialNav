@@ -217,19 +217,13 @@ K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); %
 
 %% derive equations for sequential fusion of optical flow measurements
 
-% assume camera is aligned with Z body axis plus a misalignment
-% defined by 3 small angles about X, Y and Z body axis
-% Tsb is rotation from sensor to body
-Tsb = [ 1  , -a3  ,  a2 ; ...
-        a3 ,  1   , -a1 ; ...
-       -a2 ,  a1  ,  1 ];
-Tsn = Tbn*Tsb; 
 % calculate range from plane to centre of sensor fov assuming flat earth
-range = ((ptd - pd)/Tsn(3,3));
+% and camera axes aligned with body axes
+range = ((ptd - pd)/Tbn(3,3));
 % calculate relative velocity in body frame
-relVelBody = transpose(Tsn)*[vn;ve;vd];
+relVelBody = transpose(Tbn)*[vn;ve;vd];
 % divide by range to get predicted angular LOS rates relative to X and Y
-% axes
+% axes. Note these are body angular rate motion compensated optical flow rates
 losRateX = +relVelBody(2)/range;
 losRateY = -relVelBody(1)/range;
 
@@ -241,23 +235,14 @@ H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
 K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS); % Kalman gain vector
 K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
 K_LOS = [K_LOSX,K_LOSY];
+simplify(K_LOS);
 [K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
-[SK_LOS,SKK_LOS]=OptimiseAlgebra(SK_LOS,'SKK_LOS');
 
 %% derive equations for fusion of laser range finder measurement
 
-% assume laser is aligned in the X-Z body plane plus an alignment
-% defined by rotation about the Y body axis. This allows the sensor to be
-% aligned to accomodate different aircraft pitch trims. We would normally
-% want the sensor to be aligned so that it was close to vertical during the
-% phases of flight where height accuracy is most important
-% Tsb is rotation from sensor to body
-Tsb = [ 1       ,  0 , sin(a4) ; ...
-        0       ,  1 , 0       ; ...
-       -sin(a4) ,  0 , 1      ];
-Tsn = Tbn*Tsb; 
 % calculate range from plane to centre of sensor fov assuming flat earth
-range = ((ptd - pd)/Tsn(3,3));
+% and sensor aligned with Z body axis
+range = ((ptd - pd)/Tbn(3,3));
 H_RNG = jacobian(range,stateVector); % measurement Jacobian
 [H_RNG,SH_RNG]=OptimiseAlgebra(H_RNG,'SH_RNG');
 
