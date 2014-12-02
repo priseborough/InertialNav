@@ -277,7 +277,7 @@ void StoreStates(uint64_t timestamp_ms);
  */
 int RecallStates(float *statesForFusion, uint64_t msec);
 
-int RecallOmega(float *omegaForFusion, uint64_t msec);
+void RecallOmega(float *omegaForFusion, uint64_t msec);
 
 void ResetStoredStates();
 
