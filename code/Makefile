@@ -1,5 +1,5 @@
 
-CC=g++
+CC=c++
 CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -fno-strength-reduce \
 			   -fomit-frame-pointer \
@@ -8,16 +8,13 @@ CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -Wextra \
 			   -Wshadow \
 			   -Wfloat-equal \
-			   -Wframe-larger-than=1024 \
 			   -Wpointer-arith \
-			   -Wmissing-declarations \
 			   -Wpacked \
 			   -Wno-unused-parameter \
 			   -Werror=format-security \
-			   -Werror=array-bounds \
 			   -Wfatal-errors \
 			   -Wno-missing-field-initializers \
-			   -std=gnu++0x
+			   -std=c++11
 
 ODIR=obj
 LDIR =../lib
@@ -27,7 +24,7 @@ LIBS=-lm
 #_DEPS = test.h
 #DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = main_closed_loop_float.o estimator_23states.o estimator_utilities.o
+_OBJ = main_closed_loop_float.o estimator_22states.o estimator_utilities.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 #$(DEPS)
@@ -49,3 +46,4 @@ plots:
 	python plot_position.py &
 	python plot_states.py &
 	python plot_velocity.py &
+	python plot_flow.py &

@@ -4,7 +4,7 @@ close all;
 % load('search_pattern_log002.mat');
 %load('quad_flight_log003.mat');
 %load('attitude_log001.mat');
-load('laser_landings.mat');
+load('m_10_48_56.mat');
 
 mintime = 0;
 maxtime = 360;
@@ -290,6 +290,8 @@ save('GPOSonboard.txt','GPOSonboard','-ascii');
 save('MAG.txt','MAG','-ascii')
 save('ATT.txt','ATT','-ascii');
 save('NTUN.txt','NTUN','-ascii');
+save('FLOW.txt','FLOW_OUT','-ascii');
+save('DIST.txt','DIST_OUT','-ascii');
 save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
 
 clear all;

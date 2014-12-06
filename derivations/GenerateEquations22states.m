@@ -5,13 +5,16 @@
 % Sequential fusion of velocity and position measurements
 % Fusion of true airspeed
 % Sequential fusion of magnetic flux measurements
+% sequential fusion of angular LOS rate measurements from optical flow
+% sensor assumed to be aligned witht eh Z body axis plus a small
+% misalingment
 % 22 state architecture.
 % IMU data is assumed to arrive at a constant rate with a time step of dt
 % IMU delta angle and velocity data are used as time varying parameters,
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 14 Mar 2013
+% Last Modified: 23 Mar 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -20,20 +23,20 @@
 % Delta Angle bias - rad (X,Y,Z)
 % Delta Velocity bias - m/s (Z)
 % Wind Vector  - m/sec (North,East)
-% Earth Magnetic Field Vector - (North, East, Down)
-% Body Magnetic Field Vector - (X,Y,Z)
+% Earth Magnetic Field Vector - milligauss (North, East, Down)
+% Body Magnetic Field Vector - milligauss (X,Y,Z)
 
 % Observations:
 % NED velocity - m/s
 % NED position - m
 % True airspeed - m/s
-% angle of sideslip - rad
-% XYZ magnetic flux
+% XYZ magnetic flux - milligauss
+% XY line of sight angular rate measurements from a downwards looking optical flow sensor
+% range to terrain measurements
 
 % Time varying parameters:
 % XYZ delta angle measurements in body axes - rad
 % XYZ delta velocity measurements in body axes - m/sec
-
 
 clear all;
 
@@ -55,8 +58,9 @@ syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
 syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
 syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
-syms R_BETA real % variance of sidelsip measurements rad^2
-
+syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
+syms R_RNG real % variance of laser range finder observations
+syms ptd real % location of terrain in D axis
 %% define the process equations
 
 % Define the state vector & number of states
@@ -193,15 +197,6 @@ H_TAS = jacobian(VtasPred,stateVector); % measurement Jacobian
 [H_TAS,SH_TAS]=OptimiseAlgebra(H_TAS,'SH_TAS'); % optimise processing
 K_TAS = (P*transpose(H_TAS))/(H_TAS*P*transpose(H_TAS) + R_TAS);[K_TAS,SK_TAS]=OptimiseAlgebra(K_TAS,'SK_TAS'); % Kalman gain vector
 
-%% derive equations for fusion of angle of sideslip measurements
-% calculate wind relative velocities in nav frame and rotate into body frame
-Vbw = Tbn'*[(vn-vwn);(ve-vwe);vd];
-% calculate predicted angle of sideslip using small angle assumption
-BetaPred = Vbw(2)/Vbw(1);
-H_BETA = jacobian(BetaPred,stateVector); % measurement Jacobian
-[H_BETA,SH_BETA]=OptimiseAlgebra(H_BETA,'SH_BETA'); % optimise processing
-K_BETA = (P*transpose(H_BETA))/(H_BETA*P*transpose(H_BETA) + R_BETA);[K_BETA,SK_BETA]=OptimiseAlgebra(K_BETA,'SK_BETA'); % Kalman gain vector
-
 %% derive equations for fusion of magnetic field measurement
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magX;magY;magZ]; % predicted measurement
 H_MAG = jacobian(magMeas,stateVector); % measurement Jacobian
@@ -214,8 +209,43 @@ K_MY = (P*transpose(H_MAG(2,:)))/(H_MAG(2,:)*P*transpose(H_MAG(2,:)) + R_MAG); %
 K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); % Kalman gain vector
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
 
+%% derive equations for sequential fusion of optical flow measurements
+
+% calculate range from plane to centre of sensor fov assuming flat earth
+% and camera axes aligned with body axes
+range = ((ptd - pd)/Tbn(3,3));
+% calculate relative velocity in body frame
+relVelBody = transpose(Tbn)*[vn;ve;vd];
+% divide by range to get predicted angular LOS rates relative to X and Y
+% axes. Note these are body angular rate motion compensated optical flow rates
+losRateX = +relVelBody(2)/range;
+losRateY = -relVelBody(1)/range;
+
+H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
+[H_LOS,SH_LOS]=OptimiseAlgebra(H_LOS,'SH_LOS');
+
+% combine into a single K matrix to enable common expressions to be found
+% note this matrix cannot be used in a single step fusion
+K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS); % Kalman gain vector
+K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
+K_LOS = [K_LOSX,K_LOSY];
+simplify(K_LOS);
+[K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
+
+%% derive equations for fusion of laser range finder measurement
+
+% calculate range from plane to centre of sensor fov assuming flat earth
+% and sensor aligned with Z body axis
+range = ((ptd - pd)/Tbn(3,3));
+H_RNG = jacobian(range,stateVector); % measurement Jacobian
+[H_RNG,SH_RNG]=OptimiseAlgebra(H_RNG,'SH_RNG');
+
+% calculate the Kalman gain matrix and optimise algebra
+K_RNG = (P*transpose(H_RNG))/(H_RNG*P*transpose(H_RNG) + R_RNG);
+[K_RNG,SK_RNG]=OptimiseAlgebra(K_RNG,'SK_RNG');
+
 %% Save output and convert to m and c code fragments
-nStates = length(PP);
+nStates = 22;
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
 save(fileName);
 SaveScriptCode(nStates);

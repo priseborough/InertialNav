@@ -1,4 +1,4 @@
-#include "estimator_23states.h"
+#include "estimator_22states.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -13,15 +13,15 @@ void readMagData();
 
 void readAirData();
 
-void readDistData();
-
-void readOptFlowData();
-
 void readAhrsData();
 
 void readTimingData();
 
 void readOnboardData();
+
+void readFlowData();
+
+void readDistData();
 
 void WriteFilterOutput();
 
@@ -38,7 +38,7 @@ uint32_t msecHgtDelay = 350;
 uint32_t msecRngDelay = 100;
 uint32_t msecMagDelay = 30;
 uint32_t msecTasDelay = 210;
-uint32_t msecOptFlowDelay = 230;
+uint32_t msecOptFlowDelay = 55;
 
 // IMU input data variables
 float imuIn;
@@ -94,6 +94,27 @@ float onboardLat;
 float onboardLon;
 float onboardHgt;
 
+uint32_t flowMsec = 0;
+uint32_t lastFlowMsec = 0;
+bool newFlowData = false;
+
+float flowTimestamp;      // in seconds
+float flowRawPixelX;       // in pixels
+float flowRawPixelY;       // in pixels
+float flowDistance;        // in meters
+float flowQuality;   // distance normalized between 0 and 1
+float flowSensorId;        // sensor ID
+float flowGyroX = 0.0f;
+float flowGyroY = 0.0f;
+float flowGyroBiasX = 0.0f;
+float flowGyroBiasY = 0.0f;
+
+float flowRadX;
+float flowRadY;
+
+float flowRawGroundSpeedX;
+float flowRawGroundSpeedY;
+
 uint32_t distMsec = 0;
 uint32_t lastDistMsec = 0;
 bool newDistData = false;
@@ -137,6 +158,7 @@ FILE * pOnboardPosVelOutFile;
 FILE * pOnboardFile;
 FILE * pInFlowFile;
 FILE * pInDistFile;
+FILE * pOutFlowFile;
 
 FILE * open_with_exit(const char* filename, const char* flags)
 {
@@ -207,6 +229,7 @@ int main(int argc, char *argv[])
 
     pInFlowFile = fopen ("FLOW.txt","r");
     pInDistFile = fopen ("DIST.txt","r");
+    pOutFlowFile = fopen ("FlowRawOut.txt","w");
 
     printf("Filter start\n");
 
@@ -274,6 +297,7 @@ int main(int argc, char *argv[])
             readAirData();
             readAhrsData();
             readOnboardData();
+            readFlowData();
             readDistData();
         }
 
@@ -348,6 +372,105 @@ int main(int argc, char *argv[])
                     dt = 0.0f;
                 }
 
+                // Set global time stamp used by EKF processes
+                _ekf->globalTimeStamp_ms = IMUmsec;
+            }
+
+            // Fuse optical flow measurements
+            if (newFlowData && _ekf->statesInitialised && _ekf->useOpticalFlow && flowQuality > 0.5 && _ekf->Tnb.z.z > 0.71f)
+            {
+                // recall states and angular rates stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtFlowTime, (IMUmsec - msecOptFlowDelay));
+                _ekf->RecallOmega(_ekf->omegaAcrossFlowTime, (IMUmsec - 2*msecOptFlowDelay));
+
+                // Calculate bias errorsfor flow sensor internal gyro
+                flowGyroBiasX = 0.999f * flowGyroBiasX + 0.001f * (flowGyroX - _ekf->omegaAcrossFlowTime[0]);
+                flowGyroBiasY = 0.999f * flowGyroBiasY + 0.001f * (flowGyroY - _ekf->omegaAcrossFlowTime[1]);
+
+                //use sensor internal rates corrected for bias errors
+                _ekf->omegaAcrossFlowTime[0] = flowGyroX - flowGyroBiasX;
+                _ekf->omegaAcrossFlowTime[1] = flowGyroY - flowGyroBiasY;
+
+                // calculate rotation matrix
+                // Copy required states to local variable names
+                float q0 = _ekf->statesAtFlowTime[0];
+                float q1 = _ekf->statesAtFlowTime[1];
+                float q2 = _ekf->statesAtFlowTime[2];
+                float q3 = _ekf->statesAtFlowTime[3];
+                float q00 = _ekf->sq(q0);
+                float q11 = _ekf->sq(q1);
+                float q22 = _ekf->sq(q2);
+                float q33 = _ekf->sq(q3);
+                float q01 = q0 * q1;
+                float q02 = q0 * q2;
+                float q03 = q0 * q3;
+                float q12 = q1 * q2;
+                float q13 = q1 * q3;
+                float q23 = q2 * q3;
+                _ekf->Tnb_flow.x.x = q00 + q11 - q22 - q33;
+                _ekf->Tnb_flow.y.y = q00 - q11 + q22 - q33;
+                _ekf->Tnb_flow.z.z = q00 - q11 - q22 + q33;
+                _ekf->Tnb_flow.y.x = 2*(q12 - q03);
+                _ekf->Tnb_flow.z.x = 2*(q13 + q02);
+                _ekf->Tnb_flow.x.y = 2*(q12 + q03);
+                _ekf->Tnb_flow.z.y = 2*(q23 - q01);
+                _ekf->Tnb_flow.x.z = 2*(q13 - q02);
+                _ekf->Tnb_flow.y.z = 2*(q23 + q01);
+
+                // scale from raw pixel flow rate to radians/second
+                //float scaleFactor = 0.03f; // best value for quad106.zip data using the 16 mm lens
+                //float scaleFactor = 0.06f; // best value for InputFilesPX4_flow.zip data
+                //float scaleFactor = 0.882f; // best value for quad123.zip data which outputs flow rates that have already been scaled to rad/sec
+                float scaleFactor = 1.000f; // best value for quad-124.zip data which outputs flow rates that have already been scaled to rad/sec
+                flowRadX = flowRawPixelX * scaleFactor;
+                flowRadY = flowRawPixelY * scaleFactor;
+
+                // calculate motion compensated angular flow rates used for fusion in the main nav filter
+                _ekf->flowRadXYcomp[0] = flowRadX/_ekf->flowStates[0] + _ekf->omegaAcrossFlowTime[0];
+                _ekf->flowRadXYcomp[1] = flowRadY/_ekf->flowStates[0] + _ekf->omegaAcrossFlowTime[1];
+
+                // these flow rates are not motion compensated and are used for focal length scale factor estimation
+                _ekf->flowRadXY[0] = flowRadX;
+                _ekf->flowRadXY[1] = flowRadY;
+
+                // perform optical flow fusion
+                _ekf->fuseOptFlowData = true;
+                _ekf->fuseRngData = false;
+
+                // don't try to estimate focal length scale factor if GPS is not being used or there is no range finder.
+                if (_ekf->useGPS && _ekf->useRangeFinder) {
+                    _ekf->OpticalFlowEKF();
+                }
+                _ekf->FuseOptFlow();
+                _ekf->fuseOptFlowData = false;
+
+                // estimate speed over ground for cross-check of data (debugging only)
+                float tempQuat[4];
+                float euler[3];
+                for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
+                _ekf->quat2eul(euler, tempQuat);
+                float bx = (flowRadX - _ekf->angRate.x) * distLastValidReading;
+                float by = (flowRadY - _ekf->angRate.y) * distLastValidReading;
+                flowRawGroundSpeedY = cos(euler[2]) * bx + -sin(euler[2]) * by;
+                flowRawGroundSpeedX = -(sin(euler[2]) * bx + cos(euler[2]) * by);
+            } else {
+                _ekf->fuseOptFlowData = false;
+            }
+
+            // Fuse Ground distance Measurements
+            if (newDistData && _ekf->statesInitialised && _ekf->useRangeFinder)
+            {
+                if (distValid > 0.0f && _ekf->Tnb.z.z > 0.9f) {
+                    distLastValidReading = distGroundDistance;
+                    _ekf->rngMea = distGroundDistance;
+                    _ekf->fuseRngData = true;
+                    _ekf->fuseOptFlowData = false;
+                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
+                    _ekf->OpticalFlowEKF();
+                    _ekf->fuseRngData = false;
+                }
+            }
+
                 // Fuse GPS Measurements
                 if (newDataGps)
                 {
@@ -385,75 +508,86 @@ int main(int argc, char *argv[])
                     _ekf->fuseVelData = false;
                     _ekf->fusePosData = false;
                 }
+                _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
-                // // Fuse Optical Flow Measurements
-                // if (newOptFlowData)
-                // {
-                //     // recall states stored at time of measurement after adjusting for delays
-                //     _ekf->RecallStates(_ekf->statesAtOptFlowTime, (IMUmsec - msecOptFlowDelay));
-                //     _ekf->fuseOptFlowData = true;
-                //     _ekf->FuseOptFlow();
-                // }
-                // else
-                // {
-                //     _ekf->fuseOptFlowData = false;
-                // }
+                if (pOnboardFile > 0) {
+                    _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                }
 
-                if (newAdsData)
-                {
-                    // Could use a blend of GPS and baro alt data if desired
-                    _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
-                    _ekf->fuseHgtData = true;
+                _ekf->posNE[0] = posNED[0];
+                _ekf->posNE[1] = posNED[1];
+
+                // fuse GPS
+                if (_ekf->useGPS && IMUmsec < 1000) {
+                    _ekf->fuseVelData = true;
+                    _ekf->fusePosData = true;
+                    _ekf->fuseHgtData = false;
                     // recall states stored at time of measurement after adjusting for delays
-                    _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                    _ekf->RecallStates(_ekf->statesAtVelTime, (IMUmsec - msecVelDelay));
+                    _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
+                    // record the last fix time
+                    _ekf->lastFixTime_ms = IMUmsec;
                     // run the fusion step
                     _ekf->FuseVelposNED();
-                }
-                else
-                {
+                } else {
+                    _ekf->fuseVelData = false;
+                    _ekf->fusePosData = false;
                     _ekf->fuseHgtData = false;
                 }
+            }
+            else
+            {
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
+                _ekf->fuseHgtData = false;
+            }
 
-                // Fuse RangeFinder Measurements
-                if (newDistData)
-                {
-                    // recall states stored at time of measurement after adjusting for delays
-                    _ekf->RecallStates(_ekf->statesAtRngTime, (IMUmsec - msecRngDelay));
-                    _ekf->fuseRngData = true;
-                    _ekf->rngMea = distGroundDistance;
-                    _ekf->GroundEKF();
-                }
-                else
-                {
-                    _ekf->fuseRngData = false;
-                }
+            if (newAdsData && _ekf->statesInitialised)
+            {
+                // Could use a blend of GPS and baro alt data if desired
+                _ekf->hgtMea = 1.0f*_ekf->baroHgt + 0.0f*_ekf->gpsHgt - _ekf->hgtRef - _ekf->baroHgtOffset;
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
+                _ekf->fuseHgtData = true;
+                // recall states stored at time of measurement after adjusting for delays
+                _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
+                // run the fusion step
+                _ekf->FuseVelposNED();
+                printf("time = %e \n", IMUtimestamp);
+            }
+            else
+            {
+                _ekf->fuseVelData = false;
+                _ekf->fusePosData = false;
+                _ekf->fuseHgtData = false;
+            }
 
-                // Fuse Magnetometer Measurements
-                if (newDataMag)
-                {
-                    _ekf->fuseMagData = true;
-                    _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
-                    _ekf->magstate.obsIndex = 0;
-                    _ekf->FuseMagnetometer();
-                    _ekf->FuseMagnetometer();
-                    _ekf->FuseMagnetometer();
-                }
-                else
-                {
-                    _ekf->fuseMagData = false;
-                }
+            // Fuse Magnetometer Measurements
+            if (newDataMag && _ekf->statesInitialised && _ekf->useCompass)
+            {
+                _ekf->fuseMagData = true;
+                _ekf->RecallStates(_ekf->statesAtMagMeasTime, (IMUmsec - msecMagDelay)); // Assume 50 msec avg delay for magnetometer data
+                _ekf->magstate.obsIndex = 0;
+                _ekf->FuseMagnetometer();
+                _ekf->FuseMagnetometer();
+                _ekf->FuseMagnetometer();
+            }
+            else
+            {
+                _ekf->fuseMagData = false;
+            }
 
-                // Fuse Airspeed Measurements
-                if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f)
-                {
-                    _ekf->fuseVtasData = true;
-                    _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
-                    _ekf->FuseAirspeed();
-                }
-                else
-                {
-                    _ekf->fuseVtasData = false;
-                }
+            // Fuse Airspeed Measurements
+            if (newAdsData && _ekf->statesInitialised && _ekf->VtasMeas > 8.0f && _ekf->useAirspeed)
+            {
+                _ekf->fuseVtasData = true;
+                _ekf->RecallStates(_ekf->statesAtVtasMeasTime, (IMUmsec - msecTasDelay)); // assume 100 msec avg delay for airspeed data
+                _ekf->FuseAirspeed();
+            }
+            else
+            {
+                _ekf->fuseVtasData = false;
+            }
 
                 struct ekf_status_report ekf_report;
 
@@ -577,8 +711,6 @@ int main(int argc, char *argv[])
             //     (_ekf->fuseVtasData) ? "FUSE_VTAS" : "INH_VTAS",
             //     (_ekf->useAirspeed) ? "USE_AIRSPD" : "IGN_AIRSPD",
             //     (_ekf->useCompass) ? "USE_COMPASS" : "IGN_COMPASS");
-        }
-    }
 
     printf("\n\nSuccess: Finished processing complete dataset. Text files written.\n");
 }
@@ -696,81 +828,6 @@ void readGpsData()
     }
 }
 
-void readOptFlowData()
-{
-    // currently synthesize optical flow measurements from GPS velocities and estimated angles
-    if (newDataGps) {
-        float q0 = 0.0f;
-        float q1 = 0.0f;
-        float q2 = 0.0f;
-        float q3 = 1.0f;
-        Vector3f relVelSensor;
-        // Transformation matrix from nav to body axes
-        Mat3f Tnb;
-        // Transformation matrix from body to sensor axes
-        // assume camera is aligned with Z body axis plus a misalignment
-        // defined by 3 small angles about X, Y and Z body axis
-        Mat3f Tbs;
-        // Transformation matrix from navigation to sensor axes
-        Mat3f Tns;
-        // Copy required states to local variable names
-        q0       = _ekf->statesAtVelTime[0];
-        q1       = _ekf->statesAtVelTime[1];
-        q2       = _ekf->statesAtVelTime[2];
-        q3       = _ekf->statesAtVelTime[3];
-
-        // Define rotation from body to sensor axes
-        Tbs.x.y =  _ekf->a3;
-        Tbs.y.x = -_ekf->a3;
-        Tbs.x.z = -_ekf->a2;
-        Tbs.z.x =  _ekf->a2;
-        Tbs.y.z =  _ekf->a1;
-        Tbs.z.y = -_ekf->a1;
-
-        // calculate rotation from NED to body axes
-        float q00 = q0*q0;
-        float q11 = q1*q1;
-        float q22 = q2*q2;
-        float q33 = q3*q3;
-        float q01 = q0 * q1;
-        float q02 = q0 * q2;
-        float q03 = q0 * q3;
-        float q12 = q1 * q2;
-        float q13 = q1 * q3;
-        float q23 = q2 * q3;
-        Tnb.x.x = q00 + q11 - q22 - q33;
-        Tnb.y.y = q00 - q11 + q22 - q33;
-        Tnb.z.z = q00 - q11 - q22 + q33;
-        Tnb.y.x = 2*(q12 - q03);
-        Tnb.z.x = 2*(q13 + q02);
-        Tnb.x.y = 2*(q12 + q03);
-        Tnb.z.y = 2*(q23 - q01);
-        Tnb.x.z = 2*(q13 - q02);
-        Tnb.y.z = 2*(q23 + q01);
-
-        // calculate transformation from NED to sensor axes
-        Tns = Tbs*Tnb;
-
-        // calculate range from ground plain to centre of sensor fov assuming flat earth
-        float range = ConstrainFloat(_ekf->rngMea,0.5f,100.0f);
-
-        // calculate relative velocity in sensor frame
-        Vector3f temp;
-        temp.x=_ekf->velNED[0];
-        temp.y=_ekf->velNED[1];
-        temp.z=_ekf->velNED[2];
-        relVelSensor = Tns*temp;
-
-        // divide velocity by range  and include angular rate effects to get predicted angular LOS rates relative to X and Y axes
-        _ekf->losData[0] =  relVelSensor.y/range;
-        _ekf->losData[1] = -relVelSensor.x/range;
-
-        newOptFlowData = true;
-    } else {
-        newOptFlowData = false;
-    }
-}
-
 void readMagData()
 {
     // wind data forward to one update past current IMU data time
@@ -812,7 +869,6 @@ void readAirData()
 {
     // wind data forward to one update past current IMU data time
     // and then take data from previous update
-    // Currently synthesise a terrain measurement that is 5 m below the baro alt
     while (ADStimestamp <= IMUtimestamp && !endOfData)
     {
         for (uint8_t j=0; j<=9; j++)
@@ -850,43 +906,6 @@ void readAirData()
     }
 }
 
-void readDistData()
-{
-    if (pInDistFile <= 0)
-        return;
-
-    float temp[3];
-
-    // read in current value
-    while (distTimestamp <= IMUtimestamp)
-    {
-        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
-        {
-            float in;
-            if (fscanf(pInDistFile, "%f", &in) != EOF) temp[j] = in;
-            else endOfData = true;
-        }
-        if (!endOfData)
-        {
-            // timestamp, distance, flags
-            distTimestamp  = temp[0];       // in milliseconds
-            distGroundDistance = temp[1];   // in meters
-            distValid = (temp[2] > 0.0f);   // reading is valid
-
-            distMsec = temp[0];
-        }
-    }
-    if (distMsec > lastDistMsec && distValid)
-    {
-        lastDistMsec = distMsec;
-        newDistData = true;
-    }
-    else
-    {
-        newDistData = false;
-    }
-}
-
 void readOnboardData()
 {
     if (pOnboardFile <= 0)
@@ -907,6 +926,7 @@ void readOnboardData()
         if (!endOfData)
         {
             onboardTimestamp  = tempOnboard[0];
+            onboardMsec = tempOnboard[0];
             onboardLat = deg2rad*tempOnboard[1];
             onboardLon = deg2rad*tempOnboard[2] - pi;
             onboardHgt = tempOnboard[3];
@@ -957,6 +977,92 @@ void readAhrsData()
     }
 }
 
+void readFlowData()
+{
+    if (pInFlowFile <= 0)
+        return;
+
+    float temp[8];
+
+    // read in current value
+    while (flowTimestamp <= IMUtimestamp)
+    {
+        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
+        {
+            float in;
+            if (fscanf(pInFlowFile, "%f", &in) != EOF) temp[j] = in;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            // timestamp, rawx, rawy, distance, quality, sensor id, flowGyroX, flowGyroY
+            flowTimestamp = temp[0];       // in milliseconds
+            flowRawPixelX = temp[1];        // in pixels
+            flowRawPixelY = temp[2];        // in pixels
+            flowDistance  = temp[3];         // in meters
+            // catch glitches in logged data
+            if (flowRawPixelX > 200 || flowRawPixelY > 200 || flowRawPixelX < -200 || flowRawPixelY < -200) {
+                flowQuality = 0.0f;    // quality normalized between 0 and 1
+            } else {
+                flowQuality = temp[4] / 255;    // quality normalized between 0 and 1
+            }
+            flowSensorId = temp[5];         // sensor ID
+            flowGyroX = temp[6];
+            flowGyroY = temp[7];
+
+            flowMsec = temp[0];
+        }
+    }
+    if (flowMsec > lastFlowMsec)
+    {
+        // assume 1/2 interval effective delay associated with averaging inside the sensor
+        msecOptFlowDelay = (flowMsec - lastFlowMsec)/2;
+        lastFlowMsec = flowMsec;
+        newFlowData = true;
+    }
+    else
+    {
+        newFlowData = false;
+    }
+}
+
+void readDistData()
+{
+    if (pInDistFile <= 0)
+        return;
+
+    float temp[3];
+
+    // read in current value
+    while (distTimestamp <= IMUtimestamp)
+    {
+        for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
+        {
+            float in;
+            if (fscanf(pInDistFile, "%f", &in) != EOF) temp[j] = in;
+            else endOfData = true;
+        }
+        if (!endOfData)
+        {
+            // timestamp, distance, flags
+            distTimestamp  = temp[0];       // in milliseconds
+            distGroundDistance = temp[1];   // in meters
+            distValid = (temp[2] > 0.0f);   // reading is valid
+
+            distMsec = temp[0];
+        }
+    }
+    if (distMsec > lastDistMsec)
+    {
+        lastDistMsec = distMsec;
+        newDistData = true;
+    }
+    else
+    {
+        newDistData = false;
+    }
+}
+
 void WriteFilterOutput()
 {
 
@@ -988,13 +1094,16 @@ void WriteFilterOutput()
     fprintf(pCovOutFile,"\n");
     // velocity, position and height observations used by the filter
     fprintf(pRefPosVelOutFile," %e", float(IMUmsec*0.001f));
-    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", _ekf->velNED[0], _ekf->velNED[1], _ekf->velNED[2], _ekf->posNE[0], _ekf->posNE[1], _ekf->hgtMea);
+    fprintf(pRefPosVelOutFile," %e %e %e %e %e %e", _ekf->velNED[0], _ekf->velNED[1], _ekf->velNED[2], _ekf->posNE[0], _ekf->posNE[1], -_ekf->hgtMea);
     fprintf(pRefPosVelOutFile,"\n");
 
     fprintf(pOnboardPosVelOutFile," %e", float(IMUmsec*0.001f));
     fprintf(pOnboardPosVelOutFile," %e %e %e %e %e %e", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     // printf("velned onboard out: %e %e %e %e %e %e\n", onboardPosNED[0], onboardPosNED[1], -onboardPosNED[2] + _ekf->hgtRef, onboardVelNED[0], onboardVelNED[1], onboardVelNED[2]);
     fprintf(pOnboardPosVelOutFile,"\n");
+
+    fprintf(pOutFlowFile, " %e", float(IMUmsec*0.001f));
+    fprintf(pOutFlowFile, " %e %e %e %e %e %e %e %e %e\n", flowRadX, flowRadY, _ekf->angRate.x, _ekf->angRate.y, flowRawGroundSpeedX, flowRawGroundSpeedY, gpsRaw[4], gpsRaw[5], distLastValidReading);
 
     // raw GPS outputs
     fprintf(pGpsRawOUTFile," %e", float(IMUmsec*0.001f));
@@ -1038,6 +1147,8 @@ void WriteFilterOutput()
     {
         fprintf(pOptFlowFuseFile," %e %e", _ekf->innovOptFlow [i], _ekf->varInnovOptFlow[i]);
     }
+    // focal length scale factor and height above ground estimate and innovations from optical flow rates
+    fprintf(pOptFlowFuseFile," %e %e %e %e %e %e", _ekf->flowStates[0], _ekf->auxFlowObsInnov[0], _ekf->auxFlowObsInnov[1], _ekf->flowStates[1] - _ekf->states[9], distGroundDistance*_ekf->Tbn.z.z, - _ekf->states[9]);
     fprintf(pOptFlowFuseFile,"\n");
 }
 
