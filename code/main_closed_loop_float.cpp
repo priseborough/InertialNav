@@ -985,13 +985,19 @@ void readFlowData()
     float temp[8];
 
     // read in current value
-    while (flowTimestamp <= IMUtimestamp)
+    while (flowTimestamp <= IMUtimestamp && !endOfData)
     {
         for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
         {
             float in;
-            if (fscanf(pInFlowFile, "%f", &in) != EOF) temp[j] = in;
-            else endOfData = true;
+            if (fscanf(pInFlowFile, "%f", &in) != EOF)
+            {
+                temp[j] = in;
+            }
+            else
+            {
+                endOfData = true;
+            }
         }
         if (!endOfData)
         {
@@ -1034,7 +1040,7 @@ void readDistData()
     float temp[3];
 
     // read in current value
-    while (distTimestamp <= IMUtimestamp)
+    while (distTimestamp <= IMUtimestamp && !endOfData)
     {
         for (unsigned j = 0; j < (sizeof(temp) / sizeof(temp[0])); j++)
         {
