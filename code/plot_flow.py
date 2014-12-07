@@ -16,7 +16,7 @@ import math
 	# 18-20: Body Magnetic Field Vector - milligauss (X,Y,Z)
 
 data = np.genfromtxt('FlowRawOut.txt', delimiter=' ', skip_header=1,
-	skip_footer=1, names=['time', 'flowRadX', 'flowRadY', 'gyroX', 'gyroY', 'flowMsX', 'flowMsY', 'GpsVn', 'GpsVe', 'distance' , 'predFlowX', 'predFlowY'])
+	skip_footer=1, names=['time', 'flowRadX', 'flowRadY', 'gyroX', 'gyroY', 'flowMsX', 'flowMsY', 'GpsVn', 'GpsVe', 'distance'])
 
 fig = plt.figure()
 
@@ -27,7 +27,7 @@ ax1.set_xlabel('time (s)')
 ax1.set_ylabel('flow X (rad)')
 ax1.plot(data['time'], data['flowRadX'], color='r', label='flow x')
 #ax1.plot(data['time'], data['gyroX'], color='b', label='angular rate x')
-ax1.plot(data['time'], data['predFlowX'], color='g', label='pred flow x')
+#ax1.plot(data['time'], data['predFlowX'], color='g', label='pred flow x')
 
 ax2 = fig.add_subplot(212)
   
@@ -35,7 +35,7 @@ ax2.set_xlabel('time (s)')
 ax2.set_ylabel('flow Y (rad)')
 ax2.plot(data['time'], data['flowRadY'], color='r', label='flow y')
 #ax2.plot(data['time'], data['gyroY'], color='b', label='angular rate y')
-ax2.plot(data['time'], data['predFlowY'], color='g', label='pred flow y')
+#ax2.plot(data['time'], data['predFlowY'], color='g', label='pred flow y')
 
 figvel = plt.figure()
 
