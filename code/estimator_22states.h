@@ -74,12 +74,12 @@ public:
         accelProcessNoise = 0.5f;
 
         gndHgtSigma  = 0.1f; // terrain gradient 1-sigma
-        R_LOS = 0.09f; // optical flow measurement noise variance (rad/sec)^2
+        R_LOS = 0.3f; // optical flow measurement noise variance (rad/sec)^2
         flowInnovGate = 3.0f; // number of standard deviations applied to the optical flow innovation consistency check
         auxFlowInnovGate = 10.0f; // number of standard deviations applied to the optical flow innovation consistency check used by the auxiliary filter
-        rngInnovGate = 5.0f; // number of standard deviations applied to the rnage finder innovation consistency check
+        rngInnovGate = 5.0f; // number of standard deviations applied to the range finder innovation consistency check
         minFlowRng = 0.3f; //minimum range between ground and flow sensor
-        moCompR_LOS = 0.2; // scaler from sensor gyro rate to uncertainty in LOS rate
+        moCompR_LOS = 0.0; // scaler from sensor gyro rate to uncertainty in LOS rate
 
     }
 

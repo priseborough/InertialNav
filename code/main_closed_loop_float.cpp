@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
                 //float scaleFactor = 0.03f; // best value for quad106.zip data using the 16 mm lens
                 //float scaleFactor = 0.06f; // best value for InputFilesPX4_flow.zip data
                 //float scaleFactor = 0.882f; // best value for quad123.zip data which outputs flow rates that have already been scaled to rad/sec
-                float scaleFactor = 1.000f; // best value for quad-124.zip data which outputs flow rates that have already been scaled to rad/sec
+                float scaleFactor = 1.000f; // best value for quadOptFlowLogData.zip data which outputs flow rates that have already been scaled to rad/sec
                 flowRadX = flowRawPixelX * scaleFactor;
                 flowRadY = flowRawPixelY * scaleFactor;
 
