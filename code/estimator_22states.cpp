@@ -114,7 +114,7 @@ AttPosEKF::AttPosEKF() :
 
     onGround(true),
     staticMode(true),
-    useGPS(true),
+    useGPS(false),
     useAirspeed(true),
     useCompass(true),
     useRangeFinder(true),
