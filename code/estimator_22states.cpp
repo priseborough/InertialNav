@@ -2508,7 +2508,7 @@ void AttPosEKF::ConstrainStates()
 
     // Constrain altitude
     // NOT FOR FLIGHT : Upper value of 0.0 is a temporary fix to get around lack of range finder data during development testing
-    states[9] = ConstrainFloat(states[9], -4.0e4f, 0.0f);
+    states[9] = ConstrainFloat(states[9], -4.0e4f, 4.0e4f);
 
     // Angle bias limit - set to 8 degrees / sec
     for (unsigned i = 10; i <= 12; i++) {
