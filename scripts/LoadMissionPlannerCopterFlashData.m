@@ -1,6 +1,5 @@
-%clear all;
-%load('quadEKF_400_1.mat');
-load('SkyhunterOptFlow.mat');
+clear all;
+load('ekfOptFlowCopter.mat');
 %maxtime = 600000;
 %% IMU Data
 
@@ -62,17 +61,35 @@ if ~isempty(BARO)
     NTUN = [ADStimestamp ADStimestamp zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) zeros(size(Veas, 1), 1) Veas HgtBaro zeros(size(Veas, 1), 1)];
 end
 
+%% Range Finder Data
+
+if ~isempty(EKF5)
+    DIST(:,1) = (EKF5(:,2) - zerotimestamp);
+    DIST(:,2) = EKF5(:,10);
+    DIST(:,3) = 1;
+end
+
 %% PX4Flow Data
 
-if ~isempty(OF)
+if (~isempty(OF) && ~isempty(EKF5))
     OF(:,2) = (OF(:,2) - zerotimestamp);
+    EKF5(:,2) = (EKF5(:,2) - zerotimestamp);
     % timestamp, flowx, flowy, distance, quality, sensor id, angRateX,
     % angRateY
-    FLOW_OUT = [OF(:,2) OF(:,7) -OF(:,6) OF(:,8) OF(:,3) 77*ones(size(OF(:,1))) 0.001*OF(:,4) 0.001*OF(:,5)];
-elseif ~isempty(EKF5)
-    EKF5(:,2) = (EKF5(:,2) - zerotimestamp);
-    % timestamp, flowx, flowy, distance, quality, sensor id, angRateX, angRateY
-    FLOW_OUT = [EKF5(:,2) EKF5(:,3) EKF5(:,4) zeros(size(EKF5(:,1))) EKF5(:,9) 77*ones(size(EKF5(:,1))) EKF5(:,5) EKF5(:,6)];
+    % resample range measurements to be at same time coordinates as OF data 
+    newIndex = 1;
+    clear range rangeTime;
+    rangeTime(1) = EKF5(1,2);
+    range(1) = EKF5(1,10);
+    for index = 1:length(EKF5(:,2))-1
+        if ((EKF5(index + 1,2) - EKF5(index,2)) > 10)
+            rangeTime(newIndex) = EKF5(index + 1,2);
+            range(newIndex) = EKF5(index + 1,10);
+            newIndex = newIndex +1;
+        end
+    end
+    range = interp1(rangeTime,range,OF(:,2),'nearest',0);
+    FLOW_OUT = [OF(:,2) -OF(:,4) -OF(:,5) range OF(:,3) 77*ones(size(OF(:,1))) OF(:,6) OF(:,7)];
 end
 
 %% Reference Data
@@ -107,70 +124,70 @@ if ~isempty(ATT)
 end
 
 %% Prune data
-% i = 1;
-% prune_start_time = IMU(1,1)
-% 
-% % Go right to the end of logfile minus 1000 ms
-% %maxtime = IMU(end,1) - 1000;
-% 
-% if (exist('IMU', 'var') == 1)
-%     while (i < size(IMU, 1) && (IMU(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     IMU = IMU(1:i,:);
-%     
-%     i = 1;
-% end
-% 
-% if (exist('GPS', 'var') == 1)
-%     while (i < size(GPS, 1) && (GPS(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     GPS = GPS(1:i,:);
-%     
-%     i = 1;
-% end
-% 
-% if (exist('MAG', 'var') == 1)
-%     while (i < size(MAG, 1) && (MAG(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     MAG = MAG(1:i,:);
-% end
-% 
-% i = 1;
-% 
-% if (exist('FLOW', 'var') == 1)
-%     while (i < size(FLOW, 1) && (FLOW(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     FLOW = FLOW(1:i,:);
-% end
-% 
-% i = 1;
-% 
-% if (exist('NTUN', 'var') == 1)
-%     while (i < size(NTUN, 1) && (NTUN(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     NTUN = NTUN(1:i,:);
-% end
-% 
-% i = 1;
-% 
-% if (exist('ATT', 'var') == 1)
-%     while (i < size(ATT, 1) && (ATT(i,1) - prune_start_time) < maxtime)
-%         i = i+1;
-%     end
-%     
-%     ATT = ATT(1:i,:);
-%     
-% end
+i = 1;
+prune_start_time = IMU(1,1) + 1000
+
+% Go right to the end of logfile minus 1000 ms
+maxtime = IMU(end,1) - 1000
+
+if (exist('IMU', 'var') == 1)
+    while (i < size(IMU, 1) && (IMU(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    IMU = IMU(1:i,:);
+    
+    i = 1;
+end
+
+if (exist('GPS', 'var') == 1)
+    while (i < size(GPS, 1) && (GPS(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    GPS = GPS(1:i,:);
+    
+    i = 1;
+end
+
+if (exist('MAG', 'var') == 1)
+    while (i < size(MAG, 1) && (MAG(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    MAG = MAG(1:i,:);
+end
+
+i = 1;
+
+if (exist('FLOW', 'var') == 1)
+    while (i < size(FLOW, 1) && (FLOW(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    FLOW = FLOW(1:i,:);
+end
+
+i = 1;
+
+if (exist('NTUN', 'var') == 1)
+    while (i < size(NTUN, 1) && (NTUN(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    NTUN = NTUN(1:i,:);
+end
+
+i = 1;
+
+if (exist('ATT', 'var') == 1)
+    while (i < size(ATT, 1) && (ATT(i,1) - prune_start_time) < maxtime)
+        i = i+1;
+    end
+    
+    ATT = ATT(1:i,:);
+    
+end
 
 %% Save to files
 startTime = IMUtime(1,1);
@@ -200,6 +217,7 @@ save('ATT.txt','ATT','-ascii');
 save('NTUN.txt','NTUN','-ascii');
 save('timing.txt','alignTime','startTime','endTime','msecVelDelay','msecPosDelay','msecHgtDelay','msecMagDelay','msecTasDelay','EAS2TAS','-ascii');
 save('FLOW.txt','FLOW_OUT','-ascii');
+save('DIST.txt','DIST','-ascii');
 
 clear all;
 load('NavFilterTestData.mat');
