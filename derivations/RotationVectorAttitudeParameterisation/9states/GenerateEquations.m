@@ -136,6 +136,21 @@ F = jacobian([errRotNew;vNew;dabNew], stateVector);
 F = subs(F, {'rotErr1', 'rotErr2', 'rotErr3'}, {0,0,0});
 f = matlabFunction(F,'file','calcF.m');
 
+% define a symbolic covariance matrix using strings to represent 
+% '_l_' to represent '( '
+% '_c_' to represent ,
+% '_r_' to represent ')' 
+% these can be substituted later to create executable code
+% for rowIndex = 1:nStates
+%     for colIndex = 1:nStates
+%         eval(['syms OP_l_',num2str(rowIndex),'_c_',num2str(colIndex), '_r_ real']);
+%         eval(['P(',num2str(rowIndex),',',num2str(colIndex), ') = OP_l_',num2str(rowIndex),'_c_',num2str(colIndex),'_r_;']);
+%     end
+% end
+
+% Derive the predicted covariance matrix using the standard equation
+% nextP = F*P*transpose(F) + Q;
+% f = matlabFunction(nextP,'file','calcP.m');
 %% derive equations for fusion of magnetic deviation measurement
 % rotate body measured field into earth axes
 magMeasNED = Tbn*[magX;magY;magZ]; 

@@ -29,7 +29,7 @@ Kfusion = (P*transpose(H))/varInnov;
 
 % Calculate the predicted magnetic declination
 magMeasNED = Tbn*[magX;magY;magZ];
-predDec = tan(magMeasNED(2)/magMeasNED(1));
+predDec = atan2(magMeasNED(2),magMeasNED(1));
 
 % Calculate the measurement innovation
 innovation = predDec - measDec;

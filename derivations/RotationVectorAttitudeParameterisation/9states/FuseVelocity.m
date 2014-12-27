@@ -1,6 +1,7 @@
 function [...
     quat, ... % quaternion state vector after fusion of measurements
     states, ... % state vector after fusion of measurements
+    angErrVec, ... % angle error vector
     P, ... % state covariance matrix after fusion of corrections
     innovation,... % NED velocity innovations (m/s)
     varInnov] ... % NED velocity innovation variance ((m/s)^2)
@@ -14,6 +15,7 @@ R_OBS = 0.5^2;
 innovation = zeros(1,3);
 varInnov = zeros(1,3);
 % Fuse measurements sequentially
+angErrVec = [0;0;0];
 for obsIndex = 1:3
     stateIndex = 3 + obsIndex;
     % Calculate the velocity measurement innovation
@@ -31,6 +33,9 @@ for obsIndex = 1:3
     % Apply the state corrections
     states(1:3) = 0;
     states = states - xk;
+    
+    % Store tilt error estimate for external monitoring
+    angErrVec = angErrVec + states(1:3);
     
     % the first 3 states represent the angular misalignment vector. This is
     % is used to correct the estimated quaternion

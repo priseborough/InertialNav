@@ -43,7 +43,7 @@ P = F*P*transpose(F) + Q;
 
 % Add the general process noise
 for i = 1:9
-    P(i,i) = P(i,i) + processNoise(i);
+    P(i,i) = P(i,i) + processNoise(i)^2;
 end
 
 % Force symmetry on the covariance matrix to prevent ill-conditioning
