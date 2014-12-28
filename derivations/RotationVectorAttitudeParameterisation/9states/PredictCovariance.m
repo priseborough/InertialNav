@@ -9,7 +9,7 @@ function P  = PredictCovariance(deltaAngle, ...
 % equations). It  includes the process noise required for evolution of the 
 % IMU bias errors
 
-dAngBiasSigma = dt*0.05/3600*pi/180;
+dAngBiasSigma = dt*1E-6;
 processNoise = [0*ones(1,6), dAngBiasSigma*[1 1 1]];
 
 % Specify the estimated errors on the delta angles and delta velocities
