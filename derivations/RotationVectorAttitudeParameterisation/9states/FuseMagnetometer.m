@@ -34,6 +34,17 @@ predDec = atan2(magMeasNED(2),magMeasNED(1));
 % Calculate the measurement innovation
 innovation = predDec - measDec;
 
+if (innovation > pi)
+    innovation = innovation - 2*pi;
+elseif (innovation < -pi)
+    innovation = innovation + 2*pi;
+end
+if (innovation > 0.5)
+    innovation = 0.5;
+elseif (innovation < -0.5)
+    innovation = -0.5;
+end
+
 % correct the state vector
 states(1:3) = 0;
 states = states - Kfusion * innovation;

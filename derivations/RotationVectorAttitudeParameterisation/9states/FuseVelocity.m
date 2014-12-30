@@ -1,7 +1,7 @@
 function [...
     quat, ... % quaternion state vector after fusion of measurements
     states, ... % state vector after fusion of measurements
-    angErrVec, ... % angle error vector
+    angErr, ... % angle error
     P, ... % state covariance matrix after fusion of corrections
     innovation,... % NED velocity innovations (m/s)
     varInnov] ... % NED velocity innovation variance ((m/s)^2)
@@ -66,5 +66,7 @@ for obsIndex = 1:3
     end
     
 end
+
+angErr = sqrt(dot(angErrVec,angErrVec));
 
 end
