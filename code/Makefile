@@ -12,8 +12,8 @@ CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -Wpacked \
 			   -Wno-unused-parameter \
 			   -Werror=format-security \
+			   -Wmissing-field-initializers \
 			   -Wfatal-errors \
-			   -Wno-missing-field-initializers \
 			   -std=c++11
 
 ODIR=obj

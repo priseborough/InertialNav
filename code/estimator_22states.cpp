@@ -94,6 +94,8 @@ AttPosEKF::AttPosEKF() :
     refSet(false),
     magBias(),
     covSkipCount(0),
+    lastFixTime_ms(0),
+    globalTimeStamp_ms(0),
     gpsLat(0.0),
     gpsLon(-M_PI),
     gpsHgt(0.0f),
@@ -111,6 +113,7 @@ AttPosEKF::AttPosEKF() :
     inhibitWindStates(true),
     inhibitMagStates(true),
     inhibitGndState(true),
+    inhibitScaleState(true),
 
     onGround(true),
     staticMode(true),
@@ -1955,7 +1958,7 @@ void AttPosEKF::FuseOptFlow()
                 }
                 // normalise the quaternion states
                 float quatMag = sqrt(states[0]*states[0] + states[1]*states[1] + states[2]*states[2] + states[3]*states[3]);
-                if (quatMag > 1e-12)
+                if (quatMag > 1e-12f)
                 {
                     for (uint8_t j= 0; j<=3; j++)
                     {
