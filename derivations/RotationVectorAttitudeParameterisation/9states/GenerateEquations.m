@@ -122,7 +122,6 @@ distVector = [daxNoise;dayNoise;dazNoise;dvxNoise;dvyNoise;dvzNoise];
 % derive the control(disturbance) influence matrix
 G = jacobian([errRotNew;vNew;dabNew], distVector);
 G = subs(G, {'rotErr1', 'rotErr2', 'rotErr3'}, {0,0,0});
-f = matlabFunction(G,'file','calcG.m');
 
 % derive the state error matrix
 distMatrix = diag(distVector);

@@ -21,7 +21,7 @@ magX = magData(1);
 magY = magData(2);
 magZ = magData(3);
 
-R_MAG = 0.05^2;
+R_MAG = 0.1745^2;
 
 H = calcH_MAG(magX,magY,magZ,q0,q1,q2,q3);
 varInnov = (H*P*transpose(H) + R_MAG);

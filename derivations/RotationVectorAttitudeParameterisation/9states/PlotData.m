@@ -1,7 +1,6 @@
 %% calculate and plot tilt correction magnitude
-temp = sqrt(angErrLog(2,:).^2 + angErrLog(3,:).^2)*180/pi;
 figure;
-plot(angErrLog(1,:),temp);
+plot(angErrLog(1,:),angErrLog(2,:));
 grid on;
 ylabel('Tilt correction magnitude (deg)');
 xlabel('time (sec)');
@@ -11,4 +10,19 @@ figure;
 plot(statesLog(1,:),statesLog(8:10,:)/dt*180/pi);
 grid on;
 ylabel('Gyro Bias Estimate (deg/sec)');
+xlabel('time (sec)');
+
+%% plot Euler angle estimates
+figure;
+eulLog(4,:) = eulLog(4,:) + pi;
+plot(eulLog(1,:),eulLog(2:4,:)*180/pi);
+grid on;
+ylabel('Euler Angle Estimates (deg)');
+xlabel('time (sec)');
+
+%% plot velocity innovations
+figure;
+plot(statesLog(1,:),statesLog(5:7,:));
+grid on;
+ylabel('EKF velocity Innovations (m/s)');
 xlabel('time (sec)');
