@@ -1,0 +1,53 @@
+
+nextPopt = zeros(1,1);
+nextPopt(1,1) = Popt + stateNoiseVar;
+
+
+SH_OPT = zeros(4,1);
+SH_OPT(1) = q0^2 - q1^2 - q2^2 + q3^2;
+SH_OPT(2) = 1/(pd - ptd)^2;
+SH_OPT(3) = q1^2;
+SH_OPT(4) = 2*q0*q3;
+
+
+H_OPT = zeros(2,1);
+H_OPT(1,1) = SH_OPT(1)*SH_OPT(2)*(vel_y*(SH_OPT(3) - q0^2 - q2^2 + q3^2) - vel_z*(2*q0*q1 + 2*q2*q3) + vel_x*(SH_OPT(4) - 2*q1*q2));
+H_OPT(2,1) = SH_OPT(1)*SH_OPT(2)*(vel_x*(SH_OPT(3) + q0^2 - q2^2 - q3^2) - vel_z*(2*q0*q2 - 2*q1*q3) + vel_y*(SH_OPT(4) + 2*q1*q2));
+
+
+SK_OPT = zeros(4,1);
+SK_OPT(1) = vel_x*(SH_OPT(3) + q0^2 - q2^2 - q3^2) - vel_z*(2*q0*q2 - 2*q1*q3) + vel_y*(SH_OPT(4) + 2*q1*q2);
+SK_OPT(2) = vel_y*(SH_OPT(3) - q0^2 - q2^2 + q3^2) - vel_z*(2*q0*q1 + 2*q2*q3) + vel_x*(SH_OPT(4) - 2*q1*q2);
+SK_OPT(3) = SH_OPT(2)^2;
+SK_OPT(4) = SH_OPT(1)^2;
+
+
+K_OPT = zeros(1,2);
+K_OPT(1,1) = (Popt*SH_OPT(1)*SH_OPT(2)*SK_OPT(2))/(R_OPT + Popt*SK_OPT(2)^2*SK_OPT(3)*SK_OPT(4));
+K_OPT(1,2) = (Popt*SH_OPT(1)*SH_OPT(2)*SK_OPT(1))/(R_OPT + Popt*SK_OPT(1)^2*SK_OPT(3)*SK_OPT(4));
+
+
+nextPopt = zeros(1,1);
+nextPopt(1,1) = Popt - (Popt^2*SH_OPT(1)^2*SH_OPT(2)^2*SK_OPT(2)*(vel_y*(SH_OPT(3) - q0^2 - q2^2 + q3^2) - vel_z*(2*q0*q1 + 2*q2*q3) + vel_x*(SH_OPT(4) - 2*q1*q2)))/(R_OPT + Popt*SK_OPT(2)^2*SK_OPT(3)*SK_OPT(4));
+
+
+nextPopt = zeros(1,1);
+nextPopt(1,1) = Popt - (Popt^2*SH_OPT(1)^2*SH_OPT(2)^2*SK_OPT(1)*(vel_x*(SH_OPT(3) + q0^2 - q2^2 - q3^2) - vel_z*(2*q0*q2 - 2*q1*q3) + vel_y*(SH_OPT(4) + 2*q1*q2)))/(R_OPT + Popt*SK_OPT(1)^2*SK_OPT(3)*SK_OPT(4));
+
+
+H_RNG = zeros(1,1);
+H_RNG(1,1) = 1/(q0^2 - q1^2 - q2^2 + q3^2);
+
+
+SK_RNG = zeros(1,1);
+SK_RNG(1) = q0^2 - q1^2 - q2^2 + q3^2;
+
+
+K_RNG = zeros(1,1);
+K_RNG = zeros(1,1);
+K_RNG(1) = Popt/(SK_RNG(1)*(R_RNG + Popt/SK_RNG(1)^2));
+
+
+nextPopt = zeros(1,1);
+nextPopt(1,1) = Popt - Popt^2/(SK_RNG(1)*(R_RNG + Popt/SK_RNG(1)^2)*(q0^2 - q1^2 - q2^2 + q3^2));
+
