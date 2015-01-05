@@ -70,42 +70,40 @@ relVelSensor = transpose(Tbn)*[vel_x;vel_y;vel_z];
 range = ((terrainState - navPosD)/Tbn(3,3));
 optRateX =  relVelSensor(2)/range;
 optRateY = -relVelSensor(1)/range;
+predFlow = [optRateX;optRateY];
+matlabFunction(predFlow,'file','calcPredFlow.m');
 
 % calculate the observation jacobian
 H_OPTX = jacobian(optRateX,terrainState);
 H_OPTY = jacobian(optRateY,terrainState);
 H_OPT = [H_OPTX;H_OPTY];
-[H_OPT,SH_OPT]=OptimiseAlgebra(H_OPT,'SH_OPT');
+matlabFunction(H_OPT,'file','calcH_OPT.m');
 
 % calculate Kalman gain vectors
 % combine into a single K matrix to enable common expressions to be found
 % note this matrix cannot be used in a single step fusion
-K_OPTX = (Popt*transpose(H_OPT(1,:)))/(H_OPT(1,:)*Popt*transpose(H_OPT(1,:)) + R_LOS);
-K_OPTY = (Popt*transpose(H_OPT(2,:)))/(H_OPT(2,:)*Popt*transpose(H_OPT(2,:)) + R_LOS);
+K_OPTX = Popt*H_OPT(1)/(H_OPT(1)*Popt*H_OPT(1) + R_LOS);
+K_OPTY = Popt*H_OPT(2)/(H_OPT(2)*Popt*H_OPT(2) + R_LOS);
 K_OPT = [K_OPTX,K_OPTY];
-[K_OPT,SK_OPT]=OptimiseAlgebra(K_OPT,'SK_OPT');
+matlabFunction(K_OPT,'file','calcK_OPT.m');
 
 %% derive equations for fusion of range finder measurements
 % assume laser is aligned in the X-Z body plane 
 % calculate range from plane to centre of sensor fov assuming flat earth
 range = ((terrainState - navPosD)/Tbn(3,3));
 H_RNG = jacobian(range,terrainState); % measurement Jacobian
+matlabFunction(H_RNG,'file','calcH_RNG.m');
 
 % calculate the Kalman gain matrix and optimise algebra
 K_RNG = (Popt*transpose(H_RNG))/(H_RNG*Popt*transpose(H_RNG) + R_RNG);
-[K_RNG,SK_RNG]=OptimiseAlgebra(K_RNG,'SK_RNG');
+matlabFunction(K_RNG,'file','calcK_RNG.m');
 
 %% derive the covariance update equations
 %P = (I - K*H)*P
-nextPX = Popt - K_OPT(:,1)*H_OPT(1,:)*Popt;
-nextPY = Popt - K_OPT(:,2)*H_OPT(2,:)*Popt;
+nextPX = Popt - K_OPT(1)*H_OPT(1)*Popt;
+nextPY = Popt - K_OPT(2)*H_OPT(2)*Popt;
 nextPR = Popt - K_RNG*H_RNG*Popt;
 
 %% Save output
 fileName = strcat('SymbolicOutput.mat');
-save(fileName);
-
-%% Write equations to text and convert to m and c code fragments
-SaveScriptCode;
-ConvertToM;
-ConvertToC;
+save(fileName)
