@@ -53,27 +53,27 @@ You will need Matlab + Simulink 2012a or later to run this model
 
 Instructions to run:
 
-1) Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
-2) Make 'models' your working directory
-3) Run the RunNavFilterTestHarness24.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
+1. Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
+2. Make 'models' your working directory
+3. Run the RunNavFilterTestHarness24.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
    the 21-state filter
-4) Test data will be loaded and the model will be built, run and plots generated.
+4. Test data will be loaded and the model will be built, run and plots generated.
 
 You can load other test data by modifying the file load command at the top of the LoadNavFilterTestData.m script file.
 
 
 ### Instructions To Run C++ code test harness ###
 
-1) Go to the code directory and run make
-2) Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable (unzip one of the data ZIP files)
-3) Run: ./estimator_closed_loop_test
-4) The program will put the results into the following space deliminted data files
-5) Run make plots to generate Python plots
+1. Go to the code directory and run make
+2. Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable (unzip one of the data ZIP files)
+3. Run: ./estimator_closed_loop_test
+4. The program will put the results into the following space deliminted data files
+5. Run make plots to generate Python plots
 
-CovDataOut.txt
-EulDataOut.txt
-MagFuse.txt
-RefVelPosDataOut.txt
-StateDataOut.txt
-TasFuse.txt
-VelPosFuse.txt
+ * CovDataOut.txt
+ * EulDataOut.txt
+ * MagFuse.txt
+ * RefVelPosDataOut.txt
+ * StateDataOut.txt
+ * TasFuse.txt
+ * VelPosFuse.txt
