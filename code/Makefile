@@ -58,10 +58,11 @@ tests:
 	make
 	unzip -o InputFilesPX4.zip
 	./estimator_closed_loop_test
+#make clean
+#export CXX=arm-none-eabi-gcc
+#export EXTRAARGS=--specs=nosys.specs
+#make
+#export CXX="g++"
+#export EXTRAARGS=""
 	make clean
-	export CXX=arm-none-eabi-gcc
-	export EXTRAARGS=--specs=nosys.specs
-	make
-	export CXX="g++"
-	export EXTRAARGS=""
-	make clean
+	./validate_output.py
