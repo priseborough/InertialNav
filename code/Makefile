@@ -1,5 +1,6 @@
 
-CC=g++
+CXX?=g++
+EXTRAARGS?=""
 CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -fno-strength-reduce \
 			   -fomit-frame-pointer \
@@ -33,11 +34,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 #$(DEPS)
 $(ODIR)/%.o: %.cpp
 	mkdir -p $(ODIR)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CXX) -c -o $@ $< $(CFLAGS)
 
 #
 estimator_closed_loop_test: $(OBJ)
-	g++ -O3 -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CXX) -O3 -o $@ $^ $(CFLAGS) $(LIBS) $(EXTRAARGS)
 
 .PHONY: clean plots
 
@@ -49,3 +50,18 @@ plots:
 	python plot_position.py &
 	python plot_states.py &
 	python plot_velocity.py &
+
+tests:
+	make clean
+	export CXX="g++"
+	export EXTRAARGS=""
+	make
+	unzip -o InputFilesPX4.zip
+	./estimator_closed_loop_test
+	make clean
+	export CXX=arm-none-eabi-gcc
+	export EXTRAARGS=--specs=nosys.specs
+	make
+	export CXX="g++"
+	export EXTRAARGS=""
+	make clean
