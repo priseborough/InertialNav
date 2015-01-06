@@ -1,3 +1,5 @@
+## Inertial Navigation Estimation Library ##
+
 Files for prototype 21, 22, 23 and 24 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
@@ -39,8 +41,8 @@ airframe limitations.
 
 Some additional data sets incorporating optical flow and range finder measurements are included.
 
-========================================================================================================================
-Instructions To Run Simulink Model:
+
+### Instructions To Run Simulink Model ###
 
 Note : Simulink models are only available for 21 and 24 state architecture, and do not include range finder or optical
 flow measurements.
@@ -57,13 +59,14 @@ Instructions to run:
 
 You can load other test data by modifying the file load command at the top of the LoadNavFilterTestData.m script file.
 
-========================================================================================================================
-Instructions To Run C++ code test harness
 
-1) Build the main - closed loop test harness - single precision.cpp file
-2) Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable
-3) Run and exit when the Euler difference display stops updating
-4) The program will put the results into the folliwing space deliminted data files:
+### Instructions To Run C++ code test harness ###
+
+1) Go to the code directory and run make
+2) Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable (unzip one of the data ZIP files)
+3) Run: ./estimator_closed_loop_test
+4) The program will put the results into the following space deliminted data files
+5) Run make plots to generate Python plots
 
 CovDataOut.txt
 EulDataOut.txt
