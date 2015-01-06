@@ -1,6 +1,6 @@
 
 CXX?=g++
-EXTRAARGS?=""
+EXTRAARGS?=
 CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -fno-strength-reduce \
 			   -fomit-frame-pointer \
