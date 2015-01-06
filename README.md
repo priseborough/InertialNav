@@ -1,5 +1,7 @@
 ## Inertial Navigation Estimation Library ##
 
+[![Build Status](https://travis-ci.org/priseborough/InertialNav.svg?branch=master)](https://travis-ci.org/priseborough/InertialNav)
+
 Files for prototype 21, 22, 23 and 24 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
