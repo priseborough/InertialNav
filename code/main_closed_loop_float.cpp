@@ -580,6 +580,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    delete _ekf;
+
     printf("\n\nSuccess: Finished processing complete dataset. Text files written.\n");
 }
 
