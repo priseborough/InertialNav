@@ -18,7 +18,8 @@ CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -Werror=array-bounds \
 			   -Wfatal-errors \
 			   -Wno-missing-field-initializers \
-			   -std=gnu++0x
+			   -std=c++11 \
+			   -stdlib=libc++
 
 ODIR=obj
 LDIR =../lib

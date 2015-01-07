@@ -115,28 +115,28 @@ float gpsVelD;
 AttPosEKF                   *_ekf;
 
 // Data file identifiers
-FILE * pImuFile;
-FILE * pMagFile;
-FILE * pGpsFile;
-FILE * pAhrsFile;
-FILE * pAdsFile;
-FILE * pStateOutFile;
-FILE * pEulOutFile;
-FILE * pCovOutFile;
-FILE * pRefPosVelOutFile;
-FILE * pVelPosFuseFile;
-FILE * pMagFuseFile;
-FILE * pTasFuseFile;
-FILE * pRngFuseFile;
-FILE * pOptFlowFuseFile;
-FILE * pTimeFile;
-FILE * pGpsRawOUTFile;
-FILE * pGpsRawINFile;
-FILE * validationOutFile;
-FILE * pOnboardPosVelOutFile;
-FILE * pOnboardFile;
-FILE * pInFlowFile;
-FILE * pInDistFile;
+FILE * pImuFile = nullptr;
+FILE * pMagFile = nullptr;
+FILE * pGpsFile = nullptr;
+FILE * pAhrsFile = nullptr;
+FILE * pAdsFile = nullptr;
+FILE * pStateOutFile = nullptr;
+FILE * pEulOutFile = nullptr;
+FILE * pCovOutFile = nullptr;
+FILE * pRefPosVelOutFile = nullptr;
+FILE * pVelPosFuseFile = nullptr;
+FILE * pMagFuseFile = nullptr;
+FILE * pTasFuseFile = nullptr;
+FILE * pRngFuseFile = nullptr;
+FILE * pOptFlowFuseFile = nullptr;
+FILE * pTimeFile = nullptr;
+FILE * pGpsRawOUTFile = nullptr;
+FILE * pGpsRawINFile = nullptr;
+FILE * validationOutFile = nullptr;
+FILE * pOnboardPosVelOutFile = nullptr;
+FILE * pOnboardFile = nullptr;
+FILE * pInFlowFile = nullptr;
+FILE * pInDistFile = nullptr
 
 FILE * open_with_exit(const char* filename, const char* flags)
 {
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
             // Initialise states, covariance and other data
             if ((IMUmsec > msecAlignTime) && !_ekf->statesInitialised && (_ekf->GPSstatus == 3))
             {
-                if (pGpsRawINFile > 0)
+                if (pGpsRawINFile != nullptr)
                 {
                     _ekf->velNED[0] = gpsRaw[4];
                     _ekf->velNED[1] = gpsRaw[5];
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
                 if (newDataGps)
                 {
                     // Convert GPS measurements to Pos NE, hgt and Vel NED
-                    if (pGpsRawINFile > 0)
+                    if (pGpsRawINFile != nullptr)
                     {
                         _ekf->velNED[0] = gpsRaw[4];
                         _ekf->velNED[1] = gpsRaw[5];
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
                     }
                     _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
-                    if (pOnboardFile > 0) {
+                    if (pOnboardFile != nullptr) {
                         _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                     }
@@ -651,7 +651,7 @@ void readGpsData()
             }
         }
 
-        if (pGpsRawINFile > 0) {
+        if (pGpsRawINFile != nullptr) {
             // Load RAW GPS file format in addition
             for (unsigned j = 0; j < sizeof(gpsRaw) / sizeof(gpsRaw[0]); j++)
             {
@@ -852,7 +852,7 @@ void readAirData()
 
 void readDistData()
 {
-    if (pInDistFile <= 0)
+    if (pInDistFile == nullptr)
         return;
 
     float temp[3];
@@ -889,7 +889,7 @@ void readDistData()
 
 void readOnboardData()
 {
-    if (pOnboardFile <= 0)
+    if (pOnboardFile == nullptr)
         return;
 
     float tempOnboard[7];
