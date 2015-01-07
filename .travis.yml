@@ -30,3 +30,4 @@ script:
   - echo 'Running Tests..'
   - cd code
   - make tests
+  - gdb -x travis_gdbscript
