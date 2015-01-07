@@ -29,4 +29,5 @@ script:
   - echo 'Running Tests..'
   - cd code
   - make tests
+#  - valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --dsymutil=yes ./estimator_closed_loop_test
   - gdb -x travis_gdbscript

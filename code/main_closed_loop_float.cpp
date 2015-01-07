@@ -1065,24 +1065,46 @@ void readTimingData()
 
 void CloseFiles()
 {
-    fclose (pImuFile);
-    fclose (pMagFile);
-    fclose (pGpsFile);
-    fclose (pAhrsFile);
-    fclose (pAdsFile);
-    fclose (pStateOutFile);
-    fclose (pEulOutFile);
-    fclose (pCovOutFile);
-    fclose (pRefPosVelOutFile);
-    fclose (pVelPosFuseFile);
-    fclose (pMagFuseFile);
-    fclose (pTasFuseFile);
-    fclose (pTimeFile);
-    fclose (pGpsRawINFile);
-    fclose (pGpsRawOUTFile);
-    fclose (validationOutFile);
-    fclose (pOnboardPosVelOutFile);
-    fclose (pOnboardFile);
+    if (pImuFile)
+        fclose (pImuFile);
+    if (pMagFile)
+        fclose (pMagFile);
+    if (pGpsFile)
+        fclose (pGpsFile);
+    if (pAhrsFile)
+        fclose (pAhrsFile);
+    if (pAdsFile)
+        fclose (pAdsFile);
+    if (pStateOutFile)
+        fclose (pStateOutFile);
+    if (pEulOutFile)
+        fclose (pEulOutFile);
+    if (pCovOutFile)
+        fclose (pCovOutFile);
+    if (pRefPosVelOutFile)
+        fclose (pRefPosVelOutFile);
+    if (pVelPosFuseFile)
+        fclose (pVelPosFuseFile);
+    if (pMagFuseFile)
+        fclose (pMagFuseFile);
+    if (pTasFuseFile)
+        fclose (pTasFuseFile);
+    if (pTimeFile)
+        fclose (pTimeFile);
+    if (pGpsRawINFile)
+        fclose (pGpsRawINFile);
+    if (pGpsRawOUTFile)
+        fclose (pGpsRawOUTFile);
+    if (validationOutFile)
+        fclose (validationOutFile);
+    if (pOnboardPosVelOutFile)
+        fclose (pOnboardPosVelOutFile);
+    if (pOnboardFile)
+        fclose (pOnboardFile);
+    if (pOptFlowFuseFile)
+        fclose (pOptFlowFuseFile);
+    if (pRngFuseFile)
+        fclose(pRngFuseFile);
 }
 
 float ConstrainFloat(float val, float min, float max)
