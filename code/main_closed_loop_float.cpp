@@ -136,7 +136,7 @@ FILE * validationOutFile = nullptr;
 FILE * pOnboardPosVelOutFile = nullptr;
 FILE * pOnboardFile = nullptr;
 FILE * pInFlowFile = nullptr;
-FILE * pInDistFile = nullptr
+FILE * pInDistFile = nullptr;
 
 FILE * open_with_exit(const char* filename, const char* flags)
 {
