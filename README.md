@@ -1,3 +1,7 @@
+## Inertial Navigation Estimation Library ##
+
+[![Build Status](https://travis-ci.org/priseborough/InertialNav.svg?branch=master)](https://travis-ci.org/priseborough/InertialNav)
+
 Files for prototype 21, 22, 23 and 24 state Extended Kalman filters designed for APMPlane implementation
 Author: Paul Riseborough
 
@@ -39,8 +43,8 @@ airframe limitations.
 
 Some additional data sets incorporating optical flow and range finder measurements are included.
 
-========================================================================================================================
-Instructions To Run Simulink Model:
+
+### Instructions To Run Simulink Model ###
 
 Note : Simulink models are only available for 21 and 24 state architecture, and do not include range finder or optical
 flow measurements.
@@ -49,26 +53,27 @@ You will need Matlab + Simulink 2012a or later to run this model
 
 Instructions to run:
 
-1) Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
-2) Make 'models' your working directory
-3) Run the RunNavFilterTestHarness24.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
+1. Add 'plots', 'scripts' and 'TestData' directories to your Matlab path
+2. Make 'models' your working directory
+3. Run the RunNavFilterTestHarness24.m script file to run the 24-state filter, or RunNavFilterTestHarness21.m to run
    the 21-state filter
-4) Test data will be loaded and the model will be built, run and plots generated.
+4. Test data will be loaded and the model will be built, run and plots generated.
 
 You can load other test data by modifying the file load command at the top of the LoadNavFilterTestData.m script file.
 
-========================================================================================================================
-Instructions To Run C++ code test harness
 
-1) Build the main - closed loop test harness - single precision.cpp file
-2) Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable
-3) Run and exit when the Euler difference display stops updating
-4) The program will put the results into the folliwing space deliminted data files:
+### Instructions To Run C++ code test harness ###
 
-CovDataOut.txt
-EulDataOut.txt
-MagFuse.txt
-RefVelPosDataOut.txt
-StateDataOut.txt
-TasFuse.txt
-VelPosFuse.txt
+1. Go to the code directory and run make
+2. Make sure the ATT, GPS, IMU, MAG and NTUN.txt files are in the directory with the executable (unzip one of the data ZIP files)
+3. Run: ./estimator_closed_loop_test
+4. The program will put the results into the following space deliminted data files
+5. Run make plots to generate Python plots
+
+ * CovDataOut.txt
+ * EulDataOut.txt
+ * MagFuse.txt
+ * RefVelPosDataOut.txt
+ * StateDataOut.txt
+ * TasFuse.txt
+ * VelPosFuse.txt

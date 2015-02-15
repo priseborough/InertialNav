@@ -1,5 +1,6 @@
 
-CC=c++
+CXX?=g++
+EXTRAARGS?=
 CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -fno-strength-reduce \
 			   -fomit-frame-pointer \
@@ -14,6 +15,7 @@ CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
 			   -Werror=format-security \
 			   -Wmissing-field-initializers \
 			   -Wfatal-errors \
+			   -Wno-missing-field-initializers \
 			   -std=c++11
 
 ODIR=obj
@@ -30,11 +32,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 #$(DEPS)
 $(ODIR)/%.o: %.cpp
 	mkdir -p $(ODIR)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CXX) -c -o $@ $< $(CFLAGS)
 
 #
 estimator_closed_loop_test: $(OBJ)
-	g++ -O3 -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CXX) -O3 -o $@ $^ $(CFLAGS) $(LIBS) $(EXTRAARGS)
 
 .PHONY: clean plots
 
@@ -47,3 +49,19 @@ plots:
 	python plot_states.py &
 	python plot_velocity.py &
 	python plot_flow.py &
+
+tests:
+	make clean
+	export CXX="g++"
+	export EXTRAARGS=""
+	make
+	unzip -o InputFilesPX4.zip
+	./estimator_closed_loop_test
+#make clean
+#export CXX=arm-none-eabi-gcc
+#export EXTRAARGS=--specs=nosys.specs
+#make
+#export CXX="g++"
+#export EXTRAARGS=""
+	make clean
+	./validate_output.py
