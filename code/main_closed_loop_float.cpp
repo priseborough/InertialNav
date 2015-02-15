@@ -191,7 +191,7 @@ int printstates() {
         printf(" %e", _ekf->states[i]);
     }
     printf("\n");
-    for (; i<n_states; i++)
+    for (; i < sizeof(_ekf->states) / sizeof(_ekf->states[0]); i++)
     {
         printf(" %e", _ekf->states[i]);
     }
@@ -357,7 +357,9 @@ int main(int argc, char *argv[])
                 // store the predicted states for subsequent use by measurement fusion
                 _ekf->StoreStates(IMUmsec);
                 // Check if on ground - status is used by covariance prediction
-                _ekf->OnGroundCheck();
+                bool onground = (((AttPosEKF::sq(_ekf->velNED[0]) + AttPosEKF::sq(_ekf->velNED[1]) + AttPosEKF::sq(_ekf->velNED[2])) < 4.0f) && (_ekf->VtasMeas < 8.0f));
+
+                _ekf->setOnGround(onground);
                 // sum delta angles and time used by covariance prediction
                 _ekf->summedDelAng = _ekf->summedDelAng + _ekf->correctedDelAng;
                 _ekf->summedDelVel = _ekf->summedDelVel + _ekf->dVelIMU;
@@ -1073,6 +1075,7 @@ void readFlowData()
 
 void WriteFilterOutput()
 {
+    unsigned n_states = sizeof(_ekf->states) / sizeof(_ekf->states[0]);
 
     float tempQuat[4];
     for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
@@ -1080,7 +1083,7 @@ void WriteFilterOutput()
 
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));
-    for (uint8_t i=0; i<n_states; i++)
+    for (uint8_t i=0; i < n_states; i++)
     {
         fprintf(pStateOutFile," %e", _ekf->states[i]);
     }
@@ -1171,8 +1174,13 @@ void readTimingData()
             timeArray[j] = timeDataIn;
         }
     }
-    msecAlignTime = 1000*timeArray[0];
+    // we set the align time to start time
+    // as we do not require an align time
+    // any more with the sensor-based
+    // filter init.
+    // msecAlignTime = 1000*timeArray[0];
     msecStartTime = 1000*timeArray[1];
+    msecAlignTime = msecStartTime;
     msecEndTime   = 1000*timeArray[2];
     msecVelDelay  = timeArray[3];
     msecPosDelay  = timeArray[4];
