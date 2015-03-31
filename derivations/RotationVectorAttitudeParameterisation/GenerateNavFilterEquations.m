@@ -11,7 +11,7 @@
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 14 Mar 2013
+% Last Modified: 1 April 2015
 
 % Based on use of a rotation vector for attitude estimation as described
 % here:
@@ -22,7 +22,6 @@
 
 % State vector:
 % error rotation vector in body frame (X,Y,Z)
-% dummy variable (we pad the state vector to keep compatibility with existing code)
 % Velocity - m/sec (North, East, Down)
 % Position - m (North, East, Down)
 % Delta Angle bias - rad (X,Y,Z)
@@ -64,8 +63,9 @@ syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
 syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
 syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 syms R_BETA real % variance of sidelsip measurements rad^2
+syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
+syms ptd real % location of terrain in D axis
 syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
-syms dummy; % dummy variable used to pad out state vector so we can use the same state vector size as the previous quaternion implementation
 %% define the process equations
 
 % define the measured Delta angle and delta velocity vectors
@@ -140,11 +140,8 @@ magXnew = magX;
 magYnew = magY;
 magZnew = magZ;
 
-% define a dummy variable so we can use the existing state structure
-dummyNew = dummy;
-
 % Define the state vector & number of states
-stateVector = [errRotVec;dummy;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dvz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
+stateVector = [errRotVec;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dvz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
 nStates=numel(stateVector);
 
 %% derive the covariance prediction equation
@@ -158,7 +155,7 @@ nStates=numel(stateVector);
 distVector = [daxNoise;dayNoise;dazNoise;dvxNoise;dvyNoise;dvzNoise];
 
 % derive the control(disturbance) influence matrix
-G = jacobian([errRotNew;dummyNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], distVector);
+G = jacobian([errRotNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], distVector);
 G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
 [G,SG]=OptimiseAlgebra(G,'SG');
 
@@ -173,7 +170,7 @@ vNew = subs(vNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoi
 errRotNew = subs(errRotNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0},0);
 
 % derive the state transition matrix
-F = jacobian([errRotNew;dummyNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], stateVector);
+F = jacobian([errRotNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], stateVector);
 % set the rotation error states to zero
 F = subs(F, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
 [F,SF]=OptimiseAlgebra(F,'SF');
@@ -225,6 +222,29 @@ K_MY = (P*transpose(H_MAG(2,:)))/(H_MAG(2,:)*P*transpose(H_MAG(2,:)) + R_MAG); %
 [K_MY,SK_MY]=OptimiseAlgebra(K_MY,'SK_MY');
 K_MZ = (P*transpose(H_MAG(3,:)))/(H_MAG(3,:)*P*transpose(H_MAG(3,:)) + R_MAG); % Kalman gain vector
 [K_MZ,SK_MZ]=OptimiseAlgebra(K_MZ,'SK_MZ');
+
+%% derive equations for sequential fusion of optical flow measurements
+
+% calculate range from plane to centre of sensor fov assuming flat earth
+% and camera axes aligned with body axes
+range = ((ptd - pd)/Tbn(3,3));
+% calculate relative velocity in body frame
+relVelBody = transpose(Tbn)*[vn;ve;vd];
+% divide by range to get predicted angular LOS rates relative to X and Y
+% axes. Note these are body angular rate motion compensated optical flow rates
+losRateX = +relVelBody(2)/range;
+losRateY = -relVelBody(1)/range;
+
+H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
+[H_LOS,SH_LOS]=OptimiseAlgebra(H_LOS,'SH_LOS');
+
+% combine into a single K matrix to enable common expressions to be found
+% note this matrix cannot be used in a single step fusion
+K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS); % Kalman gain vector
+K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
+K_LOS = [K_LOSX,K_LOSY];
+simplify(K_LOS);
+[K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
 
 %% Save output and convert to m and c code fragments
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
