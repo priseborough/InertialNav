@@ -1,30 +1,30 @@
 /****************************************************************************
 * Copyright (c) 2014, Paul Riseborough All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
+* 
+* Redistribution and use in source and binary forms, with or without 
 * modification, are permitted provided that the following conditions are met:
-*
-* Redistributions of source code must retain the above copyright notice, this
+* 
+* Redistributions of source code must retain the above copyright notice, this 
 * list of conditions and the following disclaimer.
-*
-* Redistributions in binary form must reproduce the above copyright notice,
-* this list of conditions and the following disclaimer in the documentation
+* 
+* Redistributions in binary form must reproduce the above copyright notice, 
+* this list of conditions and the following disclaimer in the documentation 
 * and/or other materials provided with the distribution.
-*
-* Neither the name of the {organization} nor the names of its contributors
-* may be used to endorse or promote products derived from this software without
+* 
+* Neither the name of the {organization} nor the names of its contributors 
+* may be used to endorse or promote products derived from this software without 
 * specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* 
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 * POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************/
 
@@ -41,14 +41,12 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 
 #ifndef M_PI_F
 #define M_PI_F static_cast<float>(M_PI)
 #endif
-
-using namespace std;
 
 constexpr float EKF_COVARIANCE_DIVERGED = 1.0e8f;
 
@@ -187,7 +185,9 @@ AttPosEKF::AttPosEKF() :
     minFlowRng(0.0f),
     moCompR_LOS(0.0f),
 
-    _onGround(true)    
+    _isFixedWing(false),
+    _onGround(true),
+    _accNavMagHorizontal(0.0f)
 {
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
@@ -198,6 +198,7 @@ AttPosEKF::AttPosEKF() :
 
 AttPosEKF::~AttPosEKF()
 {
+    //dtor
 }
 
 void AttPosEKF::InitialiseParameters()
@@ -209,10 +210,10 @@ void AttPosEKF::InitialiseParameters()
 
     yawVarScale = 1.0f;
     windVelSigma = 0.1f;
-    dAngBiasSigma = 5.0e-7f;
-    dVelBiasSigma = 1e-4f;
-    magEarthSigma = 3.0e-4f;
-    magBodySigma  = 3.0e-4f;
+    dAngBiasSigma = 1.0e-6;
+    dVelBiasSigma = 0.0002f;
+    magEarthSigma = 0.0003f;
+    magBodySigma  = 0.0003f;
 
     vneSigma = 0.2f;
     vdSigma = 0.3f;
@@ -350,6 +351,11 @@ void AttPosEKF::UpdateStrapdownEquationsNED()
     // variance estimation)
     accNavMag = delVelNav.length()/dtIMU;
 
+    //First order low-pass filtered magnitude of horizontal nav acceleration
+    Vector3f derivativeNav = (delVelNav / dtIMU);
+    float derivativeVelNavMagnitude = sqrtf(sq(derivativeNav.x) + sq(derivativeNav.y));
+    _accNavMagHorizontal = _accNavMagHorizontal * 0.95f + derivativeVelNavMagnitude * 0.05f;
+
     // If calculating position save previous velocity
     float lastVelocity[3];
     lastVelocity[0] = states[4];
@@ -408,9 +414,10 @@ void AttPosEKF::CovariancePrediction(float dt)
     // calculate covariance prediction process noise
     for (uint8_t i= 0; i<4;  i++) processNoise[i] = 1.0e-9f;
     for (uint8_t i= 4; i<10;  i++) processNoise[i] = 1.0e-9f;
-    for (uint8_t i=10; i<=12; i++) processNoise[i] = dt * dAngBiasSigma;
     // scale gyro bias noise when on ground to allow for faster bias estimation
-    for (uint8_t i=10; i<=12; i++) processNoise[i] = dt * dAngBiasSigma;
+    float gyroBiasScale = (_onGround) ? 2.0f : 1.0f;
+
+    for (uint8_t i=10; i<=12; i++) processNoise[i] = dt * dAngBiasSigma * gyroBiasScale;
     processNoise[13] = dVelBiasSigma;
     if (!inhibitWindStates) {
         for (uint8_t i=14; i<=15; i++) processNoise[i] = dt * windVelSigma;
@@ -2005,12 +2012,12 @@ void AttPosEKF::FuseOptFlow()
                 K_LOS[1][15] = 0.0f;
             }
             if (inhibitMagStates) {
-            K_LOS[1][16] = SK_LOS[0]*(P[16][0]*tempVar[1] + P[16][1]*tempVar[2] - P[16][2]*tempVar[3] + P[16][3]*tempVar[4] + P[16][5]*tempVar[5] - P[16][6]*tempVar[6] - P[16][9]*tempVar[7] + P[16][4]*tempVar[8]);
-            K_LOS[1][17] = SK_LOS[0]*(P[17][0]*tempVar[1] + P[17][1]*tempVar[2] - P[17][2]*tempVar[3] + P[17][3]*tempVar[4] + P[17][5]*tempVar[5] - P[17][6]*tempVar[6] - P[17][9]*tempVar[7] + P[17][4]*tempVar[8]);
-            K_LOS[1][18] = SK_LOS[0]*(P[18][0]*tempVar[1] + P[18][1]*tempVar[2] - P[18][2]*tempVar[3] + P[18][3]*tempVar[4] + P[18][5]*tempVar[5] - P[18][6]*tempVar[6] - P[18][9]*tempVar[7] + P[18][4]*tempVar[8]);
-            K_LOS[1][19] = SK_LOS[0]*(P[19][0]*tempVar[1] + P[19][1]*tempVar[2] - P[19][2]*tempVar[3] + P[19][3]*tempVar[4] + P[19][5]*tempVar[5] - P[19][6]*tempVar[6] - P[19][9]*tempVar[7] + P[19][4]*tempVar[8]);
-            K_LOS[1][20] = SK_LOS[0]*(P[20][0]*tempVar[1] + P[20][1]*tempVar[2] - P[20][2]*tempVar[3] + P[20][3]*tempVar[4] + P[20][5]*tempVar[5] - P[20][6]*tempVar[6] - P[20][9]*tempVar[7] + P[20][4]*tempVar[8]);
-            K_LOS[1][21] = SK_LOS[0]*(P[21][0]*tempVar[1] + P[21][1]*tempVar[2] - P[21][2]*tempVar[3] + P[21][3]*tempVar[4] + P[21][5]*tempVar[5] - P[21][6]*tempVar[6] - P[21][9]*tempVar[7] + P[21][4]*tempVar[8]);
+                K_LOS[1][16] = SK_LOS[0]*(P[16][0]*tempVar[1] + P[16][1]*tempVar[2] - P[16][2]*tempVar[3] + P[16][3]*tempVar[4] + P[16][5]*tempVar[5] - P[16][6]*tempVar[6] - P[16][9]*tempVar[7] + P[16][4]*tempVar[8]);
+                K_LOS[1][17] = SK_LOS[0]*(P[17][0]*tempVar[1] + P[17][1]*tempVar[2] - P[17][2]*tempVar[3] + P[17][3]*tempVar[4] + P[17][5]*tempVar[5] - P[17][6]*tempVar[6] - P[17][9]*tempVar[7] + P[17][4]*tempVar[8]);
+                K_LOS[1][18] = SK_LOS[0]*(P[18][0]*tempVar[1] + P[18][1]*tempVar[2] - P[18][2]*tempVar[3] + P[18][3]*tempVar[4] + P[18][5]*tempVar[5] - P[18][6]*tempVar[6] - P[18][9]*tempVar[7] + P[18][4]*tempVar[8]);
+                K_LOS[1][19] = SK_LOS[0]*(P[19][0]*tempVar[1] + P[19][1]*tempVar[2] - P[19][2]*tempVar[3] + P[19][3]*tempVar[4] + P[19][5]*tempVar[5] - P[19][6]*tempVar[6] - P[19][9]*tempVar[7] + P[19][4]*tempVar[8]);
+                K_LOS[1][20] = SK_LOS[0]*(P[20][0]*tempVar[1] + P[20][1]*tempVar[2] - P[20][2]*tempVar[3] + P[20][3]*tempVar[4] + P[20][5]*tempVar[5] - P[20][6]*tempVar[6] - P[20][9]*tempVar[7] + P[20][4]*tempVar[8]);
+                K_LOS[1][21] = SK_LOS[0]*(P[21][0]*tempVar[1] + P[21][1]*tempVar[2] - P[21][2]*tempVar[3] + P[21][3]*tempVar[4] + P[21][5]*tempVar[5] - P[21][6]*tempVar[6] - P[21][9]*tempVar[7] + P[21][4]*tempVar[8]);
             } else {
                 for (uint8_t i = 16; i < EKF_STATE_ESTIMATES; i++) {
                     K_LOS[1][i] = 0.0f;
@@ -2323,15 +2330,20 @@ void AttPosEKF::zeroCols(float (&covMat)[EKF_STATE_ESTIMATES][EKF_STATE_ESTIMATE
 // Store states in a history array along with time stamp
 void AttPosEKF::StoreStates(uint64_t timestamp_ms)
 {
-    for (size_t i=0; i<EKF_STATE_ESTIMATES; i++)
+    for (size_t i = 0; i < EKF_STATE_ESTIMATES; i++) {
         storedStates[i][storeIndex] = states[i];
+    }
+
     storedOmega[0][storeIndex] = angRate.x;
     storedOmega[1][storeIndex] = angRate.y;
     storedOmega[2][storeIndex] = angRate.z;
     statetimeStamp[storeIndex] = timestamp_ms;
+
+    // increment to next storage index
     storeIndex++;
-    if (storeIndex == EKF_DATA_BUFFER_SIZE)
+    if (storeIndex >= EKF_DATA_BUFFER_SIZE) {
         storeIndex = 0;
+    }
 }
 
 void AttPosEKF::ResetStoredStates()
@@ -2344,10 +2356,8 @@ void AttPosEKF::ResetStoredStates()
     // reset store index to first
     storeIndex = 0;
 
-    statetimeStamp[storeIndex] = millis();
-
-    // increment to next storage index
-    storeIndex++;
+    //Reset stored state to current state
+    StoreStates(millis());
 }
 
 // Output the state vector stored at the time that best matches that specified by msec
@@ -2378,9 +2388,9 @@ int AttPosEKF::RecallStates(float* statesForFusion, uint64_t msec)
     if (bestTimeDelta < 200) // only output stored state if < 200 msec retrieval error
     {
         for (size_t i=0; i < EKF_STATE_ESTIMATES; i++) {
-            if (isfinite(storedStates[i][bestStoreIndex])) {
+            if (std::isfinite(storedStates[i][bestStoreIndex])) {
                 statesForFusion[i] = storedStates[i][bestStoreIndex];
-            } else if (isfinite(states[i])) {
+            } else if (std::isfinite(states[i])) {
                 statesForFusion[i] = states[i];
             } else {
                 // There is not much we can do here, except reporting the error we just
@@ -2392,7 +2402,7 @@ int AttPosEKF::RecallStates(float* statesForFusion, uint64_t msec)
     else // otherwise output current state
     {
         for (size_t i = 0; i < EKF_STATE_ESTIMATES; i++) {
-            if (isfinite(states[i])) {
+            if (std::isfinite(states[i])) {
                 statesForFusion[i] = states[i];
             } else {
                 ret++;
@@ -2507,27 +2517,6 @@ void AttPosEKF::quat2eul(float (&y)[3], const float (&u)[4])
     y[2] = atan2f((2.0f*(u[1]*u[2]+u[0]*u[3])) , (u[0]*u[0]+u[1]*u[1]-u[2]*u[2]-u[3]*u[3]));
 }
 
-void AttPosEKF::calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD)
-{
-    velNED[0] = gpsGndSpd*cosf(gpsCourse);
-    velNED[1] = gpsGndSpd*sinf(gpsCourse);
-    velNED[2] = gpsVelD;
-}
-
-void AttPosEKF::calcposNED(float (&posNED)[3], double lat, double lon, float hgt, double latReference, double lonReference, float hgtReference)
-{
-    posNED[0] = earthRadius * (lat - latReference);
-    posNED[1] = earthRadius * cos(latReference) * (lon - lonReference);
-    posNED[2] = -(hgt - hgtReference);
-}
-
-void AttPosEKF::calcLLH(float posNED[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef)
-{
-    lat = latRef + (double)posNED[0] * earthRadiusInv;
-    lon = lonRef + (double)posNED[1] * earthRadiusInv / cos(latRef);
-    hgt = hgtRef - posNED[2];
-}
-
 void AttPosEKF::setOnGround(const bool isLanded)
 {
     _onGround = isLanded;
@@ -2539,15 +2528,14 @@ void AttPosEKF::setOnGround(const bool isLanded)
     if (_onGround || !useAirspeed) {
         inhibitWindStates = true;
     } else {
-        inhibitWindStates =false;
+        inhibitWindStates = false;
     }
 
+    //Check if we are accelerating forward, only then is the mag offset is observable
+    bool isMovingForward = _accNavMagHorizontal > 0.5f;
+
     // don't update magnetic field states if on ground or not using compass
-    if (_onGround || !useCompass) {
-        inhibitMagStates = true;
-    } else {
-        inhibitMagStates = false;
-    }
+    inhibitMagStates = (!useCompass || _onGround) || (!_isFixedWing && !isMovingForward);
 
     // don't update terrain offset state if there is no range finder and flying at low velocity or without GPS
     if ((_onGround || !useGPS) && !useRangeFinder) {
@@ -2587,25 +2575,40 @@ void AttPosEKF::CovarianceInit()
     P[1][1]   = 0.25f * sq(1.0f*deg2rad);
     P[2][2]   = 0.25f * sq(1.0f*deg2rad);
     P[3][3]   = 0.25f * sq(10.0f*deg2rad);
+
+    //velocities
     P[4][4]   = sq(0.7f);
     P[5][5]   = P[4][4];
     P[6][6]   = sq(0.7f);
+
+    //positions
     P[7][7]   = sq(15.0f);
     P[8][8]   = P[7][7];
     P[9][9]   = sq(5.0f);
+
+    //delta angle biases
     P[10][10] = sq(0.1f*deg2rad*dtIMU);
     P[11][11] = P[10][10];
     P[12][12] = P[10][10];
+
+    //Z delta velocity bias
     P[13][13] = sq(0.2f*dtIMU);
-    P[14][14] = sq(0.0f);
+
+    //Wind velocities
+    P[14][14] = 0.0f;
     P[15][15]  = P[14][14];
+
+    //Earth magnetic field
     P[16][16] = sq(0.02f);
     P[17][17] = P[16][16];
     P[18][18] = P[16][16];
+
+    //Body magnetic field
     P[19][19] = sq(0.02f);
     P[20][20] = P[19][19];
     P[21][21] = P[19][19];
 
+    //Optical flow
     fScaleFactorVar = 0.001f; // focal length scale factor variance
     Popt[0][0] = 0.001f;
 }
@@ -2623,8 +2626,8 @@ float AttPosEKF::ConstrainFloat(float val, float min_val, float max_val)
         ret = val;
     }
 
-    if (!isfinite(val)) {
-        //ekf_debug("constrain: non-finite!");
+    if (!std::isfinite(val)) {
+        ekf_debug("constrain: non-finite!");
     }
 
     return ret;
@@ -2702,6 +2705,11 @@ void AttPosEKF::ConstrainStates()
     // 16-18: Earth Magnetic Field Vector - gauss (North, East, Down)
     // 19-21: Body Magnetic Field Vector - gauss (X,Y,Z)
 
+    // Constrain dtIMUfilt
+    if (!std::isfinite(dtIMUfilt) || (fabsf(dtIMU - dtIMUfilt) > 0.01f)) {
+        dtIMUfilt = dtIMU;
+    }
+
     // Constrain quaternion
     for (size_t i = 0; i <= 3; i++) {
         states[i] = ConstrainFloat(states[i], -1.0f, 1.0f);
@@ -2723,11 +2731,11 @@ void AttPosEKF::ConstrainStates()
 
     // Angle bias limit - set to 8 degrees / sec
     for (size_t i = 10; i <= 12; i++) {
-        states[i] = ConstrainFloat(states[i], -0.12f * dtIMU, 0.12f * dtIMU);
+        states[i] = ConstrainFloat(states[i], -0.16f * dtIMUfilt, 0.16f * dtIMUfilt);
     }
 
     // Constrain delta velocity bias
-    states[13] = ConstrainFloat(states[13], -1.0f * dtIMU, 1.0f * dtIMU);
+    states[13] = ConstrainFloat(states[13], -1.0f * dtIMUfilt, 1.0f * dtIMUfilt);
 
     // Wind velocity limits - assume 120 m/s max velocity
     for (size_t i = 14; i <= 15; i++) {
@@ -2791,8 +2799,8 @@ bool AttPosEKF::GyroOffsetsDiverged()
 
     // Protect against division by zero
     if (delta_len > 0.0f) {
-        float cov_mag = ConstrainFloat((P[10][10] + P[11][11] + P[12][12]), 1e-12f, 1e-8f);
-        delta_len_scaled = (5e-7 / (double)cov_mag) * (double)delta_len / (double)dtIMU;
+        float cov_mag = ConstrainFloat((P[10][10] + P[11][11] + P[12][12]), 1e-12f, 1e-2f);
+        delta_len_scaled = (5e-7 / (double)cov_mag) * (double)delta_len / (double)dtIMUfilt;
     }
 
     bool diverged = (delta_len_scaled > 1.0f);
@@ -2858,8 +2866,12 @@ void AttPosEKF::ResetPosition(void)
         for (size_t i = 0; i < EKF_DATA_BUFFER_SIZE; ++i){
             storedStates[7][i] = states[7];
             storedStates[8][i] = states[8];
-        }        
+        }
     }
+
+    //reset position covariance
+    P[7][7]   = sq(15.0f);
+    P[8][8]   = P[7][7];    
 }
 
 void AttPosEKF::ResetHeight(void)
@@ -2871,6 +2883,10 @@ void AttPosEKF::ResetHeight(void)
     for (size_t i = 0; i < EKF_DATA_BUFFER_SIZE; ++i){
         storedStates[9][i] = states[9];
     }    
+
+    //reset altitude covariance
+    P[9][9] = sq(5.0f);
+    P[6][6] = sq(0.7f);
 }
 
 void AttPosEKF::ResetVelocity(void)
@@ -2879,7 +2895,8 @@ void AttPosEKF::ResetVelocity(void)
         states[4] = 0.0f;
         states[5] = 0.0f;
         states[6] = 0.0f;
-    } else if (GPSstatus >= GPS_FIX_3D) {
+    } 
+    else if (GPSstatus >= GPS_FIX_3D) {
         //Do not use Z velocity, we trust the Barometer history more
 
         states[4]  = velNED[0]; // north velocity from last reading
@@ -2889,29 +2906,33 @@ void AttPosEKF::ResetVelocity(void)
         for (size_t i = 0; i < EKF_DATA_BUFFER_SIZE; ++i){
             storedStates[4][i] = states[4];
             storedStates[5][i] = states[5];
-        }                
+        }          
     }
+
+    //reset velocities covariance
+    P[4][4]   = sq(0.7f);
+    P[5][5]   = P[4][4]; 
 }
 
 bool AttPosEKF::StatesNaN() {
     bool err = false;
 
     // check all integrators
-    if (!isfinite(summedDelAng.x) || !isfinite(summedDelAng.y) || !isfinite(summedDelAng.z)) {
+    if (!std::isfinite(summedDelAng.x) || !std::isfinite(summedDelAng.y) || !std::isfinite(summedDelAng.z)) {
         current_ekf_state.angNaN = true;
         ekf_debug("summedDelAng NaN: x: %f y: %f z: %f", (double)summedDelAng.x, (double)summedDelAng.y, (double)summedDelAng.z);
         err = true;
         goto out;
     } // delta angles
 
-    if (!isfinite(correctedDelAng.x) || !isfinite(correctedDelAng.y) || !isfinite(correctedDelAng.z)) {
+    if (!std::isfinite(correctedDelAng.x) || !std::isfinite(correctedDelAng.y) || !std::isfinite(correctedDelAng.z)) {
         current_ekf_state.angNaN = true;
         ekf_debug("correctedDelAng NaN: x: %f y: %f z: %f", (double)correctedDelAng.x, (double)correctedDelAng.y, (double)correctedDelAng.z);
         err = true;
         goto out;
     } // delta angles
 
-    if (!isfinite(summedDelVel.x) || !isfinite(summedDelVel.y) || !isfinite(summedDelVel.z)) {
+    if (!std::isfinite(summedDelVel.x) || !std::isfinite(summedDelVel.y) || !std::isfinite(summedDelVel.z)) {
         current_ekf_state.summedDelVelNaN = true;
         ekf_debug("summedDelVel NaN: x: %f y: %f z: %f", (double)summedDelVel.x, (double)summedDelVel.y, (double)summedDelVel.z);
         err = true;
@@ -2921,7 +2942,7 @@ bool AttPosEKF::StatesNaN() {
     // check all states and covariance matrices
     for (size_t i = 0; i < EKF_STATE_ESTIMATES; i++) {
         for (size_t j = 0; j < EKF_STATE_ESTIMATES; j++) {
-            if (!isfinite(KH[i][j])) {
+            if (!std::isfinite(KH[i][j])) {
 
                 current_ekf_state.KHNaN = true;
                 err = true;
@@ -2929,7 +2950,7 @@ bool AttPosEKF::StatesNaN() {
                 goto out;
             } //  intermediate result used for covariance updates
 
-            if (!isfinite(KHP[i][j])) {
+            if (!std::isfinite(KHP[i][j])) {
 
                 current_ekf_state.KHPNaN = true;
                 err = true;
@@ -2937,7 +2958,7 @@ bool AttPosEKF::StatesNaN() {
                 goto out;
             } // intermediate result used for covariance updates
 
-            if (!isfinite(P[i][j])) {
+            if (!std::isfinite(P[i][j])) {
 
                 current_ekf_state.covarianceNaN = true;
                 err = true;
@@ -2945,7 +2966,7 @@ bool AttPosEKF::StatesNaN() {
             } // covariance matrix
         }
 
-        if (!isfinite(Kfusion[i])) {
+        if (!std::isfinite(Kfusion[i])) {
 
             current_ekf_state.kalmanGainsNaN = true;
             ekf_debug("Kfusion NaN");
@@ -2953,7 +2974,7 @@ bool AttPosEKF::StatesNaN() {
             goto out;
         } // Kalman gains
 
-        if (!isfinite(states[i])) {
+        if (!std::isfinite(states[i])) {
 
             current_ekf_state.statesNaN = true;
             ekf_debug("states NaN: i: %u val: %f", i, (double)states[i]);
@@ -3007,10 +3028,10 @@ int AttPosEKF::CheckAndBound(struct ekf_status_report *last_error)
         // Fill error report
         GetFilterState(&last_ekf_error);
 
-        ResetStoredStates();
         ResetVelocity();
         ResetPosition();
         ResetHeight();
+        ResetStoredStates();
 
         // Timeout cleared with this reset
         current_ekf_state.imuTimeout = false;
@@ -3024,10 +3045,10 @@ int AttPosEKF::CheckAndBound(struct ekf_status_report *last_error)
         // Fill error report, but not setting error flag
         GetFilterState(&last_ekf_error);
 
-        ResetStoredStates();
         ResetVelocity();
         ResetPosition();
         ResetHeight();
+        ResetStoredStates();
 
         ret = 0;
     }
@@ -3197,10 +3218,10 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
     states[20] = magBias.y; // Magnetic Field Bias Y
     states[21] = magBias.z; // Magnetic Field Bias Z
 
-    ResetStoredStates();
     ResetVelocity();
     ResetPosition();
     ResetHeight();
+    ResetStoredStates();
 
     // initialise focal length scale factor estimator states
     flowStates[0] = 1.0f;
@@ -3212,7 +3233,6 @@ void AttPosEKF::InitializeDynamic(float (&initvelNED)[3], float declination)
 
     //Define Earth rotation vector in the NED navigation frame
     calcEarthRateNED(earthRateNED, latRef);
-
 }
 
 void AttPosEKF::InitialiseFilter(float (&initvelNED)[3], double referenceLat, double referenceLon, float referenceHgt, float declination)
@@ -3288,7 +3308,6 @@ void AttPosEKF::ZeroVariables()
     magstate.DCM.identity();
 
     memset(&current_ekf_state, 0, sizeof(current_ekf_state));
-
 }
 
 void AttPosEKF::GetFilterState(struct ekf_status_report *err)
@@ -3305,17 +3324,15 @@ void AttPosEKF::GetFilterState(struct ekf_status_report *err)
     current_ekf_state.useAirspeed = useAirspeed;
 
     memcpy(err, &current_ekf_state, sizeof(*err));
-
-    // err->velHealth = current_ekf_state.velHealth;
-    // err->posHealth = current_ekf_state.posHealth;
-    // err->hgtHealth = current_ekf_state.hgtHealth;
-    // err->velTimeout = current_ekf_state.velTimeout;
-    // err->posTimeout = current_ekf_state.posTimeout;
-    // err->hgtTimeout = current_ekf_state.hgtTimeout;
 }
 
 void AttPosEKF::GetLastErrorState(struct ekf_status_report *last_error)
 {
     memcpy(last_error, &last_ekf_error, sizeof(*last_error));
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
+}
+
+void AttPosEKF::setIsFixedWing(const bool fixedWing)
+{
+    _isFixedWing = fixedWing;
 }

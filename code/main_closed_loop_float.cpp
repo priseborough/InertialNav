@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    _ekf->calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                    calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
                 }
                 _ekf->InitialiseFilter(_ekf->velNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, 0.0f);
 
@@ -485,12 +485,12 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-                        _ekf->calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
+                        calcvelNED(_ekf->velNED, gpsCourse, gpsGndSpd, gpsVelD);
                     }
-                    _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                    calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                     if (pOnboardFile != nullptr) {
-                        _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                        calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                     }
 
@@ -510,10 +510,10 @@ int main(int argc, char *argv[])
                     _ekf->fuseVelData = false;
                     _ekf->fusePosData = false;
                 }
-                _ekf->calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
                 if (pOnboardFile > 0) {
-                    _ekf->calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
+                    calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
                 }
 
                 _ekf->posNE[0] = posNED[0];

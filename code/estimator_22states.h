@@ -1,30 +1,30 @@
 /****************************************************************************
 * Copyright (c) 2014, Paul Riseborough All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
+* 
+* Redistribution and use in source and binary forms, with or without 
 * modification, are permitted provided that the following conditions are met:
-*
-* Redistributions of source code must retain the above copyright notice, this
+* 
+* Redistributions of source code must retain the above copyright notice, this 
 * list of conditions and the following disclaimer.
-*
-* Redistributions in binary form must reproduce the above copyright notice,
-* this list of conditions and the following disclaimer in the documentation
+* 
+* Redistributions in binary form must reproduce the above copyright notice, 
+* this list of conditions and the following disclaimer in the documentation 
 * and/or other materials provided with the distribution.
-*
-* Neither the name of the {organization} nor the names of its contributors
-* may be used to endorse or promote products derived from this software without
+* 
+* Neither the name of the {organization} nor the names of its contributors 
+* may be used to endorse or promote products derived from this software without 
 * specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* 
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 * POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************************/
 
@@ -288,7 +288,6 @@ public:
      * Recall the state vector.
      *
      * Recalls the vector stored at closest time to the one specified by msec
-     *FuseOptFlow
      * @return zero on success, integer indicating the number of invalid states on failure.
      *         Does only copy valid states, if the statesForFusion vector was initialized
      *         correctly by the caller, the result can be safely used, but is a mixture
@@ -306,12 +305,6 @@ public:
     static void eul2quat(float (&quat)[4], const float (&eul)[3]);
 
     static void quat2eul(float (&eul)[3], const float (&quat)[4]);
-
-    static void calcvelNED(float (&velNED)[3], float gpsCourse, float gpsGndSpd, float gpsVelD);
-
-    static void calcposNED(float (&posNED)[3], double lat, double lon, float hgt, double latRef, double lonRef, float hgtRef);
-
-    static void calcLLH(float posNED[3], double &lat, double &lon, float &hgt, double latRef, double lonRef, float hgtRef);
 
     //static void quat2Tnb(Mat3f &Tnb, const float (&quat)[4]);
 
@@ -362,8 +355,6 @@ public:
      */
     void ResetVelocity();
 
-    void ZeroVariables();
-
     void GetFilterState(struct ekf_status_report *state);
 
     void GetLastErrorState(struct ekf_status_report *last_error);
@@ -371,6 +362,22 @@ public:
     bool StatesNaN();
 
     void InitializeDynamic(float (&initvelNED)[3], float declination);
+
+    /**
+    * @brief
+    *   Tells the EKF wheter the vehicle is a fixed wing frame or not.
+    *   This changes the way the EKF fuses position or attitude calulations
+    *   by making some assumptions on movement.
+    * @param fixedWing
+    *   true if the vehicle moves like a Fixed Wing, false otherwise
+    **/
+    void setIsFixedWing(const bool fixedWing);
+    
+    /**
+     * @brief
+     *   Reset internal filter states and clear all variables to zero value
+     */
+    void ZeroVariables();
 
 protected:
 
@@ -399,10 +406,11 @@ protected:
     void AttitudeInit(float ax, float ay, float az, float mx, float my, float mz, float declination, float *initQuat);
 
     void ResetStoredStates();
-    
-private:
-    bool _onGround;    ///< boolean true when the flight vehicle is on the ground (not flying)
 
+private:
+    bool _isFixedWing;               ///< True if the vehicle is a fixed-wing frame type
+    bool _onGround;                  ///< boolean true when the flight vehicle is on the ground (not flying)
+    float _accNavMagHorizontal;      ///< First-order low-pass filtered rate of change maneuver velocity
 };
 
 uint32_t millis();
