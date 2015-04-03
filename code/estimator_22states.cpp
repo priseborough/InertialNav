@@ -49,7 +49,7 @@
 #endif
 
 #ifndef isfinite
-#define isfinite(__x) isfinite(__x)
+#define isfinite(__x) std::isfinite(__x)
 #endif
 
 constexpr float EKF_COVARIANCE_DIVERGED = 1.0e8f;
