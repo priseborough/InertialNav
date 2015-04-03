@@ -351,8 +351,8 @@ int main(int argc, char *argv[])
                 for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
                 _ekf->quat2eul(eulerEst, tempQuat);
                 for (uint8_t j=0; j<=2; j++) eulerDif[j] = eulerEst[j] - ahrsEul[j];
-                if (eulerDif[2] > pi) eulerDif[2] -= 2*pi;
-                if (eulerDif[2] < -pi) eulerDif[2] += 2*pi;
+                if (eulerDif[2] > M_PI) eulerDif[2] -= 2 * M_PI;
+                if (eulerDif[2] < -M_PI) eulerDif[2] += 2 * M_PI;
                 #endif
                 // store the predicted states for subsequent use by measurement fusion
                 _ekf->StoreStates(IMUmsec);
@@ -815,7 +815,7 @@ void readGpsData()
             gpsGndSpd = tempGpsPrev[10];
             gpsVelD = tempGpsPrev[12];
             _ekf->gpsLat = deg2rad*tempGpsPrev[6];
-            _ekf->gpsLon = deg2rad*tempGpsPrev[7] - pi;
+            _ekf->gpsLon = deg2rad*tempGpsPrev[7] - M_PI;
             _ekf->gpsHgt = tempGpsPrev[8];
         } else if (endOfData) {
             break;
@@ -969,7 +969,7 @@ void readOnboardData()
             onboardTimestamp  = tempOnboard[0];
             onboardMsec = tempOnboard[0];
             onboardLat = deg2rad*tempOnboard[1];
-            onboardLon = deg2rad*tempOnboard[2] - pi;
+            onboardLon = deg2rad*tempOnboard[2] - M_PI;
             onboardHgt = tempOnboard[3];
             onboardVelNED[0] = tempOnboard[4];
             onboardVelNED[1] = tempOnboard[5];
