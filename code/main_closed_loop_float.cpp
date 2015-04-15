@@ -142,6 +142,7 @@ FILE * pGpsFile = nullptr;
 FILE * pAhrsFile = nullptr;
 FILE * pAdsFile = nullptr;
 FILE * pStateOutFile = nullptr;
+FILE * pGlitchOutFile = nullptr;
 FILE * pEulOutFile = nullptr;
 FILE * pCovOutFile = nullptr;
 FILE * pRefPosVelOutFile = nullptr;
@@ -212,6 +213,7 @@ int main(int argc, char *argv[])
     pAhrsFile = open_with_exit ("ATT.txt","r");
     pAdsFile = open_with_exit ("NTUN.txt","r");
     pTimeFile = open_with_exit ("timing.txt","r");
+    pGlitchOutFile = open_with_exit ("GlitchOffsetOut.txt","w");
     pStateOutFile = open_with_exit ("StateDataOut.txt","w");
     pEulOutFile = open_with_exit ("EulDataOut.txt","w");
     pCovOutFile = open_with_exit ("CovDataOut.txt","w");
@@ -476,6 +478,9 @@ int main(int argc, char *argv[])
                 // Fuse GPS Measurements
                 if (newDataGps)
                 {
+                    // calculate a position offset which is applied to NE position and velocity wherever it is used throughout code to allow GPS position jumps to be accommodated gradually
+                    _ekf->decayGpsOffset();
+
                     // Convert GPS measurements to Pos NE, hgt and Vel NED
                     if (pGpsRawINFile != nullptr)
                     {
@@ -1080,6 +1085,10 @@ void WriteFilterOutput()
     float tempQuat[4];
     for (uint8_t j=0; j<4; j++) tempQuat[j] = _ekf->states[j];
     _ekf->quat2eul(eulerEst, tempQuat);
+
+    // GPS glitch offset
+    fprintf(pGlitchOutFile," %e", float(IMUmsec*0.001f));
+    fprintf(pGlitchOutFile," %e %e\n", _ekf->gpsPosGlitchOffsetNE.x, _ekf->gpsPosGlitchOffsetNE.y);
 
     // filter states
     fprintf(pStateOutFile," %e", float(IMUmsec*0.001f));

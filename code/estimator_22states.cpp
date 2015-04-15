@@ -1188,8 +1188,8 @@ void AttPosEKF::FuseVelposNED()
         if (fusePosData)
         {
             // test horizontal position measurements
-            posInnov[0] = statesAtPosTime[7] - posNE[0];
-            posInnov[1] = statesAtPosTime[8] - posNE[1];
+            posInnov[0] = statesAtPosTime[7] - observation[0];
+            posInnov[1] = statesAtPosTime[8] - observation[1];
 
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
@@ -1285,6 +1285,7 @@ void AttPosEKF::FuseVelposNED()
             fuseData[5] = true;
         }
         // Fuse measurements sequentially
+    	printf("fusing: posNE: (%f, %f), glitchOffset: (%f, %f)\n", posNE[0], posNE[1], gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y);
         for (obsIndex=0; obsIndex<=5; obsIndex++)
         {
             if (fuseData[obsIndex])
