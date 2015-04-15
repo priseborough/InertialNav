@@ -4,7 +4,7 @@ close all;
 % load('search_pattern_log002.mat');
 %load('quad_flight_log003.mat');
 %load('attitude_log001.mat');
-load('m_10_48_56.mat');
+load('m_20_43_07.mat');
 
 mintime = 0;
 maxtime = 360;

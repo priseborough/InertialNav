@@ -1,7 +1,7 @@
 
 CXX?=g++
 EXTRAARGS?=
-CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -fno-strict-aliasing \
+CFLAGS=-I. -D__EXPORT="" -Dnullptr="0" -g -fno-strict-aliasing \
 			   -fno-strength-reduce \
 			   -fomit-frame-pointer \
    			   -funsafe-math-optimizations \
@@ -36,7 +36,7 @@ $(ODIR)/%.o: %.cpp
 
 #
 estimator_closed_loop_test: $(OBJ)
-	$(CXX) -O3 -o $@ $^ $(CFLAGS) $(LIBS) $(EXTRAARGS)
+	$(CXX) -g -o $@ $^ $(CFLAGS) $(LIBS) $(EXTRAARGS)
 
 .PHONY: clean plots
 

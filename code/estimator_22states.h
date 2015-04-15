@@ -151,6 +151,7 @@ public:
     Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
     Vector3f dVelIMU;
     Vector3f dAngIMU;
+    uint32_t imuSampleTime_ms;      // time that the last IMU value was taken
     float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec), this may have significant jitter
     float dtIMUfilt; // average time between IMU measurements (sec)
     float dtVelPos; // time lapsed since the last position / velocity fusion (seconds), this may have significant jitter
@@ -160,6 +161,14 @@ public:
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output
+    int16_t _gpsGlitchAccelMax;    // Maximum allowed discrepancy between inertial and GPS Horizontal acceleration before GPS data is ignored : cm/s^2
+    int8_t _gpsGlitchRadiusMax;    // Maximum allowed discrepancy between inertial and GPS Horizontal position before GPS glitch is declared : m
+    int8_t  _gpsVelInnovGate;      // Number of standard deviations applied to GPS velocity innovation consistency check
+    int8_t  _gpsPosInnovGate;      // Number of standard deviations applied to GPS position innovation consistency check
+    float _gpsHorizPosNoise;     // GPS horizontal position measurement noise m
+    Vector3f gpsPosGlitchOffsetNE;  // offset applied to GPS data in the NE direction to compensate for rapid changes in GPS solution
+    uint32_t lastDecayTime_ms;      // time of last decay of GPS position offset
+    Vector3f gpsVelGlitchOffset;    // Offset applied to the GPS velocity when the gltch radius is being  decayed back to zero
 
     float velNED[3]; // North, East, Down velocity obs (m/s)
     float posNE[2]; // North, East position obs (m)
@@ -378,6 +387,8 @@ public:
      *   Reset internal filter states and clear all variables to zero value
      */
     void ZeroVariables();
+
+    void decayGpsOffset();
 
 protected:
 

@@ -191,7 +191,12 @@ AttPosEKF::AttPosEKF() :
 
     _isFixedWing(false),
     _onGround(true),
-    _accNavMagHorizontal(0.0f)
+    _accNavMagHorizontal(0.0f),
+	_gpsGlitchAccelMax(150),
+	_gpsGlitchRadiusMax(20),
+	_gpsPosInnovGate(30),
+	_gpsVelInnovGate(6),
+	_gpsHorizPosNoise(0.5f)
 {
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
@@ -1049,6 +1054,34 @@ void AttPosEKF::updateDtVelPosFilt(float dt)
     dtVelPosFilt = ConstrainFloat(dt, 0.0005f, 2.0f) * 0.05f + dtVelPosFilt * 0.95f;
 }
 
+// decay GPS horizontal position offset to close to zero at a rate of 1 m/s for copters and 5 m/s for planes
+// limit radius to a maximum of 50m
+void AttPosEKF::decayGpsOffset()
+{
+    float offsetDecaySpd;
+    if (_isFixedWing) {
+        offsetDecaySpd = 5.0f;
+    } else {
+        offsetDecaySpd = 1.0f;
+    }
+    float lapsedTime = 0.001f*float(millis() - lastDecayTime_ms);
+    lastDecayTime_ms = millis();
+    float offsetRadius = gpsPosGlitchOffsetNE.length();
+    // decay radius if larger than offset decay speed multiplied by lapsed time (plus a margin to prevent divide by zero)
+    if (offsetRadius > (offsetDecaySpd * lapsedTime + 0.1f)) {
+        // Calculate the GPS velocity offset required. This is necessary to prevent the position measurement being rejected for inconsistency when the radius is being pulled back in.
+        gpsVelGlitchOffset = gpsPosGlitchOffsetNE * -offsetDecaySpd/offsetRadius;
+        // calculate scale factor to be applied to both offset components
+        float scaleFactor = ConstrainFloat((offsetRadius - offsetDecaySpd * lapsedTime), 0.0f, 50.0f) / offsetRadius;
+        gpsPosGlitchOffsetNE.x *= scaleFactor;
+        gpsPosGlitchOffsetNE.y *= scaleFactor;
+        printf("gpsPosGlitchOffsetNE: %f, %f, %f\n", gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y, gpsPosGlitchOffsetNE.z);
+    } else {
+        gpsVelGlitchOffset.zero();
+        gpsPosGlitchOffsetNE.zero();
+    }
+}
+
 void AttPosEKF::FuseVelposNED()
 {
 
@@ -1102,8 +1135,13 @@ void AttPosEKF::FuseVelposNED()
         else horizRetryTime = gpsRetryTimeNoTAS;
 
         // Form the observation vector
-        for (uint8_t i=0; i <=2; i++) observation[i] = velNED[i];
-        for (uint8_t i=3; i <=4; i++) observation[i] = posNE[i-3];
+        observation[0] = velNED[0] + gpsVelGlitchOffset.x;
+        observation[1] = velNED[1] + gpsVelGlitchOffset.y;
+        observation[2] = velNED[2];
+        observation[3] = posNE[0] + gpsPosGlitchOffsetNE.x;
+        observation[4] = posNE[1] + gpsPosGlitchOffsetNE.y;
+//        for (uint8_t i=0; i <=2; i++) observation[i] = velNED[i];
+//        for (uint8_t i=3; i <=4; i++) observation[i] = posNE[i-3];
         observation[5] = -(hgtMea);
 
         // Estimate the GPS Velocity, GPS horiz position and height measurement variances.
@@ -1152,21 +1190,44 @@ void AttPosEKF::FuseVelposNED()
             // test horizontal position measurements
             posInnov[0] = statesAtPosTime[7] - posNE[0];
             posInnov[1] = statesAtPosTime[8] - posNE[1];
+
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
+
             // apply a 10-sigma threshold
-            current_ekf_state.posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
+//            current_ekf_state.posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
             current_ekf_state.posTimeout = (millis() - current_ekf_state.posFailTime) > horizRetryTime;
+
+            // apply an innovation consistency threshold test, but don't fail if bad IMU data
+            // calculate max valid position innovation squared based on a maximum horizontal inertial nav accel error and GPS noise parameter
+            // max inertial nav error is scaled with horizontal g to allow for increased errors when manoeuvring
+            float accelScale =  (1.0f + 0.1f * accNavMag);
+            float maxPosInnov2 = sq(float(_gpsPosInnovGate) * _gpsHorizPosNoise + 0.005f * accelScale * float(_gpsGlitchAccelMax) * sq(0.001f * float(millis() - current_ekf_state.posFailTime)));
+
+            float posTestRatio = (sq(posInnov[0]) + sq(posInnov[1])) / maxPosInnov2;
+            current_ekf_state.posHealth = (posTestRatio < 1.0f);
+            printf("posHealth: %d  ", current_ekf_state.posHealth);
+            printf("posInnov: %f, %f  \n", posInnov[0], posInnov[1]);
+
             if (current_ekf_state.posHealth || current_ekf_state.posTimeout)
             {
                 current_ekf_state.posHealth = true;
                 current_ekf_state.posFailTime = millis();
 
-                if (current_ekf_state.posTimeout) {
+                if (current_ekf_state.posTimeout || (maxPosInnov2 > sq(float(_gpsGlitchRadiusMax)))) {
+                    printf(" gpsglitch: accelScale: %f, maxPosInnov2: %f \n", accelScale, maxPosInnov2);
+
+                    gpsPosGlitchOffsetNE.x += posInnov[0];
+                    gpsPosGlitchOffsetNE.y += posInnov[1];
+                    printf(" gpsPosGlitchOffsetNE: %f, %f, %f \n", gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y, gpsPosGlitchOffsetNE.z);
+
+                    // limit the radius of the offset and decay the offset to zero radially
+                    decayGpsOffset();
+
+                    // reset the position to the current GPS position which will include the glitch correction offset
                     ResetPosition();
                     
-                    // do not fuse position data on this time
-                    // step
+                    // do not fuse position data on this timestep
                     fusePosData = false;
                 }
             }
@@ -1689,7 +1750,7 @@ void AttPosEKF::FuseAirspeed()
 
     // Need to check that it is flying before fusing airspeed data
     // Calculate the predicted airspeed
-    VtasPred = sqrtf((ve - vwe)*(ve - vwe) + (vn - vwn)*(vn - vwn) + vd*vd);
+    VtasPred = sqrtf((ve - gpsVelGlitchOffset.y - vwe)*(ve - gpsVelGlitchOffset.y - vwe) + (vn - gpsVelGlitchOffset.x - vwn)*(vn - gpsVelGlitchOffset.x - vwn) + vd*vd);
     // Perform fusion of True Airspeed measurement
     if (useAirspeed && fuseVtasData && (VtasPred > 1.0f) && (VtasMeas > 8.0f))
     {
@@ -2863,8 +2924,12 @@ void AttPosEKF::ResetPosition(void)
     } else if (GPSstatus >= GPS_FIX_3D) {
 
         // reset the states from the GPS measurements
-        states[7] = posNE[0];
-        states[8] = posNE[1];
+        states[7] = posNE[0] + gpsPosGlitchOffsetNE.x;
+        states[8] = posNE[1] + gpsPosGlitchOffsetNE.y;
+
+        // the estimated states at the last GPS measurement are set equal to the GPS measurement to prevent transients on the first fusion
+        statesAtPosTime[7] = posNE[0];
+        statesAtPosTime[8] = posNE[1];
 
         // stored horizontal position states to prevent subsequent GPS measurements from being rejected
         for (size_t i = 0; i < EKF_DATA_BUFFER_SIZE; ++i){
@@ -2903,13 +2968,14 @@ void AttPosEKF::ResetVelocity(void)
     else if (GPSstatus >= GPS_FIX_3D) {
         //Do not use Z velocity, we trust the Barometer history more
 
-        states[4]  = velNED[0]; // north velocity from last reading
-        states[5]  = velNED[1]; // east velocity from last reading
+    	// reset horizontal velocity states with an offset to prevent the GPS position being rejected when the GPS position offset is being decayed to zero.
+        states[4]  = velNED[0] + gpsVelGlitchOffset.x; // north velocity from last reading
+        states[5]  = velNED[1] + gpsVelGlitchOffset.y; // east velocity from last reading
 
         // stored horizontal position states to prevent subsequent GPS measurements from being rejected
         for (size_t i = 0; i < EKF_DATA_BUFFER_SIZE; ++i){
-            storedStates[4][i] = states[4];
-            storedStates[5][i] = states[5];
+            storedStates[4][i] = states[4] + gpsVelGlitchOffset.x;
+            storedStates[5][i] = states[5] + gpsVelGlitchOffset.y;
         }          
     }
 
