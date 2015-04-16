@@ -1162,7 +1162,7 @@ void AttPosEKF::FuseVelposNED()
             if (fusionModeGPS == 1) imax = 1;
             for (uint8_t i = 0; i<=imax; i++)
             {
-                velInnov[i] = statesAtVelTime[i+4] - velNED[i];
+                velInnov[i] = statesAtVelTime[i+4] - observation[i];
                 stateIndex = 4 + i;
                 varInnovVelPos[i] = P[stateIndex][stateIndex] + R_OBS[i];
             }
@@ -1188,8 +1188,8 @@ void AttPosEKF::FuseVelposNED()
         if (fusePosData)
         {
             // test horizontal position measurements
-            posInnov[0] = statesAtPosTime[7] - observation[0];
-            posInnov[1] = statesAtPosTime[8] - observation[1];
+            posInnov[0] = statesAtPosTime[7] - observation[3];
+            posInnov[1] = statesAtPosTime[8] - observation[4];
 
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
