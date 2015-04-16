@@ -151,7 +151,6 @@ public:
     Vector3f accel; // acceleration vector in XYZ body axes measured by the IMU (m/s^2)
     Vector3f dVelIMU;
     Vector3f dAngIMU;
-    uint32_t imuSampleTime_ms;      // time that the last IMU value was taken
     float dtIMU; // time lapsed since the last IMU measurement or covariance update (sec), this may have significant jitter
     float dtIMUfilt; // average time between IMU measurements (sec)
     float dtVelPos; // time lapsed since the last position / velocity fusion (seconds), this may have significant jitter

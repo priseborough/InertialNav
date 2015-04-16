@@ -49,6 +49,7 @@ plots:
 	python plot_states.py &
 	python plot_velocity.py &
 	python plot_flow.py &
+	python plot_glitchOffset.py &
 
 tests:
 	make clean

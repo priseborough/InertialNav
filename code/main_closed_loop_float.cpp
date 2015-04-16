@@ -1088,6 +1088,7 @@ void WriteFilterOutput()
 
     // GPS glitch offset
     fprintf(pGlitchOutFile," %e", float(IMUmsec*0.001f));
+    fprintf(pGlitchOutFile," %e", powf(_ekf->velNED[0]*_ekf->velNED[0] + _ekf->velNED[1]*_ekf->velNED[1], 0.5f) );
     fprintf(pGlitchOutFile," %e %e", _ekf->gpsPosGlitchOffsetNE.x, _ekf->gpsPosGlitchOffsetNE.y);
     fprintf(pGlitchOutFile," %e %e\n", _ekf->gpsVelGlitchOffset.x, _ekf->gpsVelGlitchOffset.y);
 
