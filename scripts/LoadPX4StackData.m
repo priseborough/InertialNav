@@ -227,9 +227,9 @@ if (exist('ATT', 'var') && ~isempty(ATT.data))
     ATT.data(:,1) = (ATT.data(:,1) - zerotimestamp) * 1e3;
     ATTtimestamp = ATT.data(:,1);
     ATTtime  = ATT.data(:,1)*1e-3;
-    Roll     = ATT.data(:,2) ./ pi .* 180;
-    Pitch    = ATT.data(:,3) ./ pi .* 180;
-    Yaw      = ATT.data(:,4) ./ pi .* 180;
+    Roll     = ATT.data(:,6) ./ pi .* 180;
+    Pitch    = ATT.data(:,7) ./ pi .* 180;
+    Yaw      = ATT.data(:,8) ./ pi .* 180;
 end
 
 %% Save to files
