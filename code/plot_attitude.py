@@ -17,18 +17,14 @@ fig = plt.figure()
 ax1 = fig.add_subplot(311)
 
 ax1.set_title("Attitude estimate")    
-ax1.set_xlabel('time (s)')
 ax1.set_ylabel('angle (degrees)')
 
 ax2 = fig.add_subplot(312)
 
-ax2.set_title("Attitude estimate")    
-ax2.set_xlabel('time (s)')
 ax2.set_ylabel('angle (degrees)')
 
 ax3 = fig.add_subplot(313)
 
-ax3.set_title("Attitude estimate")    
 ax3.set_xlabel('time (s)')
 ax3.set_ylabel('angle (degrees)')
 

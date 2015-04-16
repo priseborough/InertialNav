@@ -678,7 +678,10 @@ int main(int argc, char *argv[])
 
                 // debug output
                 //printf("Euler Angle Difference = %3.1f , %3.1f , %3.1f deg\n", rad2deg*eulerDif[0],rad2deg*eulerDif[1],rad2deg*eulerDif[2]);
-                WriteFilterOutput();
+                if ((IMUmsec >= msecStartTime) && (IMUmsec <= msecEndTime))
+                {
+                	WriteFilterOutput();
+                }
 
             }
 
