@@ -188,15 +188,15 @@ AttPosEKF::AttPosEKF() :
     rngInnovGate(0.0f),
     minFlowRng(0.0f),
     moCompR_LOS(0.0f),
+	gpsGlitchAccel(150),
+	gpsGlitchRadius(20),
+	gpsPosInnovNSTD(30),
+	gpsVelInnovNSTD(6),
+	gpsHorizPosNoise(0.5f),
 
     _isFixedWing(false),
     _onGround(true),
-    _accNavMagHorizontal(0.0f),
-	_gpsGlitchAccelMax(150),
-	_gpsGlitchRadiusMax(20),
-	_gpsPosInnovGate(30),
-	_gpsVelInnovGate(6),
-	_gpsHorizPosNoise(0.5f)
+    _accNavMagHorizontal(0.0f)
 {
 
     memset(&last_ekf_error, 0, sizeof(last_ekf_error));
@@ -1075,7 +1075,6 @@ void AttPosEKF::decayGpsOffset()
         float scaleFactor = ConstrainFloat((offsetRadius - offsetDecaySpd * lapsedTime), 0.0f, 50.0f) / offsetRadius;
         gpsPosGlitchOffsetNE.x *= scaleFactor;
         gpsPosGlitchOffsetNE.y *= scaleFactor;
-        printf("gpsPosGlitchOffsetNE: %f, %f, %f\n", gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y, gpsPosGlitchOffsetNE.z);
     } else {
         gpsVelGlitchOffset.zero();
         gpsPosGlitchOffsetNE.zero();
@@ -1194,32 +1193,33 @@ void AttPosEKF::FuseVelposNED()
             varInnovVelPos[3] = P[7][7] + R_OBS[3];
             varInnovVelPos[4] = P[8][8] + R_OBS[4];
 
-            // apply a 10-sigma threshold
-//            current_ekf_state.posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
             current_ekf_state.posTimeout = (millis() - current_ekf_state.posFailTime) > horizRetryTime;
 
-            // apply an innovation consistency threshold test, but don't fail if bad IMU data
+            /* old calculation for posHealth
+             * // apply a 10-sigma threshold
+             * current_ekf_state.posHealth = (sq(posInnov[0]) + sq(posInnov[1])) < 100.0f*(varInnovVelPos[3] + varInnovVelPos[4]);
+			 *
+			 */
+
+            // apply an innovation consistency threshold test
+            // *** this excludes the exception for "aliased accelerometer data" ***
             // calculate max valid position innovation squared based on a maximum horizontal inertial nav accel error and GPS noise parameter
-            // max inertial nav error is scaled with horizontal g to allow for increased errors when manoeuvring
+            // max inertial nav error is scaled with horizontal g to allow for increased errors when maneuvering
             float accelScale =  (1.0f + 0.1f * accNavMag);
-            float maxPosInnov2 = sq(float(_gpsPosInnovGate) * _gpsHorizPosNoise + 0.005f * accelScale * float(_gpsGlitchAccelMax) * sq(0.001f * float(millis() - current_ekf_state.posFailTime)));
+            float maxPosInnov2 = sq(float(gpsPosInnovNSTD) * gpsHorizPosNoise + 0.005f * accelScale * float(gpsGlitchAccel) * sq(0.001f * float(millis() - current_ekf_state.posFailTime)));
 
             float posTestRatio = (sq(posInnov[0]) + sq(posInnov[1])) / maxPosInnov2;
             current_ekf_state.posHealth = (posTestRatio < 1.0f);
-            printf("posHealth: %d  ", current_ekf_state.posHealth);
-            printf("posInnov: %f, %f  \n", posInnov[0], posInnov[1]);
 
             if (current_ekf_state.posHealth || current_ekf_state.posTimeout)
             {
                 current_ekf_state.posHealth = true;
                 current_ekf_state.posFailTime = millis();
 
-                if (current_ekf_state.posTimeout || (maxPosInnov2 > sq(float(_gpsGlitchRadiusMax)))) {
-                    printf(" gpsglitch: accelScale: %f, maxPosInnov2: %f \n", accelScale, maxPosInnov2);
+                if (current_ekf_state.posTimeout || (maxPosInnov2 > sq(float(gpsGlitchRadius)))) {
 
                     gpsPosGlitchOffsetNE.x += posInnov[0];
                     gpsPosGlitchOffsetNE.y += posInnov[1];
-                    printf(" gpsPosGlitchOffsetNE: %f, %f, %f \n", gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y, gpsPosGlitchOffsetNE.z);
 
                     // limit the radius of the offset and decay the offset to zero radially
                     decayGpsOffset();
@@ -1285,7 +1285,6 @@ void AttPosEKF::FuseVelposNED()
             fuseData[5] = true;
         }
         // Fuse measurements sequentially
-    	printf("fusing: posNE: (%f, %f), glitchOffset: (%f, %f)\n", posNE[0], posNE[1], gpsPosGlitchOffsetNE.x, gpsPosGlitchOffsetNE.y);
         for (obsIndex=0; obsIndex<=5; obsIndex++)
         {
             if (fuseData[obsIndex])

@@ -160,14 +160,14 @@ public:
     uint8_t fusionModeGPS; // 0 = GPS outputs 3D velocity, 1 = GPS outputs 2D velocity, 2 = GPS outputs no velocity
     float innovVelPos[6]; // innovation output
     float varInnovVelPos[6]; // innovation variance output
-    int16_t _gpsGlitchAccelMax;    // Maximum allowed discrepancy between inertial and GPS Horizontal acceleration before GPS data is ignored : cm/s^2
-    int8_t _gpsGlitchRadiusMax;    // Maximum allowed discrepancy between inertial and GPS Horizontal position before GPS glitch is declared : m
-    int8_t  _gpsVelInnovGate;      // Number of standard deviations applied to GPS velocity innovation consistency check
-    int8_t  _gpsPosInnovGate;      // Number of standard deviations applied to GPS position innovation consistency check
-    float _gpsHorizPosNoise;     // GPS horizontal position measurement noise m
-    Vector3f gpsPosGlitchOffsetNE;  // offset applied to GPS data in the NE direction to compensate for rapid changes in GPS solution
+    int16_t gpsGlitchAccel;    // Magnitude of discrepancy between inertial and GPS Horizontal acceleration above which GPS data is ignored : cm/s^2
+    int8_t gpsGlitchRadius;    // Magnitude of discrepancy between inertial and GPS Horizontal position before GPS glitch is declared : m
+    int8_t  gpsVelInnovNSTD;      // Number of standard deviations allowed in GPS velocity innovation consistency check
+    int8_t  gpsPosInnovNSTD;      // Number of standard deviations allowed in GPS position innovation consistency check
+    float gpsHorizPosNoise;     // GPS horizontal position measurement noise m
+    Vector2f gpsPosGlitchOffsetNE;  // offset applied to GPS data in the NE direction to compensate for rapid changes in GPS solution
     uint32_t lastDecayTime_ms;      // time of last decay of GPS position offset
-    Vector3f gpsVelGlitchOffset;    // Offset applied to the GPS velocity when the gltch radius is being  decayed back to zero
+    Vector2f gpsVelGlitchOffset;    // Offset applied to the GPS velocity when the gltch radius is being  decayed back to zero
 
     float velNED[3]; // North, East, Down velocity obs (m/s)
     float posNE[2]; // North, East position obs (m)
