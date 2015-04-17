@@ -188,11 +188,11 @@ AttPosEKF::AttPosEKF() :
     rngInnovGate(0.0f),
     minFlowRng(0.0f),
     moCompR_LOS(0.0f),
-	gpsGlitchAccel(150),
-	gpsGlitchRadius(20),
-	gpsPosInnovNSTD(30),
-	gpsVelInnovNSTD(6),
-	gpsHorizPosNoise(0.5f),
+	gpsGlitchAccel(0),
+	gpsGlitchRadius(0),
+	gpsPosInnovNSTD(0),
+	gpsVelInnovNSTD(0),
+	gpsHorizPosNoise(0.0f),
 
     _isFixedWing(false),
     _onGround(true),
@@ -241,6 +241,13 @@ void AttPosEKF::InitialiseParameters()
     rngInnovGate = 5.0f; // number of standard deviations applied to the range finder innovation consistency check
     minFlowRng = 0.3f; //minimum range between ground and flow sensor
     moCompR_LOS = 0.0; // scaler from sensor gyro rate to uncertainty in LOS rate
+
+	gpsGlitchAccel = 150;
+	gpsGlitchRadius = 10;
+	gpsPosInnovNSTD = 6;
+	gpsVelInnovNSTD = 6;
+	gpsHorizPosNoise = 0.5f;
+
 }
 
 
@@ -1159,14 +1166,26 @@ void AttPosEKF::FuseVelposNED()
             // test velocity measurements
             uint8_t imax = 2;
             if (fusionModeGPS == 1) imax = 1;
+            float innovVelSumSq = 0; // sum of squares of velocity innovations
+            float varVelSum = 0; // sum of velocity innovation variances
             for (uint8_t i = 0; i<=imax; i++)
             {
                 velInnov[i] = statesAtVelTime[i+4] - observation[i];
                 stateIndex = 4 + i;
                 varInnovVelPos[i] = P[stateIndex][stateIndex] + R_OBS[i];
+                // sum the innovation and innovation variances
+                innovVelSumSq += velInnov[i] * velInnov[i];
+                varVelSum += varInnovVelPos[i];
             }
             // apply a 5-sigma threshold
             current_ekf_state.velHealth = (sq(velInnov[0]) + sq(velInnov[1]) + sq(velInnov[2])) < 25.0f * (varInnovVelPos[0] + varInnovVelPos[1] + varInnovVelPos[2]);
+
+            // apply an innovation consistency threshold test, but don't fail if bad IMU data
+            // calculate the test ratio
+            float velTestRatio = innovVelSumSq / (varVelSum * gpsVelInnovNSTD * gpsVelInnovNSTD);
+            // fail if the ratio is greater than 1
+            current_ekf_state.velHealth = (velTestRatio < 1.0f);
+
             current_ekf_state.velTimeout = (millis() - current_ekf_state.velFailTime) > horizRetryTime;
             if (current_ekf_state.velHealth || staticMode) {
                 current_ekf_state.velHealth = true;
