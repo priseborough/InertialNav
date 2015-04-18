@@ -226,6 +226,8 @@ void AttPosEKF::InitialiseParameters()
 
     vneSigma = 0.2f;
     vdSigma = 0.3f;
+//    vneSigma = 0.5f;
+//    vdSigma = 0.7f;
     posNeSigma = 2.0f;
     posDSigma = 2.0f;
 
@@ -1180,7 +1182,7 @@ void AttPosEKF::FuseVelposNED()
             // apply a 5-sigma threshold
             current_ekf_state.velHealth = (sq(velInnov[0]) + sq(velInnov[1]) + sq(velInnov[2])) < 25.0f * (varInnovVelPos[0] + varInnovVelPos[1] + varInnovVelPos[2]);
 
-            // apply an innovation consistency threshold test, but don't fail if bad IMU data
+            // apply an innovation consistency threshold test
             // calculate the test ratio
             float velTestRatio = innovVelSumSq / (varVelSum * gpsVelInnovNSTD * gpsVelInnovNSTD);
             // fail if the ratio is greater than 1
@@ -1196,9 +1198,7 @@ void AttPosEKF::FuseVelposNED()
 
                 // do not fuse bad data
                 fuseVelData = false;
-            }
-            else
-            {
+            } else {
                 current_ekf_state.velHealth = false;
             }
         }
