@@ -509,6 +509,7 @@ int main(int argc, char *argv[])
                     _ekf->RecallStates(_ekf->statesAtPosTime, (IMUmsec - msecPosDelay));
                     // run the fusion step
                     _ekf->FuseVelposNED();
+                    printf("FuseVelposNED at time = %e \n", IMUtimestamp);
                 }
                 else
                 {
@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
                 _ekf->RecallStates(_ekf->statesAtHgtTime, (IMUmsec - msecHgtDelay));
                 // run the fusion step
                 _ekf->FuseVelposNED();
-                printf("time = %e \n", IMUtimestamp);
+//                printf("time = %e \n", IMUtimestamp);
             }
             else
             {
@@ -1203,6 +1204,9 @@ void readTimingData()
     msecMagDelay  = timeArray[6];
     msecTasDelay  = timeArray[7];
     _ekf->EAS2TAS       = timeArray[8];
+
+    printf("msecVelDelay %d\nmsecPosDelay %d\nmsecHgtDelay %d\nmsecMagDelay %d\nmsecTasDelay %d\n",
+    		msecVelDelay, msecPosDelay, msecHgtDelay, msecMagDelay, msecTasDelay);
 }
 
 void CloseFiles()

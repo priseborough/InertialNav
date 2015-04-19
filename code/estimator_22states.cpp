@@ -244,11 +244,14 @@ void AttPosEKF::InitialiseParameters()
     minFlowRng = 0.3f; //minimum range between ground and flow sensor
     moCompR_LOS = 0.0; // scaler from sensor gyro rate to uncertainty in LOS rate
 
+    // the following 3 terms are all multiplied together in computation of maxInnov2
 	gpsGlitchAccel = 150;
-	gpsGlitchRadius = 10;
 	gpsPosInnovNSTD = 6;
-	gpsVelInnovNSTD = 6;
 	gpsHorizPosNoise = 0.5f;
+	// maxInnov2 is compared to the square of this parameter; (maxInnov2 > radius) => glitch
+	gpsGlitchRadius = 5;
+	// if the vel innov is greater than this number of standard deviations: glitch
+	gpsVelInnovNSTD = 6;
 
 }
 
@@ -360,10 +363,10 @@ void AttPosEKF::UpdateStrapdownEquationsNED()
 
     // transform body delta velocities to delta velocities in the nav frame
     // * and + operators have been overloaded
-    //delVelNav = Tbn*dVelIMU + gravityNED*dtIMU;
-    delVelNav.x = Tbn.x.x*dVelIMURel.x + Tbn.x.y*dVelIMURel.y + Tbn.x.z*dVelIMURel.z + gravityNED.x*dtIMU;
-    delVelNav.y = Tbn.y.x*dVelIMURel.x + Tbn.y.y*dVelIMURel.y + Tbn.y.z*dVelIMURel.z + gravityNED.y*dtIMU;
-    delVelNav.z = Tbn.z.x*dVelIMURel.x + Tbn.z.y*dVelIMURel.y + Tbn.z.z*dVelIMURel.z + gravityNED.z*dtIMU;
+    delVelNav = Tbn*dVelIMU + gravityNED*dtIMU;
+//    delVelNav.x = Tbn.x.x*dVelIMURel.x + Tbn.x.y*dVelIMURel.y + Tbn.x.z*dVelIMURel.z + gravityNED.x*dtIMU;
+//    delVelNav.y = Tbn.y.x*dVelIMURel.x + Tbn.y.y*dVelIMURel.y + Tbn.y.z*dVelIMURel.z + gravityNED.y*dtIMU;
+//    delVelNav.z = Tbn.z.x*dVelIMURel.x + Tbn.z.y*dVelIMURel.y + Tbn.z.z*dVelIMURel.z + gravityNED.z*dtIMU;
 
     // calculate the magnitude of the nav acceleration (required for GPS
     // variance estimation)
@@ -1235,7 +1238,7 @@ void AttPosEKF::FuseVelposNED()
                 current_ekf_state.posHealth = true;
                 current_ekf_state.posFailTime = millis();
 
-                if (current_ekf_state.posTimeout || (maxPosInnov2 > sq(float(gpsGlitchRadius)))) {
+                if (current_ekf_state.posTimeout || ((sq(posInnov[0]) + sq(posInnov[1])) > sq(float(gpsGlitchRadius)))) {
 
                     gpsPosGlitchOffsetNE.x += posInnov[0];
                     gpsPosGlitchOffsetNE.y += posInnov[1];
@@ -3153,14 +3156,14 @@ int AttPosEKF::CheckAndBound(struct ekf_status_report *last_error)
     }
 
     // Reset the filter if it diverges too far from GPS
-    if (VelNEDDiverged()) {
-
-        // Reset and fill error report
-        InitializeDynamic(velNED, magDeclination);
-
-        // that's all we can do here, return
-        ret = 5;
-    }
+//    if (VelNEDDiverged()) {
+//
+//        // Reset and fill error report
+//        InitializeDynamic(velNED, magDeclination);
+//
+//        // that's all we can do here, return
+//        ret = 5;
+//    }
 
     // The excessive covariance detection already
     // reset the filter. Just need to report here.
