@@ -44,28 +44,39 @@ ax2.plot(data['time'], data['velOffN'], color='b', label='velOffN')
 ax2.plot(data['time'], data['velOffE'], color='r', label='velOffE')
 handles, labels = ax2.get_legend_handles_labels()
 ax2.legend(handles, labels, loc=2)
+plt.savefig('GPSglitchOffset.png', bbox_inches='tight')
 
 fig = plt.figure(11)
 
 ax1 = fig.add_subplot(211)
 
-ax1.set_title("GPS data")    
-ax1.set_ylabel('(m/sec)')
-ax1.plot(data['time'], data['velN'], color='r', label='velN')
-ax1.plot(data['time'], data['velE'], color='g', label='velE')
-ax1.plot(data['time'], data['velD'], color='b', label='velD')
+ax1.set_title("GPS pos vs EKF pos")    
+
+ax1 = fig.add_subplot(311)
+  
+ax1.set_ylabel('(m)')
+ax1.plot(data['time'], data['posN'], color='r', label='posN')
+ax1.plot(data2['time'], data2['Pn'], color='b', label='Pn')
 handles, labels = ax1.get_legend_handles_labels()
 ax1.legend(handles, labels, loc=2)
 
-ax2 = fig.add_subplot(212)
-  
-ax2.set_xlabel('time (s)')
+ax2 = fig.add_subplot(312)
 ax2.set_ylabel('(m)')
-ax2.plot(data['time'], data['posN'], color='r', label='posN')
-ax2.plot(data['time'], data['posE'], color='g', label='posE')
-ax2.plot(data['time'], data['posD'], color='b', label='posD')
+ax2.plot(data['time'], data['posE'], color='r', label='posE')
+ax2.plot(data2['time'], data2['Pe'], color='b', label='Pe')
 handles, labels = ax2.get_legend_handles_labels()
 ax2.legend(handles, labels, loc=2)
+
+ax3 = fig.add_subplot(313)
+ax3.set_xlabel('time (s)')
+ax3.set_ylabel('(m)')
+ax3.plot(data['time'], -data['posD'], color='r', label='posD')
+ax3.plot(data2['time'], data2['Pd'], color='b', label='Pd')
+handles, labels = ax3.get_legend_handles_labels()
+ax3.legend(handles, labels, loc=2)
+
+plt.savefig('GPSdata.png', bbox_inches='tight')
+
 
 fig = plt.figure(12)
 
@@ -94,6 +105,7 @@ ax3.plot(data['time'], data['velD'], color='r', label='velD')
 ax3.plot(data2['time'], data2['Vd'], color='b', label='Vd')
 handles, labels = ax3.get_legend_handles_labels()
 ax3.legend(handles, labels, loc=2)
+plt.savefig('GPS_EKF_velNED.png', bbox_inches='tight')
 
 
 plt.show()

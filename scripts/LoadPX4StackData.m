@@ -202,8 +202,11 @@ else
                 j = j+1;
             end
             
-            % we got a close measurement
-            HgtBaro(i,1) = SENS.data(j,3);
+			if (j > size(SENS.data, 1))
+				j = size(SENS.data, 1)
+			end
+	        % we got a close measurement
+	        HgtBaro(i,1) = SENS.data(j,3);
         end
         
     end

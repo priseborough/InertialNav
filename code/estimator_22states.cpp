@@ -249,7 +249,7 @@ void AttPosEKF::InitialiseParameters()
 	gpsPosInnovNSTD = 6;
 	gpsHorizPosNoise = 0.5f;
 	// maxInnov2 is compared to the square of this parameter; (maxInnov2 > radius) => glitch
-	gpsGlitchRadius = 5;
+	gpsGlitchRadius = 10;
 	// if the vel innov is greater than this number of standard deviations: glitch
 	gpsVelInnovNSTD = 6;
 
