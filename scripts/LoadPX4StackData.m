@@ -4,7 +4,7 @@ close all;
 % load('search_pattern_log002.mat');
 %load('quad_flight_log003.mat');
 %load('attitude_log001.mat');
-load('m_10_48_56.mat');
+load('m_20_43_07.mat');
 
 mintime = 0;
 maxtime = 360;
@@ -202,8 +202,11 @@ else
                 j = j+1;
             end
             
-            % we got a close measurement
-            HgtBaro(i,1) = SENS.data(j,3);
+			if (j > size(SENS.data, 1))
+				j = size(SENS.data, 1)
+			end
+	        % we got a close measurement
+	        HgtBaro(i,1) = SENS.data(j,3);
         end
         
     end
@@ -227,9 +230,9 @@ if (exist('ATT', 'var') && ~isempty(ATT.data))
     ATT.data(:,1) = (ATT.data(:,1) - zerotimestamp) * 1e3;
     ATTtimestamp = ATT.data(:,1);
     ATTtime  = ATT.data(:,1)*1e-3;
-    Roll     = ATT.data(:,2) ./ pi .* 180;
-    Pitch    = ATT.data(:,3) ./ pi .* 180;
-    Yaw      = ATT.data(:,4) ./ pi .* 180;
+    Roll     = ATT.data(:,6) ./ pi .* 180;
+    Pitch    = ATT.data(:,7) ./ pi .* 180;
+    Yaw      = ATT.data(:,8) ./ pi .* 180;
 end
 
 %% Save to files
