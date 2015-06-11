@@ -14,7 +14,6 @@
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 23 Mar 2013
 
 % State vector:
 % quaternions (q0, q1, q2, q3)
@@ -61,6 +60,11 @@ syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
 syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
 syms R_RNG real % variance of laser range finder observations
 syms ptd real % location of terrain in D axis
+syms BCXinv BCYinv real % inverse of ballistic coefficient for wind relative movement along the x and y  body axes
+syms rho real % air density (kg/m^3)
+syms R_ACC real % variance of accelerometer measurements (m/s^2)^2
+syms Kacc real % ratio of horizontal acceleration to top speed for a multirotor
+
 %% define the process equations
 
 % Define the state vector & number of states
@@ -243,6 +247,41 @@ H_RNG = jacobian(range,stateVector); % measurement Jacobian
 % calculate the Kalman gain matrix and optimise algebra
 K_RNG = (P*transpose(H_RNG))/(H_RNG*P*transpose(H_RNG) + R_RNG);
 [K_RNG,SK_RNG]=OptimiseAlgebra(K_RNG,'SK_RNG');
+
+%% derive equations for fusion of lateral body acceleration (multirotors only)
+
+% use relationship between airspeed along the X and Y body axis and the
+% drag to predict the lateral acceleration for a multirotor vehicle type
+% where propulsion forces are generated primarily along the Z body axis
+
+vrel = transpose(Tbn)*[(vn-vwn);(ve-vwe);vd]; % predicted wind relative velocity
+
+% calculate drag assuming flight along axis in positive direction
+% sign change will be looked after in implementation rather than by adding
+% sign functions to symbolic derivation which genererates output with dirac
+% functions
+% accXpred = -0.5*rho*vrel(1)*vrel(1)*BCXinv; % predicted acceleration measured along X body axis
+% accYpred = -0.5*rho*vrel(2)*vrel(2)*BCYinv; % predicted acceleration measured along Y body axis
+
+% Use a simple viscous drag model for the linear estimator equations
+% Use the the derivative from speed to acceleration averaged across the 
+% speed range
+% The nonlinear equation will be used to calculate the predicted
+% measurement in implementation
+accXpred = -Kacc*vrel(1); % predicted acceleration measured along X body axis
+accYpred = -Kacc*vrel(2); % predicted acceleration measured along Y body axis
+
+% Derive observation Jacobian and Kalman gain matrix for X accel fusion
+H_ACCX = jacobian(accXpred,stateVector); % measurement Jacobian
+[H_ACCX,SH_ACCX]=OptimiseAlgebra(H_ACCX,'SH_ACCX'); % optimise processing
+K_ACCX = (P*transpose(H_ACCX))/(H_ACCX*P*transpose(H_ACCX) + R_ACC);
+[K_ACCX,SK_ACCX]=OptimiseAlgebra(K_ACCX,'SK_ACCX'); % Kalman gain vector
+
+% Derive observation Jacobian and Kalman gain matrix for Y accel fusion
+H_ACCY = jacobian(accYpred,stateVector); % measurement Jacobian
+[H_ACCY,SH_ACCY]=OptimiseAlgebra(H_ACCY,'SH_ACCY'); % optimise processing
+K_ACCY = (P*transpose(H_ACCY))/(H_ACCY*P*transpose(H_ACCY) + R_ACC);
+[K_ACCY,SK_ACCY]=OptimiseAlgebra(K_ACCY,'SK_ACCY'); % Kalman gain vector
 
 %% Save output and convert to m and c code fragments
 nStates = 22;

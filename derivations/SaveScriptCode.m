@@ -81,6 +81,7 @@ if exist('SQ','var')
     
 end
 %% Write equations for covariance prediction
+% Only write out upper diagonal (matrix is symmetric)
 if exist('SPP','var')
     
     fprintf(fid,'\n');
@@ -93,13 +94,13 @@ if exist('SPP','var')
     
 end
 
-if exist('nextP','var')
+if exist('PP','var')
     
     fprintf(fid,'\n');
     fprintf(fid,'nextP = zeros(%d,%d);\n',nStates,nStates);
-    for rowIndex = 1:nStates
-        for colIndex = 1:nStates
-            string = char(nextP(rowIndex,colIndex));
+    for colIndex = 1:nStates
+        for rowIndex = 1:colIndex
+            string = char(PP(rowIndex,colIndex));
             % don't write out a zero-assignment
             if ~strcmpi(string,'0')
                 fprintf(fid,'nextP(%d,%d) = %s;\n',rowIndex,colIndex,string);
@@ -522,6 +523,99 @@ if exist('SH_RNG','var')
     fprintf(fid,'\n');
     
 end
+
+%% Write equations for X accel fusion
+if exist('SH_ACCX','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_ACCX = zeros(%d,1);\n',numel(SH_ACCX));
+    for rowIndex = 1:numel(SH_ACCX)
+        string = char(SH_ACCX(rowIndex,1));
+        fprintf(fid,'SH_ACCX(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(H_ACCX);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_ACCX = zeros(1,%d);\n',nCol);
+    for rowIndex = 1:nRow
+        for colIndex = 1:nCol
+            string = char(H_ACCX(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'H_ACCX(1,%d) = %s;\n',colIndex,string);
+            end
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_ACCX = zeros(%d,1);\n',numel(SK_ACCX));
+    for rowIndex = 1:numel(SK_ACCX)
+        string = char(SK_ACCX(rowIndex,1));
+        fprintf(fid,'SK_ACCX(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_ACCX);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_ACCX(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+end
+
+%% Write equations for Y accel fusion
+if exist('SH_ACCY','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_ACCY = zeros(%d,1);\n',numel(SH_ACCY));
+    for rowIndex = 1:numel(SH_ACCY)
+        string = char(SH_ACCY(rowIndex,1));
+        fprintf(fid,'SH_ACCY(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(H_ACCY);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_ACCY = zeros(1,%d);\n',nCol);
+    for rowIndex = 1:nRow
+        for colIndex = 1:nCol
+            string = char(H_ACCY(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'H_ACCY(1,%d) = %s;\n',colIndex,string);
+            end
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_ACCY = zeros(%d,1);\n',numel(SK_ACCY));
+    for rowIndex = 1:numel(SK_ACCY)
+        string = char(SK_ACCY(rowIndex,1));
+        fprintf(fid,'SK_ACCY(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_ACCY);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_ACCY(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+end
+
 %% Close output file
 fclose(fid);
 
