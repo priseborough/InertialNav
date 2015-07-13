@@ -64,6 +64,8 @@ syms BCXinv BCYinv real % inverse of ballistic coefficient for wind relative mov
 syms rho real % air density (kg/m^3)
 syms R_ACC real % variance of accelerometer measurements (m/s^2)^2
 syms Kacc real % ratio of horizontal acceleration to top speed for a multirotor
+syms decl real; % earth magnetic field declination from true north
+syms R_MAGS real; % variance for magnetic deviation measurement
 
 %% define the process equations
 
@@ -282,6 +284,21 @@ H_ACCY = jacobian(accYpred,stateVector); % measurement Jacobian
 [H_ACCY,SH_ACCY]=OptimiseAlgebra(H_ACCY,'SH_ACCY'); % optimise processing
 K_ACCY = (P*transpose(H_ACCY))/(H_ACCY*P*transpose(H_ACCY) + R_ACC);
 [K_ACCY,SK_ACCY]=OptimiseAlgebra(K_ACCY,'SK_ACCY'); % Kalman gain vector
+
+%% derive equations for fusion of magnetic deviation measurement
+
+% measured field in earth frame
+magMeas = transpose(Tbn)*[magN;magE;magD] + [magX;magY;magZ]; % predicted measurement
+% measured field in body frame
+magMeasNED = Tbn*magMeas;
+% the predicted measurement is the angle wrt magnetic north of the horizontal
+% component of the measured field
+angMeas = tan(magMeasNED(2)/magMeasNED(1)) - decl;
+H_MAGS = jacobian(angMeas,stateVector); % measurement Jacobian
+H_MAGS = simplify(H_MAGS);
+[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
+K_MAGS = (P*transpose(H_MAGS))/(H_MAGS*P*transpose(H_MAGS) + R_MAGS);
+[K_MAGS,SK_MAGS]=OptimiseAlgebra(K_MAGS,'SK_MAGS'); % Kalman gain vector
 
 %% Save output and convert to m and c code fragments
 nStates = 22;
