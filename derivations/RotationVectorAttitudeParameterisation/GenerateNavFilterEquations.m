@@ -5,13 +5,12 @@
 % Sequential fusion of velocity and position measurements
 % Fusion of true airspeed
 % Sequential fusion of magnetic flux measurements
-% 22 state architecture.
+% 24 state architecture.
 % IMU data is assumed to arrive at a constant rate with a time step of dt
 % IMU delta angle and velocity data are used as time varying parameters,
 % not observations
 
 % Author:  Paul Riseborough
-% Last Modified: 1 April 2015
 
 % Based on use of a rotation vector for attitude estimation as described
 % here:
@@ -25,10 +24,11 @@
 % Velocity - m/sec (North, East, Down)
 % Position - m (North, East, Down)
 % Delta Angle bias - rad (X,Y,Z)
+% Delta Angle scale factor (X,Y,Z)
 % Delta Velocity bias - m/s (Z)
-% Wind Vector  - m/sec (North,East)
 % Earth Magnetic Field Vector - (North, East, Down)
 % Body Magnetic Field Vector - (X,Y,Z)
+% Wind Vector  - m/sec (North,East)
 
 % Observations:
 % NED velocity - m/s
@@ -42,15 +42,16 @@
 % XYZ delta velocity measurements in body axes - m/sec
 
 
-clear all;
-
 %% define symbolic variables and constants
+clear all;
+reset(symengine);
 syms dax day daz real % IMU delta angle measurements in body axes - rad
 syms dvx dvy dvz real % IMU delta velocity measurements in body axes - m/sec
 syms q0 q1 q2 q3 real % quaternions defining attitude of body axes relative to local NED
 syms vn ve vd real % NED velocity - m/sec
 syms pn pe pd real % NED position - m
 syms dax_b day_b daz_b real % delta angle bias - rad
+syms dax_s day_s daz_s real % delta angle scale factor
 syms dvz_b real % delta velocity bias - m/sec
 syms dt real % IMU time step - sec
 syms gravity real % gravity  - m/sec^2
@@ -66,14 +67,18 @@ syms R_BETA real % variance of sidelsip measurements rad^2
 syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
 syms ptd real % location of terrain in D axis
 syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
+syms decl real; % earth magnetic field declination from true north
+syms R_MAGS real; % variance for magnetic deviation measurement
+
 %% define the process equations
 
 % define the measured Delta angle and delta velocity vectors
 dAngMeas = [dax; day; daz];
 dVelMeas = [dvx; dvy; dvz];
 
-% define the IMU bias errors
+% define the IMU bias errors and scale factor
 dAngBias = [dax_b; day_b; daz_b];
+dAngScale = [dax_s; day_s; daz_s];
 dVelBias = [0;0;dvz_b];
 
 % define the quaternion rotation vector for the state estimate
@@ -94,7 +99,7 @@ Tbn = Quat2Tbn(truthQuat);
 % define the truth delta angle
 % ignore coning compensation as these effects are negligible in terms of 
 % covariance growth for our application and grade of sensor
-dAngTruth = dAngMeas - dAngBias - [daxNoise;dayNoise;dazNoise];
+dAngTruth = dAngMeas.*dAngScale - dAngBias - [daxNoise;dayNoise;dazNoise];
 
 % define the attitude update equations
 % use a first order expansion of rotation to calculate the quaternion increment
@@ -122,8 +127,9 @@ vNew = [vn;ve;vd] + [0;0;gravity]*dt + Tbn*dVelTruth;
 % define the position update equations
 pNew = [pn;pe;pd] + [vn;ve;vd]*dt;
 
-% define the IMU bias error update equations
+% define the IMU error update equations
 dabNew = [dax_b; day_b; daz_b];
+dasNew = [dax_s; day_s; daz_s];
 dvbNew = dvz_b;
 
 % define the wind velocity update equations
@@ -141,8 +147,11 @@ magYnew = magY;
 magZnew = magZ;
 
 % Define the state vector & number of states
-stateVector = [errRotVec;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dvz_b;vwn;vwe;magN;magE;magD;magX;magY;magZ];
+stateVector = [errRotVec;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dax_s;day_s;daz_s;dvz_b;magN;magE;magD;magX;magY;magZ;vwn;vwe];
 nStates=numel(stateVector);
+
+% Define vector of process equations
+newStateVector = [errRotNew;vNew;pNew;dabNew;dasNew;dvbNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew;vwnNew;vweNew];
 
 %% derive the covariance prediction equation
 % This reduces the number of floating point operations by a factor of 6 or
@@ -155,7 +164,7 @@ nStates=numel(stateVector);
 distVector = [daxNoise;dayNoise;dazNoise;dvxNoise;dvyNoise;dvzNoise];
 
 % derive the control(disturbance) influence matrix
-G = jacobian([errRotNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], distVector);
+G = jacobian(newStateVector, distVector);
 G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
 [G,SG]=OptimiseAlgebra(G,'SG');
 
@@ -170,7 +179,7 @@ vNew = subs(vNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoi
 errRotNew = subs(errRotNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0},0);
 
 % derive the state transition matrix
-F = jacobian([errRotNew;vNew;pNew;dabNew;dvbNew;vwnNew;vweNew;magNnew;magEnew;magDnew;magXnew;magYnew;magZnew], stateVector);
+F = jacobian(newStateVector, stateVector);
 % set the rotation error states to zero
 F = subs(F, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
 [F,SF]=OptimiseAlgebra(F,'SF');
@@ -236,15 +245,38 @@ losRateX = +relVelBody(2)/range;
 losRateY = -relVelBody(1)/range;
 
 H_LOS = jacobian([losRateX;losRateY],stateVector); % measurement Jacobian
-[H_LOS,SH_LOS]=OptimiseAlgebra(H_LOS,'SH_LOS');
+H_LOS = subs(H_LOS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_LOS = simplify(H_LOS);
+[H_LOS,SH_LOS] = OptimiseAlgebra(H_LOS,'SH_LOS');
 
 % combine into a single K matrix to enable common expressions to be found
 % note this matrix cannot be used in a single step fusion
 K_LOSX = (P*transpose(H_LOS(1,:)))/(H_LOS(1,:)*P*transpose(H_LOS(1,:)) + R_LOS); % Kalman gain vector
+K_LOSX = subs(K_LOSX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 K_LOSY = (P*transpose(H_LOS(2,:)))/(H_LOS(2,:)*P*transpose(H_LOS(2,:)) + R_LOS); % Kalman gain vector
+K_LOSY = subs(K_LOSY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 K_LOS = [K_LOSX,K_LOSY];
 simplify(K_LOS);
 [K_LOS,SK_LOS]=OptimiseAlgebra(K_LOS,'SK_LOS');
+
+% Use matlab c code converter for an alternate method of 
+ccode(H_LOS,'file','H_LOS.txt');
+ccode(K_LOSX,'file','K_LOSX.txt');
+ccode(K_LOSY,'file','K_LOSY.txt');
+
+%% derive equations for fusion of magnetic deviation measurement
+
+% rotate magnetic field into earth axes
+magMeasNED = Tbn*[magX;magY;magZ];
+% the predicted measurement is the angle wrt magnetic north of the horizontal
+% component of the measured field
+angMeas = tan(magMeasNED(2)/magMeasNED(1)) - decl;
+H_MAGS = jacobian(angMeas,errRotVec); % measurement Jacobian
+%H_MAGS = H_MAGS(1:3);
+H_MAGS = subs(H_MAGS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_MAGS = simplify(H_MAGS);
+%[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
+f = ccode(H_MAGS,'file','calcH_MAGS.c');
 
 %% Save output and convert to m and c code fragments
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
@@ -252,3 +284,4 @@ save(fileName);
 SaveScriptCode(nStates);
 ConvertToM(nStates);
 ConvertToC(nStates);
+fuseCompass

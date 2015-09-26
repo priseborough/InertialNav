@@ -524,6 +524,31 @@ if exist('SH_RNG','var')
     
 end
 
+%% Write equations for simple magnetomter data fusion
+if exist('SH_MAGS','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_MAGS = zeros(%d,1);\n',numel(SH_MAGS));
+    for rowIndex = 1:numel(SH_MAGS)
+        string = char(SH_MAGS(rowIndex,1));
+        fprintf(fid,'SH_MAGS(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(H_MAGS);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_MAGS = zeros(1,%d);\n',nCol);
+    for colIndex = 1:nCol
+        string = char(H_MAGS(1,colIndex));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'H_MAGS(%d) = %s;\n',colIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+        
+end
+
 %% Write equations for X accel fusion
 if exist('SH_ACCX','var')
     
