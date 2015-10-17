@@ -276,7 +276,7 @@ H_MAGS = jacobian(angMeas,errRotVec); % measurement Jacobian
 H_MAGS = subs(H_MAGS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 H_MAGS = simplify(H_MAGS);
 %[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
-f = ccode(H_MAGS,'file','calcH_MAGS.c');
+ccode(H_MAGS,'file','calcH_MAGS.c');
 
 %% Save output and convert to m and c code fragments
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
