@@ -69,6 +69,7 @@ syms ptd real % location of terrain in D axis
 syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
 syms decl real; % earth magnetic field declination from true north
 syms R_MAGS real; % variance for magnetic deviation measurement
+syms R_DECL real; % variance of supplied declination
 
 %% define the process equations
 
@@ -165,7 +166,7 @@ distVector = [daxNoise;dayNoise;dazNoise;dvxNoise;dvyNoise;dvzNoise];
 
 % derive the control(disturbance) influence matrix
 G = jacobian(newStateVector, distVector);
-G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 [G,SG]=OptimiseAlgebra(G,'SG');
 
 % derive the state error matrix
@@ -181,7 +182,7 @@ errRotNew = subs(errRotNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNois
 % derive the state transition matrix
 F = jacobian(newStateVector, stateVector);
 % set the rotation error states to zero
-F = subs(F, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+F = subs(F, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 [F,SF]=OptimiseAlgebra(F,'SF');
 
 % define a symbolic covariance matrix using strings to represent 
@@ -205,7 +206,7 @@ PP = F*P*transpose(F) + Q;
 %% derive equations for fusion of true airspeed measurements
 VtasPred = sqrt((vn-vwn)^2 + (ve-vwe)^2 + vd^2); % predicted measurement
 H_TAS = jacobian(VtasPred,stateVector); % measurement Jacobian
-H_TAS = subs(H_TAS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_TAS = subs(H_TAS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 [H_TAS,SH_TAS]=OptimiseAlgebra(H_TAS,'SH_TAS'); % optimise processing
 K_TAS = (P*transpose(H_TAS))/(H_TAS*P*transpose(H_TAS) + R_TAS);[K_TAS,SK_TAS]=OptimiseAlgebra(K_TAS,'SK_TAS'); % Kalman gain vector
 
@@ -215,14 +216,14 @@ Vbw = Tbn'*[(vn-vwn);(ve-vwe);vd];
 % calculate predicted angle of sideslip using small angle assumption
 BetaPred = Vbw(2)/Vbw(1);
 H_BETA = jacobian(BetaPred,stateVector); % measurement Jacobian
-H_BETA = subs(H_BETA, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_BETA = subs(H_BETA, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 [H_BETA,SH_BETA]=OptimiseAlgebra(H_BETA,'SH_BETA'); % optimise processing
 K_BETA = (P*transpose(H_BETA))/(H_BETA*P*transpose(H_BETA) + R_BETA);[K_BETA,SK_BETA]=OptimiseAlgebra(K_BETA,'SK_BETA'); % Kalman gain vector
 
 %% derive equations for fusion of magnetic field measurement
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magX;magY;magZ]; % predicted measurement
 H_MAG = jacobian(magMeas,stateVector); % measurement Jacobian
-H_MAG = subs(H_MAG, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_MAG = subs(H_MAG, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 [H_MAG,SH_MAG]=OptimiseAlgebra(H_MAG,'SH_MAG');
 
 K_MX = (P*transpose(H_MAG(1,:)))/(H_MAG(1,:)*P*transpose(H_MAG(1,:)) + R_MAG); % Kalman gain vector
@@ -264,7 +265,7 @@ ccode(H_LOS,'file','H_LOS.txt');
 ccode(K_LOSX,'file','K_LOSX.txt');
 ccode(K_LOSY,'file','K_LOSY.txt');
 
-%% derive equations for fusion of magnetic deviation measurement
+%% derive equations for fusion of magnetic heading measurement
 
 % rotate magnetic field into earth axes
 magMeasNED = Tbn*[magX;magY;magZ];
@@ -278,10 +279,26 @@ H_MAGS = simplify(H_MAGS);
 %[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
 ccode(H_MAGS,'file','calcH_MAGS.c');
 
+%% derive equations for fusion of synthetic deviation measurement
+% used to keep correct heading when operating without absolute position or
+% velocity measurements - eg when using optical flow
+% rotate magnetic field into earth axes
+magMeasNED = [magN;magE;magD];
+% the predicted measurement is the angle wrt magnetic north of the horizontal
+% component of the measured field
+angMeas = tan(magMeasNED(2)/magMeasNED(1));
+H_MAGD = jacobian(angMeas,stateVector); % measurement Jacobian
+H_MAGD = subs(H_MAGD, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_MAGD = simplify(H_MAGD);
+%[H_MAGD,SH_MAGD]=OptimiseAlgebra(H_MAGD,'SH_MAGD');
+%ccode(H_MAGD,'file','calcH_MAGD.c');
+% Calculate Kalman gain vector
+K_MAGD = (P*transpose(H_MAGD))/(H_MAGD*P*transpose(H_MAGD) + R_DECL);
+ccode([H_MAGD',K_MAGD],'file','calcMAGD.c');
+
 %% Save output and convert to m and c code fragments
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
 save(fileName);
 SaveScriptCode(nStates);
 ConvertToM(nStates);
 ConvertToC(nStates);
-fuseCompass
