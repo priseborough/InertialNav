@@ -70,6 +70,10 @@ syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
 syms decl real; % earth magnetic field declination from true north
 syms R_MAGS real; % variance for magnetic deviation measurement
 syms R_DECL real; % variance of supplied declination
+syms BCXinv BCYinv real % inverse of ballistic coefficient for wind relative movement along the x and y  body axes
+syms rho real % air density (kg/m^3)
+syms R_ACC real % variance of accelerometer measurements (m/s^2)^2
+syms Kacc real % ratio of horizontal acceleration to top speed for a multirotor
 
 %% define the process equations
 
@@ -295,6 +299,45 @@ H_MAGD = simplify(H_MAGD);
 % Calculate Kalman gain vector
 K_MAGD = (P*transpose(H_MAGD))/(H_MAGD*P*transpose(H_MAGD) + R_DECL);
 ccode([H_MAGD',K_MAGD],'file','calcMAGD.c');
+
+%% derive equations for fusion of lateral body acceleration (multirotors only)
+
+% use relationship between airspeed along the X and Y body axis and the
+% drag to predict the lateral acceleration for a multirotor vehicle type
+% where propulsion forces are generated primarily along the Z body axis
+
+vrel = transpose(Tbn)*[(vn-vwn);(ve-vwe);vd]; % predicted wind relative velocity
+
+% calculate drag assuming flight along axis in positive direction
+% sign change will be looked after in implementation rather than by adding
+% sign functions to symbolic derivation which genererates output with dirac
+% functions
+% accXpred = -0.5*rho*vrel(1)*vrel(1)*BCXinv; % predicted acceleration measured along X body axis
+% accYpred = -0.5*rho*vrel(2)*vrel(2)*BCYinv; % predicted acceleration measured along Y body axis
+
+% Use a simple viscous drag model for the linear estimator equations
+% Use the the derivative from speed to acceleration averaged across the 
+% speed range
+% The nonlinear equation will be used to calculate the predicted
+% measurement in implementation
+accXpred = -Kacc*vrel(1); % predicted acceleration measured along X body axis
+accYpred = -Kacc*vrel(2); % predicted acceleration measured along Y body axis
+
+% Derive observation Jacobian and Kalman gain matrix for X accel fusion
+H_ACCX = jacobian(accXpred,stateVector); % measurement Jacobian
+H_ACCX = subs(H_ACCX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+[H_ACCX,SH_ACCX]=OptimiseAlgebra(H_ACCX,'SH_ACCX'); % optimise processing
+K_ACCX = (P*transpose(H_ACCX))/(H_ACCX*P*transpose(H_ACCX) + R_ACC);
+ccode([H_ACCX',K_ACCX],'file','calcACCX.c');
+[K_ACCX,SK_ACCX]=OptimiseAlgebra(K_ACCX,'SK_ACCX'); % Kalman gain vector
+
+% Derive observation Jacobian and Kalman gain matrix for Y accel fusion
+H_ACCY = jacobian(accYpred,stateVector); % measurement Jacobian
+H_ACCY = subs(H_ACCY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+[H_ACCY,SH_ACCY]=OptimiseAlgebra(H_ACCY,'SH_ACCY'); % optimise processing
+K_ACCY = (P*transpose(H_ACCY))/(H_ACCY*P*transpose(H_ACCY) + R_ACC);
+ccode([H_ACCY',K_ACCY],'file','calcACCY.c');
+[K_ACCY,SK_ACCY]=OptimiseAlgebra(K_ACCY,'SK_ACCY'); % Kalman gain vector
 
 %% Save output and convert to m and c code fragments
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
