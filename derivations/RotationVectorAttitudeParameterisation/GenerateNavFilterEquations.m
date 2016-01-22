@@ -276,12 +276,16 @@ magMeasNED = Tbn*[magX;magY;magZ];
 % the predicted measurement is the angle wrt magnetic north of the horizontal
 % component of the measured field
 angMeas = tan(magMeasNED(2)/magMeasNED(1)) - decl;
-H_MAGS = jacobian(angMeas,errRotVec); % measurement Jacobian
+H_MAGS = jacobian(angMeas,stateVector); % measurement Jacobian
 %H_MAGS = H_MAGS(1:3);
 H_MAGS = subs(H_MAGS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 H_MAGS = simplify(H_MAGS);
 %[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
 ccode(H_MAGS,'file','calcH_MAGS.c');
+% Calculate Kalman gain vector
+K_MAGS = (P*transpose(H_MAGS))/(H_MAGS*P*transpose(H_MAGS) + R_DECL);
+%K_MAGS = simplify(K_MAGS);
+ccode(K_MAGS,'file','calcK_MAGS.c');
 
 %% derive equations for fusion of synthetic deviation measurement
 % used to keep correct heading when operating without absolute position or
