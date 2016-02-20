@@ -1,36 +1,46 @@
-t2 = q0*q0;
-t3 = q1*q1;
-t4 = q2*q2;
-t5 = q3*q3;
-t6 = q0*q2*2.0;
-t7 = q1*q3*2.0;
-t8 = t6+t7;
-t9 = q0*q3*2.0;
-t13 = q1*q2*2.0;
-t10 = t9-t13;
-t11 = t2+t3-t4-t5;
-t12 = magX*t11;
-t14 = magZ*t8;
-t19 = magY*t10;
-t15 = t12+t14-t19;
-t16 = t2-t3+t4-t5;
-t17 = q0*q1*2.0;
-t24 = q2*q3*2.0;
-t18 = t17-t24;
-t20 = 1.0/t15;
-t21 = magY*t16;
-t22 = t9+t13;
-t23 = magX*t22;
-t28 = magZ*t18;
-t25 = t21+t23-t28;
-t29 = t20*t25;
-t26 = tan(t29);
-t27 = 1.0/(t15*t15);
-t30 = t26*t26;
-t31 = t30+1.0;
-H_MAG[0] = -t31*(t20*(magZ*t16+magY*t18)+t25*t27*(magY*t8+magZ*t10));
-H_MAG[1] = t31*(t20*(magX*t18+magZ*t22)+t25*t27*(magX*t8-magZ*t11));
-H_MAG[2] = t31*(t20*(magX*t16-magY*t22)+t25*t27*(magX*t10+magY*t11));
-H_MAG[19] = t31*(t20*t22-t11*t25*t27);
-H_MAG[20] = t31*(t16*t20+t10*t25*t27);
-H_MAG[21] = -t31*(t18*t20+t8*t25*t27);
+// calculate intermediate variables for observation jacobian
+float t2 = q0*q0;
+float t3 = q1*q1;
+float t4 = q2*q2;
+float t5 = q3*q3;
+float t6 = q0*q3*2.0f;
+float t8 = t2-t3+t4-t5;
+float t9 = q0*q1*2.0f;
+float t10 = q2*q3*2.0f;
+float t11 = t9-t10;
+float t14 = q1*q2*2.0f;
+float t21 = magY*t8;
+float t22 = t6+t14;
+float t23 = magX*t22;
+float t24 = magZ*t11;
+float t7 = t21+t23-t24;
+float t12 = t2+t3-t4-t5;
+float t13 = magX*t12;
+float t15 = q0*q2*2.0f;
+float t16 = q1*q3*2.0f;
+float t17 = t15+t16;
+float t18 = magZ*t17;
+float t19 = t6-t14;
+float t25 = magY*t19;
+float t20 = t13+t18-t25;
+if (fabsf(t20) < 1e-6f) {
+    return;
+}
+float t26 = 1.0f/(t20*t20);
+float t27 = t7*t7;
+float t28 = t26*t27;
+float t29 = t28+1.0;
+if (fabsf(t29) < 1e-12f) {
+    return;
+}
+float t30 = 1.0f/t29;
+if (fabsf(t20) < 1e-12f) {
+    return;
+}
+float t31 = 1.0f/t20;
+
+// calculate observation jacobian
+float H_DECL[3] = {};
+H_DECL[0] = -t30*(t31*(magZ*t8+magY*t11)+t7*t26*(magY*t17+magZ*t19));
+H_DECL[1] = t30*(t31*(magX*t11+magZ*t22)-t7*t26*(magZ*t12-magX*t17));
+H_DECL[2] = t30*(t31*(magX*t8-magY*t22)+t7*t26*(magY*t12+magX*t19));

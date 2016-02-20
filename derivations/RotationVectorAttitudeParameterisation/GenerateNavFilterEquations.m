@@ -68,8 +68,7 @@ syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
 syms ptd real % location of terrain in D axis
 syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
 syms decl real; % earth magnetic field declination from true north
-syms R_MAGS real; % variance for magnetic deviation measurement
-syms R_DECL R_YAW real; % variance of supplied declination or yaw angle
+syms R_DECL R_YAW real; % variance of declination or yaw angle observation
 syms BCXinv BCYinv real % inverse of ballistic coefficient for wind relative movement along the x and y  body axes
 syms rho real % air density (kg/m^3)
 syms R_ACC real % variance of accelerometer measurements (m/s^2)^2
@@ -269,25 +268,28 @@ ccode(H_LOS,'file','H_LOS.txt');
 ccode(K_LOSX,'file','K_LOSX.txt');
 ccode(K_LOSY,'file','K_LOSY.txt');
 
-%% derive equations for fusion of magnetic heading measurement
+%% derive equations for simple fusion of 2-D magnetic heading measurements
 
 % rotate magnetic field into earth axes
 magMeasNED = Tbn*[magX;magY;magZ];
-% the predicted measurement is the angle wrt magnetic north of the horizontal
+% the predicted measurement is the angle wrt true north of the horizontal
 % component of the measured field
-angMeas = atan(magMeasNED(2)/magMeasNED(1)) - decl;
-H_MAGS = jacobian(angMeas,stateVector); % measurement Jacobian
+angMeas = atan(magMeasNED(2)/magMeasNED(1));
+simpleStateVector = [errRotVec;vn;ve;vd;pn;pe;pd;dax_b;day_b;daz_b;dax_s;day_s;daz_s;dvz_b];
+Psimple = P(1:16,1:16);
+H_MAGS = jacobian(angMeas,simpleStateVector); % measurement Jacobian
 %H_MAGS = H_MAGS(1:3);
 H_MAGS = subs(H_MAGS, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
-H_MAGS = simplify(H_MAGS);
+%H_MAGS = simplify(H_MAGS);
 %[H_MAGS,SH_MAGS]=OptimiseAlgebra(H_MAGS,'SH_MAGS');
 ccode(H_MAGS,'file','calcH_MAGS.c');
 % Calculate Kalman gain vector
-K_MAGS = (P*transpose(H_MAGS))/(H_MAGS*P*transpose(H_MAGS) + R_DECL);
+K_MAGS = (Psimple*transpose(H_MAGS))/(H_MAGS*Psimple*transpose(H_MAGS) + R_DECL);
 %K_MAGS = simplify(K_MAGS);
+%[K_MAGS,SK_MAGS]=OptimiseAlgebra(K_MAGS,'SK_MAGS');
 ccode(K_MAGS,'file','calcK_MAGS.c');
 
-%% derive equations for fusion of direct yaw measurement
+%% derive equations for fusion of yaw measurements
 
 % rotate X body axis into earth axes
 yawVec = Tbn*[1;0;0];
