@@ -1,0 +1,51 @@
+
+F = zeros(3,3);
+F(1,1) = 1;
+F(2,1) = dt;
+F(2,2) = 1;
+F(3,3) = 1;
+
+
+SPP = zeros(1,1);
+SPP(1) = OP_l_2_c_1_r_ + OP_l_1_c_1_r_*dt;
+
+
+nextP = zeros(3,3);
+nextP(1,1) = OP_l_1_c_1_r_ + R_AD*dt^2;
+nextP(1,2) = OP_l_1_c_2_r_ + OP_l_1_c_1_r_*dt;
+nextP(2,2) = OP_l_2_c_2_r_ + OP_l_1_c_2_r_*dt + dt*SPP(1);
+nextP(1,3) = OP_l_1_c_3_r_;
+nextP(2,3) = OP_l_2_c_3_r_ + OP_l_1_c_3_r_*dt;
+nextP(3,3) = OP_l_3_c_3_r_ + R_TPD;
+
+
+H_HAGL = zeros(1,3);
+H_HAGL(1,2) = -1;
+H_HAGL(1,3) = 1;
+
+
+SK_HAGL = zeros(1,1);
+SK_HAGL(1) = 1/(OP_l_2_c_2_r_ - OP_l_2_c_3_r_ - OP_l_3_c_2_r_ + OP_l_3_c_3_r_ + R_HAGL);
+
+
+Kfusion = zeros(3,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = -SK_HAGL(1)*(OP_l_1_c_2_r_ - OP_l_1_c_3_r_);
+Kfusion(2) = -SK_HAGL(1)*(OP_l_2_c_2_r_ - OP_l_2_c_3_r_);
+Kfusion(3) = -SK_HAGL(1)*(OP_l_3_c_2_r_ - OP_l_3_c_3_r_);
+
+
+H_PD = zeros(1,3);
+H_PD(1,2) = 1;
+
+
+SK_PD = zeros(1,1);
+SK_PD(1) = 1/(OP_l_2_c_2_r_ + R_PD);
+
+
+Kfusion = zeros(3,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = OP_l_1_c_2_r_*SK_PD(1);
+Kfusion(2) = OP_l_2_c_2_r_*SK_PD(1);
+Kfusion(3) = OP_l_3_c_2_r_*SK_PD(1);
+
