@@ -1,0 +1,17 @@
+float t2 = q0*q0;
+float t3 = q1*q1;
+float t4 = q2*q2;
+float t5 = q3*q3;
+float t6 = t2-t3+t4-t5;
+float t7 = q0*q3*2.0f;
+float t10 = q1*q2*2.0f;
+float t8 = t7-t10;
+float t9 = 1.0f/(t6*t6);
+float t11 = t8*t8;
+float t12 = t9*t11;
+float t13 = t12+1.0f;
+float t14 = 1.0f/t13;
+float t15 = 1.0f/t6;
+H_YAW[0] = -t14*(t15*(q0*q2*2.0+q1*q3*2.0)-t8*t9*(q0*q1*2.0-q2*q3*2.0));
+H_YAW[1] = 0.0f;
+H_YAW[2] = t14*(t15*(t2+t3-t4-t5)+t8*t9*(t7+t10));
