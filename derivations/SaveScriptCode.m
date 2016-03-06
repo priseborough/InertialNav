@@ -409,7 +409,7 @@ if exist('SH_LOS','var')
     fprintf(fid,'\n');
     fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
     for rowIndex = 1:nRow
-        string = char(K_LOS(rowIndex,1));
+        string = char(K_LOSX(rowIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
             fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
@@ -421,7 +421,7 @@ if exist('SH_LOS','var')
     fprintf(fid,'\n');
     fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
     for rowIndex = 1:nRow
-        string = char(K_LOS(rowIndex,2));
+        string = char(K_LOSY(rowIndex));
         % don't write out a zero-assignment
         if ~strcmpi(string,'0')
             fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);

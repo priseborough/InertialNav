@@ -141,7 +141,7 @@ F = jacobian([errRotNew;vNew;dabNew;magEarthNew;magBodyBiasNew], stateVector);
 F = subs(F, {'rotErr1', 'rotErr2', 'rotErr3'}, {0,0,0});
 f = matlabFunction(F,'file','calcF.m');
 
-%% derive equations for fusion of magnetic deviation measurement
+%% derive equations for fusion of magnetometer measurements
 % rotate earth field into body axes
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magXbias;magYbias;magZbias];
 magMeasX = magMeas(1);

@@ -127,7 +127,7 @@ distVector = [daxNoise;dayNoise;dazNoise;dvxNoise;dvyNoise;dvzNoise];
 
 % derive the control(disturbance) influence matrix
 G = jacobian([errRotNew;vNew;dabNew;magEarthNew;magBodyBiasNew], distVector);
-G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+G = subs(G, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 
 % derive the state error matrix
 distMatrix = diag(distVector);
@@ -135,24 +135,24 @@ Q = G*distMatrix*transpose(G);
 f = matlabFunction(Q,'file','calcQ.m');
 
 % derive the state transition matrix
-vNew = subs(vNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0},0);
-errRotNew = subs(errRotNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0},0);
+vNew = subs(vNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0});
+errRotNew = subs(errRotNew,{'daxNoise','dayNoise','dazNoise','dvxNoise','dvyNoise','dvzNoise'}, {0,0,0,0,0,0});
 F = jacobian([errRotNew;vNew;dabNew;magEarthNew;magBodyBiasNew], stateVector);
 F = subs(F, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 f = matlabFunction(F,'file','calcF.m');
 
-%% derive equations for fusion of magnetic deviation measurement
-% rotate earth field into body axes
+%% derive equations for fusion of earth field measurement
+% rotate earth field into body axes and add bias
 magMeas = transpose(Tbn)*[magN;magE;magD] + [magXbias;magYbias;magZbias];
 magMeasX = magMeas(1);
 H_MAGX = jacobian(magMeasX,stateVector); % measurement Jacobian
-H_MAGX = subs(H_MAGX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_MAGX = subs(H_MAGX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 f = matlabFunction(H_MAGX,'file','calcH_MAGX.m');
 magMeasY = magMeas(2);
 H_MAGY = jacobian(magMeasY,stateVector); % measurement Jacobian
-H_MAGY = subs(H_MAGY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_MAGY = subs(H_MAGY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 f = matlabFunction(H_MAGY,'file','calcH_MAGY.m');
 magMeasZ = magMeas(3);
 H_MAGZ = jacobian(magMeasZ,stateVector); % measurement Jacobian
-H_MAGZ = subs(H_MAGZ, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0},0);
+H_MAGZ = subs(H_MAGZ, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 f = matlabFunction(H_MAGZ,'file','calcH_MAGZ.m');
