@@ -318,33 +318,52 @@ relVelBody = transpose(Tbn)*[vn;ve;vd];
 losRateX = +relVelBody(2)/range;
 losRateY = -relVelBody(1)/range;
 
+save('temp1.mat','losRateX','losRateY');
+
 % calculate the observation Jacobian for the X axis
 H_LOSX = jacobian(losRateX,stateVector); % measurement Jacobian
 H_LOSX = subs(H_LOSX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 H_LOSX = simplify(H_LOSX);
+save('temp2.mat','H_LOSX');
+ccode(H_LOSX,'file','H_LOSX.c');
+fix_c_code('H_LOSX.c');
+
+clear all;
+reset(symengine);
+load('StatePrediction.mat');
+load('temp1.mat');
 
 % calculate the observation Jacobian for the Y axis
 H_LOSY = jacobian(losRateY,stateVector); % measurement Jacobian
 H_LOSY = subs(H_LOSY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 H_LOSY = simplify(H_LOSY);
+save('temp3.mat','H_LOSY');
+ccode(H_LOSY,'file','H_LOSY.c');
+fix_c_code('H_LOSY.c');
 
-% calculate Kalman gain vector for X axis
+clear all;
+reset(symengine);
+load('StatePrediction.mat');
+load('temp1.mat');
+load('temp2.mat');
+
+% calculate Kalman gain vector for the X axis
 K_LOSX = (P*transpose(H_LOSX))/(H_LOSX*P*transpose(H_LOSX) + R_LOS); % Kalman gain vector
 K_LOSX = subs(K_LOSX, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 K_LOSX = simplify(K_LOSX);
+ccode(K_LOSX,'file','K_LOSX.c');
+fix_c_code('K_LOSX.c');
 
-% calculate Kalman gain vector for Y axis
+clear all;
+reset(symengine);
+load('StatePrediction.mat');
+load('temp1.mat');
+load('temp3.mat');
+
+% calculate Kalman gain vector for the Y axis
 K_LOSY = (P*transpose(H_LOSY))/(H_LOSY*P*transpose(H_LOSY) + R_LOS); % Kalman gain vector
 K_LOSY = subs(K_LOSY, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
 K_LOSY = simplify(K_LOSY);
-
-% Use matlab c code converter
-ccode(H_LOSX,'file','H_LOSX.c');
-fix_c_code('H_LOSX.c');
-ccode(H_LOSY,'file','H_LOSY.c');
-fix_c_code('H_LOSY.c');
-ccode(K_LOSX,'file','K_LOSX.c');
-fix_c_code('K_LOSX.c');
 ccode(K_LOSY,'file','K_LOSY.c');
 fix_c_code('K_LOSY.c');
 
@@ -359,6 +378,7 @@ load('StatePrediction.mat');
 angMeas = atan(Tbn(2,1)/Tbn(1,1));
 H_YAW321 = jacobian(angMeas,stateVector); % measurement Jacobian
 H_YAW321 = subs(H_YAW321, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW321 = simplify(H_YAW321);
 ccode(H_YAW321,'file','calcH_YAW321.c');
 fix_c_code('calcH_YAW321.c');
 
@@ -373,6 +393,7 @@ load('StatePrediction.mat');
 angMeas = atan(-Tbn(1,2)/Tbn(2,2));
 H_YAW312 = jacobian(angMeas,stateVector); % measurement Jacobianclea
 H_YAW312 = subs(H_YAW312, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW312 = simplify(H_YAW312);
 ccode(H_YAW312,'file','calcH_YAW312.c');
 fix_c_code('calcH_YAW312.c');
 

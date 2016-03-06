@@ -177,6 +177,7 @@ load('PredictionEquations.mat');
 eulYaw321 = atan(Tbn(2,1)/Tbn(1,1));
 H_YAW321 = jacobian(eulYaw321,stateVector); % measurement Jacobian
 H_YAW321 = subs(H_YAW321, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW321 = simplify(H_YAW321);
 f = matlabFunction(H_YAW321,'file','calcH_YAW321.m');
 ccode(H_YAW321,'file','calcH_YAW321.c');
 fix_c_code('calcH_YAW321.c');
@@ -191,6 +192,7 @@ load('PredictionEquations.mat');
 eulYaw312 = atan(-Tbn(1,2)/Tbn(2,2));
 H_YAW312 = jacobian(eulYaw312,stateVector); % measurement Jacobianclea
 H_YAW312 = subs(H_YAW312, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW312 = simplify(H_YAW312);
 f = matlabFunction(H_YAW312,'file','calcH_YAW312.m');
 ccode(H_YAW312,'file','calcH_YAW312.c');
 fix_c_code('calcH_YAW312.c');
