@@ -308,7 +308,8 @@ load('StatePrediction.mat');
 
 % calculate range from plane to centre of sensor fov assuming flat earth
 % and camera axes aligned with body axes
-range = ((ptd - pd)/Tbn(3,3));
+%range = ((ptd - pd)/Tbn(3,3));
+syms range real;
 
 % calculate relative velocity in body frame
 relVelBody = transpose(Tbn)*[vn;ve;vd];
