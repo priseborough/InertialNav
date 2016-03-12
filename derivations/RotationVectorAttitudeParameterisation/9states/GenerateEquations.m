@@ -1,7 +1,6 @@
 % IMPORTANT - This script requires the Matlab symbolic toolbox
 
 % Author:  Paul Riseborough
-% Last Modified: 27 Dec 2014
 
 % Derivation of a navigation EKF using a local NED earth Tangent Frame for
 % the initial alignment and gyro bias estimation from a moving platform
@@ -150,12 +149,53 @@ f = matlabFunction(F,'file','calcF.m');
 % Derive the predicted covariance matrix using the standard equation
 % nextP = F*P*transpose(F) + Q;
 % f = matlabFunction(nextP,'file','calcP.m');
+
+save('PredictionEquations.mat');
+clear all;
+reset(symengine);
+
 %% derive equations for fusion of magnetic deviation measurement
+load('PredictionEquations.mat');
+
 % rotate body measured field into earth axes
 magMeasNED = Tbn*[magX;magY;magZ]; 
+
 % the predicted measurement is the angle wrt true north of the horizontal
 % component of the measured field
-angMeas = tan(magMeasNED(2)/magMeasNED(1));
+angMeas = atan(magMeasNED(2)/magMeasNED(1));
 H_MAG = jacobian(angMeas,stateVector); % measurement Jacobian
 H_MAG = subs(H_MAG, {'rotErr1', 'rotErr2', 'rotErr3'}, {0,0,0});
 f = matlabFunction(H_MAG,'file','calcH_MAG.m');
+
+clear all;
+reset(symengine);
+
+%% derive equations for fusion of 321 sequence yaw measurement
+load('PredictionEquations.mat');
+
+% Calculate the yaw (first rotation) angle from the 321 rotation sequence
+eulYaw321 = atan(Tbn(2,1)/Tbn(1,1));
+H_YAW321 = jacobian(eulYaw321,stateVector); % measurement Jacobian
+H_YAW321 = subs(H_YAW321, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW321 = simplify(H_YAW321);
+f = matlabFunction(H_YAW321,'file','calcH_YAW321.m');
+ccode(H_YAW321,'file','calcH_YAW321.c');
+fix_c_code('calcH_YAW321.c');
+
+clear all;
+reset(symengine);
+
+%% derive equations for fusion of 312 sequence yaw measurement
+load('PredictionEquations.mat');
+
+% Calculate the yaw (first rotation) angle from an Euler 312 sequence
+eulYaw312 = atan(-Tbn(1,2)/Tbn(2,2));
+H_YAW312 = jacobian(eulYaw312,stateVector); % measurement Jacobianclea
+H_YAW312 = subs(H_YAW312, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_YAW312 = simplify(H_YAW312);
+f = matlabFunction(H_YAW312,'file','calcH_YAW312.m');
+ccode(H_YAW312,'file','calcH_YAW312.c');
+fix_c_code('calcH_YAW312.c');
+
+clear all;
+reset(symengine);

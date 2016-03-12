@@ -1,0 +1,15 @@
+float t2 = 1.0f/range;
+float t3 = q0*q0;
+float t4 = q1*q1;
+float t5 = q2*q2;
+float t6 = q3*q3;
+float t7 = q0*q2*2.0f;
+float t8 = q1*q3*2.0f;
+float t9 = q0*q3*2.0f;
+float t10 = q1*q2*2.0f;
+float t11 = q0*q1*2.0f;
+H_LOS[0][0] = t2*(vn*(t7+t8)+vd*(t3-t4-t5+t6)-ve*(t11-q2*q3*2.0f));
+H_LOS[0][2] = -t2*(ve*(t9+t10)-vd*(t7-t8)+vn*(t3+t4-t5-t6));
+H_LOS[0][3] = -t2*(t9-t10);
+H_LOS[0][4] = t2*(t3-t4+t5-t6);
+H_LOS[0][5] = t2*(t11+q2*q3*2.0f);
