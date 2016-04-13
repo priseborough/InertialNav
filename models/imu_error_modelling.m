@@ -1,29 +1,43 @@
 %% set up simulation parameters
 clear all;
 tstop = 10;
-sim_dt = 1e-4;
-imu_dt = 1e-3;
-ins_dt = 4e-3;
+sim_dt = 1/8000;
+imu_dt = 1/4000;
+ins_dt = 1/250;
 %% calculate truth trajectory
-options = odeset('RelTol',1e-12);
+options = odeset('RelTol',1e-16);
 [truth_time,truth_states]=ode113('calc_truth_deriv',[0:sim_dt:tstop],[0;0;0;1;0;0;0]);
 
 %% sample gyro rate measurements
 index_max = length(truth_time);
 imu_index = 0;
 delta_time_gyro = 0;
+% filter coefficients for gyro DLPF
+fc = 250;
+omegac = 2 * pi * fc * sim_dt;
+K = tan(omegac / 2);
+alpha = 1 + K;
+a0 = 1;
+a1 = -(1 - K) / alpha;
+b0 = K / alpha;
+b1 = K / alpha;
+gyro_filt_state = truth_states(1,1:3)';
+truth_rate_prev = truth_states(1,1:3)';
 for index = 1:index_max;
+    gyro_filt_state = (b0/a0)*truth_states(index,1:3)' + (b1/a0)*truth_rate_prev - (a1/a0)*gyro_filt_state;
+    truth_rate_prev = truth_states(index,1:3)';
     % sample gyro data
     delta_time_gyro = delta_time_gyro + sim_dt;
     if (delta_time_gyro >= imu_dt)
         imu_index = imu_index + 1;
-        gyro_rate_data(:,imu_index) = truth_states(index,1:3)';
+        gyro_rate_data(:,imu_index) = gyro_filt_state;
         gyro_time_data(imu_index) = truth_time(index);
         delta_time_gyro = 0;
     end
 end
 
 %% model the IMU driver calculations
+method = uint8(2); % 0: addition, 1: addition + coning comp, 2: quaternion (small angle approx)
 index_max = length(gyro_rate_data);
 accumulated_time = 0;
 ins_index = 1;
@@ -34,6 +48,7 @@ last_delta_alpha = [0;0;0];
 last_sample = [0;0;0];
 gyro_rate_prev = [0;0;0];
 gyro_time_prev = 0;
+quat = [1;0;0;0];
 for index = 1:index_max
     % integrate gyro data until the accumulated time reaches the desired
     % time step for the INS consumers
@@ -54,9 +69,24 @@ for index = 1:index_max
         % store the intermediate delta angle for use by the coning
         % correction calculation next time step
         last_delta_alpha = alpha;
+        
+        % try an alternative quaternion integration method
+        % convert to a delta quaternion using a small angle approximation
+        % and use quaternion product to accumulate rotation
+        delta_quat = [1.0;0.5*delta_alpha(1);0.5*delta_alpha(2);0.5*delta_alpha(3)];
+        quat = QuatMult(quat,delta_quat);
     else
         % output the corrected delta angle at the INS time step
-        ins_delta_angle(:,ins_index) = alpha + beta;
+        if (method == uint8(0))
+            ins_delta_angle(:,ins_index) = alpha;
+        elseif (method == uint8(1))
+            ins_delta_angle(:,ins_index) = alpha + beta;
+        elseif (method == uint8(2))
+            quat=NormQuat(quat);
+            ins_delta_angle(:,ins_index) = 2*[quat(2);quat(3);quat(4)];
+        end
+        quat = [1;0;0;0];
+        
         % output the time stamp of the INS delta angles - use the time from
         % the most recent gyro measurement
         ins_time(ins_index) = gyro_time_data(index);
