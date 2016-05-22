@@ -1,9 +1,11 @@
+%% MPU-9250 processing chain simulation
+
 %% set up simulation parameters
 clear all;
 tstop = 10;
 sim_dt = 1/8000; % this should be the sample time of the IMU ADC
 imu_dt = 1/4000; % output data interval of the IMU
-ins_dt = 1/250; % tie step that the strapdown predictor runs at
+ins_dt = 1/250; % time step that the strapdown predictor runs at
 %% calculate truth trajectory
 options = odeset('RelTol',1e-16);
 
@@ -57,9 +59,13 @@ for index = 1:index_max;
     end
 end
 
-%% model the IMU driver calculations
+%% model the IMU driver calculations that convert raw IMU data to delta angles and velocities
+% model 3 processing options
+% 0: trapezoidal integration
+% 1: trapezoidal integration + coning compensation (current method)
+% 2: quaternion integration
+method = uint8(1);
 downsample_ratio = round(ins_dt/imu_dt);
-method = uint8(2); % 0: addition, 1: addition + coning comp, 2: quaternion (small angle approx)
 index_max = length(imu_gyro_data);
 accumulated_time = 0;
 ins_index = 1;
@@ -92,16 +98,17 @@ for index = 1:index_max
     last_delta_alpha = alpha;
     
     % try an alternative quaternion integration method
-    % convert to a delta quaternion using a small angle approximation
-    % and use quaternion product to accumulate rotation
-    delta_quat = [1.0;0.5*delta_alpha(1);0.5*delta_alpha(2);0.5*delta_alpha(3)];
+    % use quaternion product to accumulate rotation
+    delta_quat = RotToQuat(delta_alpha);
+    %delta_quat = [1.0;0.5*delta_alpha(1);0.5*delta_alpha(2);0.5*delta_alpha(3)];
+    delta_quat = NormQuat(delta_quat);
     quat = QuatMult(quat,delta_quat);
     
     % integrate accel data to get delta velocities
     delta_vel = delta_vel + (imu_accel_data(:,index) + prev_imu_accel)*imu_dt*0.5;
     prev_imu_accel = imu_accel_data(:,index);
     
-    % at the prescribed downsample intervals, output the accumualted data
+    % at the prescribed downsample intervals, output the accumulated data
     % and reset the accumulator states
     if (rem(index,downsample_ratio) == 0)
         
@@ -135,7 +142,7 @@ for index = 1:index_max
     end
 end
 
-%% model the strapdown calculations
+%% model the strapdown calculations in the EKF
 index_max = length(ins_delta_angle);
 quat = [1;0;0;0];
 vel = [0;0;0];
@@ -187,42 +194,32 @@ end
 %% plot the data
 figure;
 subplot(3,1,1);
-plot(ins_time,180/pi*ins_euler(1,:));
+plot(ins_time,180/pi*(ins_euler(1,:)-ref_euler(1,:)));
 title('Euler angle comparison');
-xlabel('time(sec)');ylabel('roll (deg)');grid on;
-hold on;
-plot(ref_time,180/pi*ref_euler(1,:));
-hold off;
+xlabel('time(sec)');ylabel('roll error (deg)');grid on;
 subplot(3,1,2);
-plot(ins_time,180/pi*ins_euler(2,:));
-xlabel('time(sec)');ylabel('pitch (deg)');grid on;
-hold on;
-plot(ref_time,180/pi*ref_euler(2,:));
-hold off;
+plot(ins_time,180/pi*(ins_euler(2,:)-ref_euler(2,:)));
+xlabel('time(sec)');ylabel('pitch error (deg)');grid on;
 subplot(3,1,3);
-plot(ins_time,180/pi*ins_euler(3,:));
-xlabel('time(sec)');ylabel('yaw (deg)');grid on;
-hold on;
-plot(ref_time,180/pi*ref_euler(3,:));
-hold off;
+yaw_error = 180/pi*(ins_euler(3,:)-ref_euler(3,:));
+for index=1:length(yaw_error)
+    if (yaw_error(index) > 180)
+        yaw_error(index) = yaw_error(index) - 360;
+    elseif (yaw_error(index < -180))
+        yaw_error(index) = yaw_error(index) + 360;
+    end
+end
+plot(ins_time,yaw_error);
+xlabel('time(sec)');ylabel('yaw error (deg)');grid on;
 
 figure;
 subplot(3,1,1);
-plot(ins_time,ins_vel(1,:));
+plot(ins_time,(ins_vel(1,:)-ref_vel(1,:)));
 title('velocity comparison');
-xlabel('time(sec)');ylabel('vx (m/s)');grid on;
-hold on;
-plot(ref_time,ref_vel(1,:));
-hold off;
+xlabel('time(sec)');ylabel('vx error (m/s)');grid on;
 subplot(3,1,2);
-plot(ins_time,ins_vel(2,:));
-xlabel('time(sec)');ylabel('vy (m/s)');grid on;
-hold on;
-plot(ref_time,ref_vel(2,:));
-hold off;
+plot(ins_time,(ins_vel(2,:)-ref_vel(2,:)));
+xlabel('time(sec)');ylabel('vy error (m/s)');grid on;
 subplot(3,1,3);
-plot(ins_time,ins_vel(3,:));
-xlabel('time(sec)');ylabel('vz (m/s)');grid on;
-hold on;
-plot(ref_time,ref_vel(3,:));
-hold off;
+plot(ins_time,(ins_vel(3,:)-ref_vel(3,:)));
+xlabel('time(sec)');ylabel('vz error (m/s)');grid on;

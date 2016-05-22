@@ -5,14 +5,16 @@ function [state_deriv] = calc_truth_deriv(time,state)
 % model a linearly increasing harmonic angular acceleration about X and Y
 % where X and Y are 90 degrees out of phase
 freq = 250*2*pi;
-amplitude = 10*time;
+amplitude = 100*time;
 % input a yaw acceleration doublet
-if (time <= 1.0) 
-    ang_acc_z = 10.0*time;
-elseif (time <= 3.0)
-    ang_acc_z = 20.0 - 10.0*time;
-elseif (time <= 4.0)
-    ang_acc_z = - 40.0 + 10.0*time;
+yaw_max_ang_accel = 5.0;
+rise_time = 2.5;
+if (time <= rise_time) 
+    ang_acc_z = time*yaw_max_ang_accel/rise_time;
+elseif (time <= 3*rise_time)
+    ang_acc_z = 2*yaw_max_ang_accel - time*yaw_max_ang_accel/rise_time;
+elseif (time <= 4*rise_time)
+    ang_acc_z = - 4*yaw_max_ang_accel + time*yaw_max_ang_accel/rise_time;
 else
     ang_acc_z = 0.0;
 end
