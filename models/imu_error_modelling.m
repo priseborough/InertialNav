@@ -26,6 +26,7 @@ for index = 1:length(truth_time)
 end
 
 %% sample imu measurements
+use_imu_dynamics = uint8(0); % set to 1 to use IMU dynamics
 index_max = length(truth_time);
 imu_index = 0;
 delta_time_gyro = 0;
@@ -47,8 +48,12 @@ a1 = -(1 - K) / alpha;
 b0 = K / alpha;
 b1 = K / alpha;
 for index = 1:index_max;
-    gyro_filt_state = (b0/a0)*truth_states(index,1:3)' + (b1/a0)*truth_rate_prev - (a1/a0)*gyro_filt_state;
-    truth_rate_prev = truth_states(index,1:3)';
+        if (use_imu_dynamics == 1)
+            gyro_filt_state = (b0/a0)*truth_states(index,1:3)' + (b1/a0)*truth_rate_prev - (a1/a0)*gyro_filt_state;
+            truth_rate_prev = truth_states(index,1:3)';
+        else
+            gyro_filt_state = truth_states(index,1:3);
+        end
     % sample gyro data
     if (rem(index,downsample_ratio) == 0)
         imu_index = imu_index + 1;
@@ -133,6 +138,7 @@ for index = 1:index_max
         
         % reset the accumulated values
         alpha = [0;0;0];
+        last_alpha = [0;0;0];
         beta = [0;0;0];
         delta_vel = [0;0;0];
         accumulated_time = 0;
