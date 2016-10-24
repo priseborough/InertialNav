@@ -660,6 +660,52 @@ if exist('SH_ACCY','var')
     
 end
 
+%% Write equations for range beacon data fusion
+if exist('SH_BCN','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_BCN = zeros(%d,1);\n',numel(SH_BCN));
+    for rowIndex = 1:numel(SH_BCN)
+        string = char(SH_BCN(rowIndex,1));
+        fprintf(fid,'SH_BCN(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(H_BCN);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_BCN = zeros(1,%d);\n',nCol);
+    for rowIndex = 1:nRow
+        for colIndex = 1:nCol
+            string = char(H_BCN(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'H_BCN(1,%d) = %s;\n',colIndex,string);
+            end
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_BCN = zeros(%d,1);\n',numel(SK_BCN));
+    for rowIndex = 1:numel(SK_BCN)
+        string = char(SK_BCN(rowIndex,1));
+        fprintf(fid,'SK_BCN(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_BCN);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_BCN(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+end
+
 %% Close output file
 fclose(fid);
 

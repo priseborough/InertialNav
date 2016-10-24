@@ -465,6 +465,24 @@ save('Drag.mat','SH_ACCX','H_ACCX','SK_ACCX','K_ACCX','SH_ACCY','H_ACCY','SK_ACC
 clear all;
 reset(symengine);
 
+%% Derive equations for fusion of range only measurements to a beacon at a known NED position
+load('StatePrediction.mat');
+syms bcn_pn bcn_pe bcn_pd real % beacon NED position
+syms R_BCN real % observation variance for range measurement
+
+rangePred = sqrt((pn - bcn_pn)^2 + (pe - bcn_pe)^2 + (pd - bcn_pd)^2);
+
+H_BCN = jacobian(rangePred,stateVector); % measurement Jacobian
+H_BCN = subs(H_BCN, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_BCN = simplify(H_BCN);
+[H_BCN,SH_BCN]=OptimiseAlgebra(H_BCN,'SH_BCN'); % optimise processing
+K_BCN = (P*transpose(H_BCN))/(H_BCN*P*transpose(H_BCN) + R_BCN);
+[K_BCN,SK_BCN]=OptimiseAlgebra(K_BCN,'SK_BCN'); % Kalman gain vector
+
+save('RngBcn.mat','SH_BCN','H_BCN','SK_BCN','K_BCN');
+clear all;
+reset(symengine);
+
 %% Save output and convert to m and c code fragments
 
 % load equations for predictions and updates
@@ -474,6 +492,7 @@ load('Sideslip.mat');
 load('Magnetometer.mat');
 load('OpticalFlow.mat');
 load('Drag.mat');
+load('RngBcn.mat');
 
 fileName = strcat('SymbolicOutput',int2str(nStates),'.mat');
 save(fileName);

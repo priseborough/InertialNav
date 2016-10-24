@@ -826,3 +826,48 @@ Kfusion(22) = SK_ACCY(1)*(Kaccy*OP_l_22_c_1_r_*SK_ACCY(3) + Kaccy*OP_l_22_c_3_r_
 Kfusion(23) = SK_ACCY(1)*(Kaccy*OP_l_23_c_1_r_*SK_ACCY(3) + Kaccy*OP_l_23_c_3_r_*SK_ACCY(2) + Kaccy*OP_l_23_c_4_r_*SK_ACCY(5) - Kaccy*OP_l_23_c_5_r_*SK_ACCY(7) - Kaccy*OP_l_23_c_6_r_*SK_ACCY(6) - 2*Kaccy*OP_l_23_c_23_r_*SK_ACCY(4) + Kaccy*OP_l_23_c_24_r_*SK_ACCY(7));
 Kfusion(24) = SK_ACCY(1)*(Kaccy*OP_l_24_c_1_r_*SK_ACCY(3) + Kaccy*OP_l_24_c_3_r_*SK_ACCY(2) + Kaccy*OP_l_24_c_4_r_*SK_ACCY(5) - Kaccy*OP_l_24_c_5_r_*SK_ACCY(7) - Kaccy*OP_l_24_c_6_r_*SK_ACCY(6) - 2*Kaccy*OP_l_24_c_23_r_*SK_ACCY(4) + Kaccy*OP_l_24_c_24_r_*SK_ACCY(7));
 
+
+SH_BCN = zeros(1,1);
+SH_BCN(1) = 1/((bcn_pd - pd)^2 + (bcn_pe - pe)^2 + (bcn_pn - pn)^2)^(1/2);
+
+H_BCN = zeros(1,24);
+H_BCN(1,7) = -SH_BCN(1)*(bcn_pn - pn);
+H_BCN(1,8) = -SH_BCN(1)*(bcn_pe - pe);
+H_BCN(1,9) = -SH_BCN(1)*(bcn_pd - pd);
+
+
+SK_BCN = zeros(5,1);
+SK_BCN(1) = 1/(R_BCN + SH_BCN(1)*(bcn_pd - pd)*(OP_l_9_c_9_r_*SH_BCN(1)*(bcn_pd - pd) + OP_l_8_c_9_r_*SH_BCN(1)*(bcn_pe - pe) + OP_l_7_c_9_r_*SH_BCN(1)*(bcn_pn - pn)) + SH_BCN(1)*(bcn_pe - pe)*(OP_l_9_c_8_r_*SH_BCN(1)*(bcn_pd - pd) + OP_l_8_c_8_r_*SH_BCN(1)*(bcn_pe - pe) + OP_l_7_c_8_r_*SH_BCN(1)*(bcn_pn - pn)) + SH_BCN(1)*(bcn_pn - pn)*(OP_l_9_c_7_r_*SH_BCN(1)*(bcn_pd - pd) + OP_l_8_c_7_r_*SH_BCN(1)*(bcn_pe - pe) + OP_l_7_c_7_r_*SH_BCN(1)*(bcn_pn - pn)));
+SK_BCN(2) = bcn_pn - pn;
+SK_BCN(3) = bcn_pe - pe;
+SK_BCN(4) = bcn_pd - pd;
+SK_BCN(5) = SH_BCN(1);
+
+
+Kfusion = zeros(24,1);
+Kfusion = zeros(1,1);
+Kfusion(1) = -SK_BCN(1)*(OP_l_1_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_1_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_1_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(2) = -SK_BCN(1)*(OP_l_2_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_2_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_2_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(3) = -SK_BCN(1)*(OP_l_3_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_3_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_3_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(4) = -SK_BCN(1)*(OP_l_4_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_4_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_4_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(5) = -SK_BCN(1)*(OP_l_5_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_5_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_5_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(6) = -SK_BCN(1)*(OP_l_6_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_6_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_6_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(7) = -SK_BCN(1)*(OP_l_7_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_7_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_7_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(8) = -SK_BCN(1)*(OP_l_8_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_8_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_8_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(9) = -SK_BCN(1)*(OP_l_9_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_9_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_9_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(10) = -SK_BCN(1)*(OP_l_10_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_10_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_10_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(11) = -SK_BCN(1)*(OP_l_11_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_11_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_11_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(12) = -SK_BCN(1)*(OP_l_12_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_12_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_12_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(13) = -SK_BCN(1)*(OP_l_13_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_13_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_13_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(14) = -SK_BCN(1)*(OP_l_14_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_14_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_14_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(15) = -SK_BCN(1)*(OP_l_15_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_15_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_15_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(16) = -SK_BCN(1)*(OP_l_16_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_16_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_16_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(17) = -SK_BCN(1)*(OP_l_17_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_17_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_17_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(18) = -SK_BCN(1)*(OP_l_18_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_18_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_18_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(19) = -SK_BCN(1)*(OP_l_19_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_19_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_19_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(20) = -SK_BCN(1)*(OP_l_20_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_20_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_20_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(21) = -SK_BCN(1)*(OP_l_21_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_21_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_21_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(22) = -SK_BCN(1)*(OP_l_22_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_22_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_22_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(23) = -SK_BCN(1)*(OP_l_23_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_23_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_23_c_9_r_*SK_BCN(4)*SK_BCN(5));
+Kfusion(24) = -SK_BCN(1)*(OP_l_24_c_7_r_*SK_BCN(2)*SK_BCN(5) + OP_l_24_c_8_r_*SK_BCN(3)*SK_BCN(5) + OP_l_24_c_9_r_*SK_BCN(4)*SK_BCN(5));
+
