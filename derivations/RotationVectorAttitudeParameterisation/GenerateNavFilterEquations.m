@@ -45,34 +45,34 @@
 %% define symbolic variables and constants
 clear all;
 reset(symengine);
-syms dax day daz real % IMU delta angle measurements in body axes - rad
-syms dvx dvy dvz real % IMU delta velocity measurements in body axes - m/sec
-syms q0 q1 q2 q3 real % quaternions defining attitude of body axes relative to local NED
-syms vn ve vd real % NED velocity - m/sec
-syms pn pe pd real % NED position - m
-syms dax_b day_b daz_b real % delta angle bias - rad
-syms dax_s day_s daz_s real % delta angle scale factor
-syms dvz_b dvy_b dvz_b real % delta velocity bias - m/sec
-syms dt real % IMU time step - sec
-syms gravity real % gravity  - m/sec^2
-syms daxNoise dayNoise dazNoise dvxNoise dvyNoise dvzNoise real; % IMU delta angle and delta velocity measurement noise
-syms vwn vwe real; % NE wind velocity - m/sec
-syms magX magY magZ real; % XYZ body fixed magnetic field measurements - milligauss
-syms magN magE magD real; % NED earth fixed magnetic field components - milligauss
-syms R_VN R_VE R_VD real % variances for NED velocity measurements - (m/sec)^2
-syms R_PN R_PE R_PD real % variances for NED position measurements - m^2
-syms R_TAS real  % variance for true airspeed measurement - (m/sec)^2
-syms R_MAG real  % variance for magnetic flux measurements - milligauss^2
-syms R_BETA real % variance of sidelsip measurements rad^2
-syms R_LOS real % variance of LOS angular rate mesurements (rad/sec)^2
-syms ptd real % location of terrain in D axis
-syms rotErrX rotErrY rotErrZ real; % error rotation vector in body frame
-syms decl real; % earth magnetic field declination from true north
-syms R_DECL R_YAW real; % variance of declination or yaw angle observation
-syms BCXinv BCYinv real % inverse of ballistic coefficient for wind relative movement along the x and y  body axes
-syms rho real % air density (kg/m^3)
-syms R_ACC real % variance of accelerometer measurements (m/s^2)^2
-syms Kaccx Kaccy real % derivative of X and Y body specific forces wrt componenent of true airspeed along each axis (1/s)
+syms dax day daz 'real' % IMU delta angle measurements in body axes - rad
+syms dvx dvy dvz 'real' % IMU delta velocity measurements in body axes - m/sec
+syms q0 q1 q2 q3 'real' % quaternions defining attitude of body axes relative to local NED
+syms vn ve vd 'real' % NED velocity - m/sec
+syms pn pe pd 'real' % NED position - m
+syms dax_b day_b daz_b 'real' % delta angle bias - rad
+syms dax_s day_s daz_s 'real' % delta angle scale factor
+syms dvz_b dvy_b dvz_b 'real' % delta velocity bias - m/sec
+syms dt 'real' % IMU time step - sec
+syms gravity 'real' % gravity  - m/sec^2
+syms daxNoise dayNoise dazNoise dvxNoise dvyNoise dvzNoise 'real'; % IMU delta angle and delta velocity measurement noise
+syms vwn vwe 'real'; % NE wind velocity - m/sec
+syms magX magY magZ 'real'; % XYZ body fixed magnetic field measurements - milligauss
+syms magN magE magD 'real'; % NED earth fixed magnetic field components - milligauss
+syms R_VN R_VE R_VD 'real' % variances for NED velocity measurements - (m/sec)^2
+syms R_PN R_PE R_PD 'real' % variances for NED position measurements - m^2
+syms R_TAS 'real'  % variance for true airspeed measurement - (m/sec)^2
+syms R_MAG 'real'  % variance for magnetic flux measurements - milligauss^2
+syms R_BETA 'real' % variance of sidelsip measurements rad^2
+syms R_LOS 'real' % variance of LOS angular rate mesurements (rad/sec)^2
+syms ptd 'real' % location of terrain in D axis
+syms rotErrX rotErrY rotErrZ 'real'; % error rotation vector in body frame
+syms decl 'real'; % earth magnetic field declination from true north
+syms R_DECL R_YAW 'real'; % variance of declination or yaw angle observation
+syms BCXinv BCYinv 'real' % inverse of ballistic coefficient for wind relative movement along the x and y  body axes
+syms rho 'real' % air density (kg/m^3)
+syms R_ACC 'real' % variance of accelerometer measurements (m/s^2)^2
+syms Kaccx Kaccy 'real' % derivative of X and Y body specific forces wrt componenent of true airspeed along each axis (1/s)
 
 %% define the state prediction equations
 
@@ -309,7 +309,7 @@ load('StatePrediction.mat');
 % calculate range from plane to centre of sensor fov assuming flat earth
 % and camera axes aligned with body axes
 %range = ((ptd - pd)/Tbn(3,3));
-syms range real;
+syms range 'real';
 
 % calculate relative velocity in body frame
 relVelBody = transpose(Tbn)*[vn;ve;vd];
@@ -467,8 +467,8 @@ reset(symengine);
 
 %% Derive equations for fusion of range only measurements to a beacon at a known NED position
 load('StatePrediction.mat');
-syms bcn_pn bcn_pe bcn_pd real % beacon NED position
-syms R_BCN real % observation variance for range measurement
+syms bcn_pn bcn_pe bcn_pd 'real' % beacon NED position
+syms R_BCN 'real' % observation variance for range measurement
 
 rangePred = sqrt((pn - bcn_pn)^2 + (pe - bcn_pe)^2 + (pd - bcn_pd)^2);
 
@@ -480,6 +480,23 @@ K_BCN = (P*transpose(H_BCN))/(H_BCN*P*transpose(H_BCN) + R_BCN);
 [K_BCN,SK_BCN]=OptimiseAlgebra(K_BCN,'SK_BCN'); % Kalman gain vector
 
 save('RngBcn.mat','SH_BCN','H_BCN','SK_BCN','K_BCN');
+clear all;
+reset(symengine);
+
+%% Derive equations for fusion of range only measurements to a beacon at a known NED position
+load('StatePrediction.mat');
+syms bcn_pn bcn_pe bcn_pd 'real' % beacon NED position
+syms R_BCN 'real' % observation variance for range measurement
+
+rangePred = sqrt((pn - bcn_pn)^2 + (pe - bcn_pe)^2 + (pd - bcn_pd)^2);
+
+H_BCN = jacobian(rangePred,stateVector); % measurement Jacobian
+H_BCN = subs(H_BCN, {'rotErrX', 'rotErrY', 'rotErrZ'}, {0,0,0});
+H_BCN = simplify(H_BCN);
+K_BCN = (P*transpose(H_BCN))/(H_BCN*P*transpose(H_BCN) + R_BCN);
+ccode([K_BCN,H_BCN'],'file','calcBCN.c');
+fix_c_code('calcBCN.c');
+
 clear all;
 reset(symengine);
 

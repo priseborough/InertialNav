@@ -1,4 +1,6 @@
 %% Derive and test an EKF to estinate initial posiiton from a series of range beacon measurements taken over time
+clear all;
+close all;
 
 % define beacon position in NED frame
 pos_bcn(:,1) = [10;10;0];
@@ -72,7 +74,7 @@ for bcnIndex=1:4
 end
 covariance = eye(3) * maxRngErr^2;
 
-for timeIndex = 1:100
+for timeIndex = 1:10
     % save estimates
     stateError(:,timeIndex) = stateEstimate - veh_pos_truth;
     stateVariance(1,timeIndex) = covariance(1,1);
