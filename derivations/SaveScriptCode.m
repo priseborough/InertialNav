@@ -478,7 +478,7 @@ if exist('SH_OPT','var')
     fprintf(fid,'\n');
     
 end
-%% Write equations for laser range finder data fusion
+%% Write equations for range measurement fusion
 if exist('SH_RNG','var')
     
     fprintf(fid,'\n');
@@ -519,6 +519,66 @@ if exist('SH_RNG','var')
         if ~strcmpi(string,'0')
             fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
         end
+    end
+    fprintf(fid,'\n');
+    
+end
+
+
+%% Write equations for range measurement fusion
+if exist('SH_RNG2','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SH_RNG2 = zeros(%d,1);\n',numel(SH_RNG2));
+    for rowIndex = 1:numel(SH_RNG2)
+        string = char(SH_RNG2(rowIndex,1));
+        fprintf(fid,'SH_RNG2(%d) = %s;\n',rowIndex,string);
+    end
+    
+    [nRow,nCol] = size(H_RNG2);
+    fprintf(fid,'\n');
+    fprintf(fid,'H_RNG2 = zeros(1,%d);\n',nCol);
+    for rowIndex = 1:nRow
+        for colIndex = 1:nCol
+            string = char(H_RNG2(rowIndex,colIndex));
+            % don't write out a zero-assignment
+            if ~strcmpi(string,'0')
+                fprintf(fid,'H_RNG2(1,%d) = %s;\n',colIndex,string);
+            end
+        end
+    end
+    fprintf(fid,'\n');
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'SK_RNG2 = zeros(%d,1);\n',numel(SK_RNG2));
+    for rowIndex = 1:numel(SK_RNG2)
+        string = char(SK_RNG2(rowIndex,1));
+        fprintf(fid,'SK_RNG2(%d) = %s;\n',rowIndex,string);
+    end
+    fprintf(fid,'\n');
+    
+    [nRow,nCol] = size(K_RNG2);
+    fprintf(fid,'\n');
+    fprintf(fid,'Kfusion = zeros(%d,1);\n',nRow,nCol);
+    for rowIndex = 1:nRow
+        string = char(K_RNG2(rowIndex,1));
+        % don't write out a zero-assignment
+        if ~strcmpi(string,'0')
+            fprintf(fid,'Kfusion(%d) = %s;\n',rowIndex,string);
+        end
+    end
+    fprintf(fid,'\n');
+    
+end
+
+%% Write equations for range measurement fusion
+if exist('rng_laser','var')
+    
+    fprintf(fid,'\n');
+    fprintf(fid,'rng_laser = zeros(%d,1);\n',numel(rng_laser));
+    for rowIndex = 1:numel(rng_laser)
+        string = char(rng_laser(rowIndex,1));
+        fprintf(fid,'rng_laser(%d) = %s;\n',rowIndex,string);
     end
     fprintf(fid,'\n');
     

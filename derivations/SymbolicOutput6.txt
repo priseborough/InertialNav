@@ -1,50 +1,82 @@
 
-SH_LOS = zeros(2,1);
-SH_LOS(1) = (Kopt*(Tnb_l_3_c_2_r_*velE + Tnb_l_3_c_3_r_*velD + Tnb_l_3_c_1_r_*velN))/range;
-SH_LOS(2) = 1/range;
+nextP = zeros(6,6);
+nextP(1,1) = OP_l_1_c_1_r_;
+nextP(1,2) = OP_l_1_c_2_r_;
+nextP(2,2) = OP_l_2_c_2_r_;
+nextP(1,3) = OP_l_1_c_3_r_;
+nextP(2,3) = OP_l_2_c_3_r_;
+nextP(3,3) = OP_l_3_c_3_r_;
+nextP(1,4) = OP_l_1_c_4_r_ + OP_l_1_c_1_r_*dt;
+nextP(2,4) = OP_l_2_c_4_r_ + OP_l_2_c_1_r_*dt;
+nextP(3,4) = OP_l_3_c_4_r_ + OP_l_3_c_1_r_*dt;
+nextP(4,4) = OP_l_4_c_4_r_ + OP_l_1_c_4_r_*dt + dt*(OP_l_4_c_1_r_ + OP_l_1_c_1_r_*dt);
+nextP(1,5) = OP_l_1_c_5_r_ + OP_l_1_c_2_r_*dt;
+nextP(2,5) = OP_l_2_c_5_r_ + OP_l_2_c_2_r_*dt;
+nextP(3,5) = OP_l_3_c_5_r_ + OP_l_3_c_2_r_*dt;
+nextP(4,5) = OP_l_4_c_5_r_ + OP_l_1_c_5_r_*dt + dt*(OP_l_4_c_2_r_ + OP_l_1_c_2_r_*dt);
+nextP(5,5) = OP_l_5_c_5_r_ + OP_l_2_c_5_r_*dt + dt*(OP_l_5_c_2_r_ + OP_l_2_c_2_r_*dt);
+nextP(1,6) = OP_l_1_c_3_r_*dt;
+nextP(2,6) = OP_l_2_c_3_r_*dt;
+nextP(3,6) = OP_l_3_c_3_r_*dt;
+nextP(4,6) = dt*(OP_l_4_c_3_r_ + OP_l_1_c_3_r_*dt);
+nextP(5,6) = dt*(OP_l_5_c_3_r_ + OP_l_2_c_3_r_*dt);
+nextP(6,6) = OP_l_3_c_3_r_*dt^2;
 
 
+SH_RNG = zeros(1,1);
+SH_RNG(1) = 1/((bcn_pos_d + deck_pos_d - veh_pos_d)^2 + (bcn_pos_e + deck_pos_e - veh_pos_e)^2 + (bcn_pos_n + deck_pos_n - veh_pos_n)^2)^(1/2);
 
-H_LOS = zeros(1,6);
-H_LOS(1) = SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - omegaX + a2*omegaZ - a3*omegaY;
-H_LOS(2) = SH_LOS(1);
-H_LOS(3) = Kopt*omegaZ - omegaZ;
-H_LOS(4) = omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN));
-H_LOS(5) = 1;
+H_RNG = zeros(1,6);
+H_RNG(1,4) = (SH_RNG(1)*(2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n))/2;
+H_RNG(1,5) = (SH_RNG(1)*(2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e))/2;
+H_RNG(1,6) = (SH_RNG(1)*(2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d))/2;
 
 
+SK_RNG = zeros(5,1);
+SK_RNG(1) = 1/(R_RNG + (SH_RNG(1)*((OP_l_5_c_5_r_*SH_RNG(1)*(2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e))/2 + (OP_l_6_c_5_r_*SH_RNG(1)*(2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d))/2 + (OP_l_4_c_5_r_*SH_RNG(1)*(2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n))/2)*(2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e))/2 + (SH_RNG(1)*((OP_l_5_c_6_r_*SH_RNG(1)*(2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e))/2 + (OP_l_6_c_6_r_*SH_RNG(1)*(2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d))/2 + (OP_l_4_c_6_r_*SH_RNG(1)*(2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n))/2)*(2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d))/2 + (SH_RNG(1)*((OP_l_5_c_4_r_*SH_RNG(1)*(2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e))/2 + (OP_l_6_c_4_r_*SH_RNG(1)*(2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d))/2 + (OP_l_4_c_4_r_*SH_RNG(1)*(2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n))/2)*(2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n))/2);
+SK_RNG(2) = 2*bcn_pos_n + 2*deck_pos_n - 2*veh_pos_n;
+SK_RNG(3) = 2*bcn_pos_e + 2*deck_pos_e - 2*veh_pos_e;
+SK_RNG(4) = 2*bcn_pos_d + 2*deck_pos_d - 2*veh_pos_d;
+SK_RNG(5) = SH_RNG(1);
 
-H_LOS = zeros(1,6);
-H_LOS(1) = a3*omegaX - SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) - a1*omegaZ - omegaY;
-H_LOS(2) = omegaZ - Kopt*omegaZ;
-H_LOS(3) = SH_LOS(1);
-H_LOS(4) = Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN)) - omegaX;
-H_LOS(6) = 1;
-
-SK_LOS = zeros(7,1);
-SK_LOS(1) = 1/(OP_l_6_c_6_r_ + R_LOS + OP_l_3_c_6_r_*SH_LOS(1) - OP_l_1_c_6_r_*(omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX) - (omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN)))*(OP_l_6_c_4_r_ + OP_l_3_c_4_r_*SH_LOS(1) - OP_l_1_c_4_r_*(omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX) - OP_l_4_c_4_r_*(omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN))) + OP_l_2_c_4_r_*(omegaZ - Kopt*omegaZ)) + (omegaZ - Kopt*omegaZ)*(OP_l_6_c_2_r_ + OP_l_3_c_2_r_*SH_LOS(1) - OP_l_1_c_2_r_*(omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX) - OP_l_4_c_2_r_*(omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN))) + OP_l_2_c_2_r_*(omegaZ - Kopt*omegaZ)) - OP_l_4_c_6_r_*(omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN))) + SH_LOS(1)*(OP_l_6_c_3_r_ + OP_l_3_c_3_r_*SH_LOS(1) - OP_l_1_c_3_r_*(omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX) - OP_l_4_c_3_r_*(omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN))) + OP_l_2_c_3_r_*(omegaZ - Kopt*omegaZ)) - (omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX)*(OP_l_6_c_1_r_ + OP_l_3_c_1_r_*SH_LOS(1) - OP_l_1_c_1_r_*(omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX) - OP_l_4_c_1_r_*(omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN))) + OP_l_2_c_1_r_*(omegaZ - Kopt*omegaZ)) + OP_l_2_c_6_r_*(omegaZ - Kopt*omegaZ));
-SK_LOS(2) = 1/(OP_l_5_c_5_r_ + R_LOS + OP_l_2_c_5_r_*SH_LOS(1) - OP_l_1_c_5_r_*(omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY) + (omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN)))*(OP_l_5_c_4_r_ + OP_l_2_c_4_r_*SH_LOS(1) - OP_l_1_c_4_r_*(omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY) + OP_l_4_c_4_r_*(omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN))) - OP_l_3_c_4_r_*(omegaZ - Kopt*omegaZ)) - (omegaZ - Kopt*omegaZ)*(OP_l_5_c_3_r_ + OP_l_2_c_3_r_*SH_LOS(1) - OP_l_1_c_3_r_*(omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY) + OP_l_4_c_3_r_*(omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN))) - OP_l_3_c_3_r_*(omegaZ - Kopt*omegaZ)) + OP_l_4_c_5_r_*(omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN))) + SH_LOS(1)*(OP_l_5_c_2_r_ + OP_l_2_c_2_r_*SH_LOS(1) - OP_l_1_c_2_r_*(omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY) + OP_l_4_c_2_r_*(omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN))) - OP_l_3_c_2_r_*(omegaZ - Kopt*omegaZ)) - (omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY)*(OP_l_5_c_1_r_ + OP_l_2_c_1_r_*SH_LOS(1) - OP_l_1_c_1_r_*(omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY) + OP_l_4_c_1_r_*(omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN))) - OP_l_3_c_1_r_*(omegaZ - Kopt*omegaZ)) - OP_l_3_c_5_r_*(omegaZ - Kopt*omegaZ));
-SK_LOS(3) = omegaX - SH_LOS(2)*(velE*(Tnb_l_2_c_2_r_ - Tnb_l_1_c_2_r_*a3 + Tnb_l_3_c_2_r_*a1) + velD*(Tnb_l_2_c_3_r_ - Tnb_l_1_c_3_r_*a3 + Tnb_l_3_c_3_r_*a1) + velN*(Tnb_l_2_c_1_r_ - Tnb_l_1_c_1_r_*a3 + Tnb_l_3_c_1_r_*a1)) - a2*omegaZ + a3*omegaY;
-SK_LOS(4) = omegaY + SH_LOS(2)*(velE*(Tnb_l_1_c_2_r_ + Tnb_l_2_c_2_r_*a3 - Tnb_l_3_c_2_r_*a2) + velD*(Tnb_l_1_c_3_r_ + Tnb_l_2_c_3_r_*a3 - Tnb_l_3_c_3_r_*a2) + velN*(Tnb_l_1_c_1_r_ + Tnb_l_2_c_1_r_*a3 - Tnb_l_3_c_1_r_*a2)) + a1*omegaZ - a3*omegaX;
-SK_LOS(5) = omegaX - Kopt*(omegaX - SH_LOS(2)*(Tnb_l_2_c_2_r_*velE + Tnb_l_2_c_3_r_*velD + Tnb_l_2_c_1_r_*velN));
-SK_LOS(6) = omegaY - Kopt*(omegaY + SH_LOS(2)*(Tnb_l_1_c_2_r_*velE + Tnb_l_1_c_3_r_*velD + Tnb_l_1_c_1_r_*velN));
-SK_LOS(7) = omegaZ - Kopt*omegaZ;
 
 Kfusion = zeros(6,1);
 Kfusion = zeros(1,1);
-Kfusion(1) = SK_LOS(2)*(OP_l_1_c_5_r_ + OP_l_1_c_2_r_*SH_LOS(1) - OP_l_1_c_1_r_*SK_LOS(3) - OP_l_1_c_3_r_*SK_LOS(7) + OP_l_1_c_4_r_*SK_LOS(6));
-Kfusion(2) = SK_LOS(2)*(OP_l_2_c_5_r_ + OP_l_2_c_2_r_*SH_LOS(1) - OP_l_2_c_1_r_*SK_LOS(3) - OP_l_2_c_3_r_*SK_LOS(7) + OP_l_2_c_4_r_*SK_LOS(6));
-Kfusion(3) = SK_LOS(2)*(OP_l_3_c_5_r_ + OP_l_3_c_2_r_*SH_LOS(1) - OP_l_3_c_1_r_*SK_LOS(3) - OP_l_3_c_3_r_*SK_LOS(7) + OP_l_3_c_4_r_*SK_LOS(6));
-Kfusion(4) = SK_LOS(2)*(OP_l_4_c_5_r_ + OP_l_4_c_2_r_*SH_LOS(1) - OP_l_4_c_1_r_*SK_LOS(3) - OP_l_4_c_3_r_*SK_LOS(7) + OP_l_4_c_4_r_*SK_LOS(6));
-Kfusion(5) = SK_LOS(2)*(OP_l_5_c_5_r_ + OP_l_5_c_2_r_*SH_LOS(1) - OP_l_5_c_1_r_*SK_LOS(3) - OP_l_5_c_3_r_*SK_LOS(7) + OP_l_5_c_4_r_*SK_LOS(6));
-Kfusion(6) = SK_LOS(2)*(OP_l_6_c_5_r_ + OP_l_6_c_2_r_*SH_LOS(1) - OP_l_6_c_1_r_*SK_LOS(3) - OP_l_6_c_3_r_*SK_LOS(7) + OP_l_6_c_4_r_*SK_LOS(6));
+Kfusion(1) = SK_RNG(1)*((OP_l_1_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_1_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_1_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+Kfusion(2) = SK_RNG(1)*((OP_l_2_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_2_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_2_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+Kfusion(3) = SK_RNG(1)*((OP_l_3_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_3_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_3_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+Kfusion(4) = SK_RNG(1)*((OP_l_4_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_4_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_4_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+Kfusion(5) = SK_RNG(1)*((OP_l_5_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_5_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_5_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+Kfusion(6) = SK_RNG(1)*((OP_l_6_c_4_r_*SK_RNG(2)*SK_RNG(5))/2 + (OP_l_6_c_5_r_*SK_RNG(3)*SK_RNG(5))/2 + (OP_l_6_c_6_r_*SK_RNG(4)*SK_RNG(5))/2);
+
+
+SH_RNG2 = zeros(1,1);
+SH_RNG2(1) = 1/((qd0^2 - qd1^2 - qd2^2 + qd3^2)*(qv0^2 - qv1^2 - qv2^2 + qv3^2) + (2*qd0*qd1 - 2*qd2*qd3)*(2*qv0*qv1 - 2*qv2*qv3) + (2*qd0*qd2 + 2*qd1*qd3)*(2*qv0*qv2 + 2*qv1*qv3));
+
+H_RNG2 = zeros(1,6);
+H_RNG2(1,4) = SH_RNG2(1)*(2*qd0*qd2 + 2*qd1*qd3);
+H_RNG2(1,5) = -SH_RNG2(1)*(2*qd0*qd1 - 2*qd2*qd3);
+H_RNG2(1,6) = SH_RNG2(1)*(qd0^2 - qd1^2 - qd2^2 + qd3^2);
+
+
+SK_RNG2 = zeros(5,1);
+SK_RNG2(1) = 1/(R_LASER + SH_RNG2(1)*(2*qd0*qd2 + 2*qd1*qd3)*(OP_l_6_c_4_r_*SH_RNG2(1)*(qd0^2 - qd1^2 - qd2^2 + qd3^2) + OP_l_4_c_4_r_*SH_RNG2(1)*(2*qd0*qd2 + 2*qd1*qd3) - OP_l_5_c_4_r_*SH_RNG2(1)*(2*qd0*qd1 - 2*qd2*qd3)) - SH_RNG2(1)*(2*qd0*qd1 - 2*qd2*qd3)*(OP_l_6_c_5_r_*SH_RNG2(1)*(qd0^2 - qd1^2 - qd2^2 + qd3^2) + OP_l_4_c_5_r_*SH_RNG2(1)*(2*qd0*qd2 + 2*qd1*qd3) - OP_l_5_c_5_r_*SH_RNG2(1)*(2*qd0*qd1 - 2*qd2*qd3)) + SH_RNG2(1)*(OP_l_6_c_6_r_*SH_RNG2(1)*(qd0^2 - qd1^2 - qd2^2 + qd3^2) + OP_l_4_c_6_r_*SH_RNG2(1)*(2*qd0*qd2 + 2*qd1*qd3) - OP_l_5_c_6_r_*SH_RNG2(1)*(2*qd0*qd1 - 2*qd2*qd3))*(qd0^2 - qd1^2 - qd2^2 + qd3^2));
+SK_RNG2(2) = qd0^2 - qd1^2 - qd2^2 + qd3^2;
+SK_RNG2(3) = 2*qd0*qd1 - 2*qd2*qd3;
+SK_RNG2(4) = 2*qd0*qd2 + 2*qd1*qd3;
+SK_RNG2(5) = SH_RNG2(1);
 
 
 Kfusion = zeros(6,1);
 Kfusion = zeros(1,1);
-Kfusion(1) = SK_LOS(1)*(OP_l_1_c_6_r_ + OP_l_1_c_3_r_*SH_LOS(1) - OP_l_1_c_1_r_*SK_LOS(4) + OP_l_1_c_2_r_*SK_LOS(7) - OP_l_1_c_4_r_*SK_LOS(5));
-Kfusion(2) = SK_LOS(1)*(OP_l_2_c_6_r_ + OP_l_2_c_3_r_*SH_LOS(1) - OP_l_2_c_1_r_*SK_LOS(4) + OP_l_2_c_2_r_*SK_LOS(7) - OP_l_2_c_4_r_*SK_LOS(5));
-Kfusion(3) = SK_LOS(1)*(OP_l_3_c_6_r_ + OP_l_3_c_3_r_*SH_LOS(1) - OP_l_3_c_1_r_*SK_LOS(4) + OP_l_3_c_2_r_*SK_LOS(7) - OP_l_3_c_4_r_*SK_LOS(5));
-Kfusion(4) = SK_LOS(1)*(OP_l_4_c_6_r_ + OP_l_4_c_3_r_*SH_LOS(1) - OP_l_4_c_1_r_*SK_LOS(4) + OP_l_4_c_2_r_*SK_LOS(7) - OP_l_4_c_4_r_*SK_LOS(5));
-Kfusion(5) = SK_LOS(1)*(OP_l_5_c_6_r_ + OP_l_5_c_3_r_*SH_LOS(1) - OP_l_5_c_1_r_*SK_LOS(4) + OP_l_5_c_2_r_*SK_LOS(7) - OP_l_5_c_4_r_*SK_LOS(5));
-Kfusion(6) = SK_LOS(1)*(OP_l_6_c_6_r_ + OP_l_6_c_3_r_*SH_LOS(1) - OP_l_6_c_1_r_*SK_LOS(4) + OP_l_6_c_2_r_*SK_LOS(7) - OP_l_6_c_4_r_*SK_LOS(5));
+Kfusion(1) = SK_RNG2(1)*(OP_l_1_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_1_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_1_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+Kfusion(2) = SK_RNG2(1)*(OP_l_2_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_2_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_2_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+Kfusion(3) = SK_RNG2(1)*(OP_l_3_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_3_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_3_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+Kfusion(4) = SK_RNG2(1)*(OP_l_4_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_4_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_4_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+Kfusion(5) = SK_RNG2(1)*(OP_l_5_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_5_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_5_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+Kfusion(6) = SK_RNG2(1)*(OP_l_6_c_4_r_*SK_RNG2(4)*SK_RNG2(5) - OP_l_6_c_5_r_*SK_RNG2(3)*SK_RNG2(5) + OP_l_6_c_6_r_*SK_RNG2(2)*SK_RNG2(5));
+
+
+rng_laser = zeros(1,1);
+rng_laser(1) = ((deck_pos_d - veh_pos_d)*(qd0^2 - qd1^2 - qd2^2 + qd3^2) - (deck_pos_e - veh_pos_e)*(2*qd0*qd1 - 2*qd2*qd3) + (deck_pos_n - veh_pos_n)*(2*qd0*qd2 + 2*qd1*qd3))/((qd0^2 - qd1^2 - qd2^2 + qd3^2)*(qv0^2 - qv1^2 - qv2^2 + qv3^2) + (2*qd0*qd1 - 2*qd2*qd3)*(2*qv0*qv1 - 2*qv2*qv3) + (2*qd0*qd2 + 2*qd1*qd3)*(2*qv0*qv2 + 2*qv1*qv3));
+
