@@ -1,4 +1,4 @@
-%% Derive and test an EKF to estinate initial posiiton from a series of range beacon measurements taken over time
+%% Derive and test an EKF to estimate initial position from a series of range beacon measurements taken over time
 clear all;
 close all;
 
