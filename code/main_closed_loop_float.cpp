@@ -518,7 +518,7 @@ int main(int argc, char *argv[])
                 }
                 calcposNED(posNED, _ekf->gpsLat, _ekf->gpsLon, _ekf->gpsHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
 
-                if (pOnboardFile > 0) {
+                if (pOnboardFile != nullptr) {
                     calcposNED(onboardPosNED, onboardLat, onboardLon, onboardHgt, _ekf->latRef, _ekf->lonRef, _ekf->hgtRef);
                 }
 
@@ -1029,7 +1029,7 @@ void readAhrsData()
 
 void readFlowData()
 {
-    if (pInFlowFile <= 0)
+    if (pInFlowFile == nullptr)
         return;
 
     float temp[8];
